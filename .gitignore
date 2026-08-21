@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+
+# chaves de integracao — nunca commitar
+google-service-account.json
+*.iam.gserviceaccount*.json
+
+.vercel/
+
+.vercel
+.env*
