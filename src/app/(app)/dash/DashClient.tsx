@@ -108,7 +108,6 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
           gap: "var(--space-4)",
-          alignItems: "start",
         }}
       >
         <div className="card">
