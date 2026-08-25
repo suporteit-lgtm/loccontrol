@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { PageHeader, StatCard } from "@/components/ui";
+import { PageHeader, StatCard, DistribuicaoStatus } from "@/components/ui";
+import type { FatiaStatus } from "@/lib/types";
 
 interface Eq {
   nome: string;
@@ -14,11 +15,13 @@ export function DashTIClient({
   stats,
   eqEntregar,
   eqReceber,
+  distribuicao,
 }: {
   unidadeAtual: string;
   stats: { admissoes: number; desligamentos: number; separar: number; receber: number };
   eqEntregar: Eq[];
   eqReceber: Eq[];
+  distribuicao: { dados: FatiaStatus[]; total: number };
 }) {
   const router = useRouter();
 
@@ -78,6 +81,7 @@ export function DashTIClient({
           )}
         </div>
       </div>
+      <DistribuicaoStatus dados={distribuicao.dados} total={distribuicao.total} />
     </div>
   );
 }

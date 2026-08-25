@@ -130,6 +130,12 @@ export interface MatrizCel {
 
 export type UnidadesMap = Record<string, string[]>;
 
+export interface FatiaStatus {
+  st: string;
+  n: number;
+  cor: string;
+}
+
 /** Template do checklist de offboarding (Configurações → Templates) */
 export const CHECKLIST_TEMPLATE = {
   rh: [

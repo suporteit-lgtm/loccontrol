@@ -53,6 +53,7 @@ const PATHS: Record<string, string[]> = {
   ],
   lua: ["M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"],
   chevron: ["m6 9 6 6 6-6"],
+  limpar: ["M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", "M3 3v5h5"],
   "sidebar-collapse": ["m15 18-6-6 6-6"],
   "sidebar-expand": ["m9 18 6-6-6-6"],
 };

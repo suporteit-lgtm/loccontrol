@@ -1,4 +1,4 @@
-import { contexto, colaboradoresDaUnidade, chamadosAbertos, daUnidade, todosColaboradores } from "@/lib/data";
+import { contexto, colaboradoresDaUnidade, chamadosAbertos, daUnidade, todosColaboradores, todosChamados, distribuicaoChamados } from "@/lib/data";
 import { EQUIPAMENTOS } from "@/lib/types";
 import { DashTIClient } from "./DashTIClient";
 
@@ -6,12 +6,14 @@ export const dynamic = "force-dynamic";
 
 export default async function DashTIPage() {
   const { filtro } = await contexto("ti");
-  const [colabsUnidade, todos, chamados] = await Promise.all([
+  const [colabsUnidade, todos, chamados, todosCh] = await Promise.all([
     colaboradoresDaUnidade(filtro),
     todosColaboradores(),
     chamadosAbertos().then((cs) => cs.filter((f) => !f.ti_concluido)),
+    todosChamados(),
   ]);
   const porId = new Map(todos.map((c) => [c.id, c]));
+  const distribuicao = distribuicaoChamados(todosCh);
 
   const admPend = colabsUnidade.filter((c) => c.status === "Pré-admissão");
   const desligCol = chamados
@@ -40,6 +42,7 @@ export default async function DashTIPage() {
       }}
       eqEntregar={eqEntregar}
       eqReceber={eqReceber}
+      distribuicao={distribuicao}
     />
   );
 }

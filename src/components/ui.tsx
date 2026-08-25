@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { avatar, pill } from "@/lib/format";
+import type { FatiaStatus } from "@/lib/types";
 import { ThemeToggleButton } from "./ThemeToggle";
 
 /** Relógio que atualiza a cada 30s (SLA), como no protótipo. */
@@ -96,6 +97,43 @@ export function PageHeader({
         {acoes}
         <ThemeToggleButton style={{ borderRadius: 999, background: "color-mix(in srgb, var(--color-text) 5%, transparent)", border: "none" }} />
       </div>
+    </div>
+  );
+}
+
+export function DistribuicaoStatus({ dados, total }: { dados: FatiaStatus[]; total: number }) {
+  return (
+    <div className="card" style={{ gap: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+        <span className="card-title">Distribuição por status</span>
+        <span className="text-muted" style={{ fontSize: 12 }}>
+          {total} chamado{total === 1 ? "" : "s"} no total
+        </span>
+      </div>
+      {total === 0 ? (
+        <span className="text-muted" style={{ fontSize: 13 }}>
+          Nenhum chamado registrado ainda
+        </span>
+      ) : (
+        <>
+          <div style={{ display: "flex", height: 8, borderRadius: 999, overflow: "hidden", background: "var(--color-neutral-200)" }}>
+            {dados
+              .filter((d) => d.n > 0)
+              .map((d) => (
+                <div key={d.st} title={`${d.st}: ${d.n}`} style={{ flex: d.n, background: d.cor }} />
+              ))}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+            {dados.map((d) => (
+              <span key={d.st} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                <i style={{ width: 8, height: 8, borderRadius: "50%", background: d.cor, flex: "none" }} />
+                {d.st}
+                <strong style={{ fontFamily: "var(--mono)" }}>{d.n}</strong>
+              </span>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

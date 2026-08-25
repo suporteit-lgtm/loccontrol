@@ -218,15 +218,6 @@ export function AppShell({ usuario, unidadesMap, filtro, temTodas, children }: S
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", alignItems: "stretch" }}>
-      <style>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .hide-scrollbar {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-      `}</style>
       {!isMobile && (
         <aside
           style={{

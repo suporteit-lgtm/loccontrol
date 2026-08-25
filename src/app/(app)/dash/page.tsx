@@ -1,11 +1,12 @@
-import { contexto, colaboradoresDaUnidade, chamadosAbertos, colunaDoChamado } from "@/lib/data";
+import { contexto, colaboradoresDaUnidade, chamadosAbertos, colunaDoChamado, todosChamados, distribuicaoChamados } from "@/lib/data";
 import { DashClient } from "./DashClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashPage() {
   const { filtro } = await contexto("rh");
-  const [colabs, chamados] = await Promise.all([colaboradoresDaUnidade(filtro), chamadosAbertos()]);
+  const [colabs, chamados, todos] = await Promise.all([colaboradoresDaUnidade(filtro), chamadosAbertos(), todosChamados()]);
+  const distribuicao = distribuicaoChamados(todos);
 
   const conta = (st: string) => colabs.filter((c) => c.status === st).length;
   const pendentes = chamados.filter((f) => !f.ti_concluido && colunaDoChamado(f) !== "pre").length;
@@ -53,6 +54,7 @@ export default async function DashPage() {
       }}
       chart={meses}
       proximas={proximas}
+      distribuicao={distribuicao}
     />
   );
 }

@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, AvatarCircle, StatusPill } from "@/components/ui";
+import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
 import { dataBR } from "@/lib/format";
 import { importarColaboradores, exportarBasesParaDrive, excluirColaborador } from "@/app/actions/colaboradores";
@@ -270,18 +271,16 @@ export function ColabsClient({
                 </th>
                 <th style={{ padding: "4px 8px" }}>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <select
+                    <SelectCustom
                       className="input"
-                      style={{ fontSize: 11, padding: "4px 2px", width: 58, fontWeight: 400, minHeight: 28, fontFamily: "var(--font-body)" }}
-                      value={admModo}
-                      onChange={(e) => {
-                        setAdmModo(e.target.value as "dia" | "mes");
+                      style={{ fontSize: 11, padding: "4px 6px", width: 72, fontWeight: 400, minHeight: 28, fontFamily: "var(--font-body)" }}
+                      value={admModo === "mes" ? "Mês" : "Data"}
+                      options={["Data", "Mês"]}
+                      onChange={(v) => {
+                        setAdmModo(v === "Mês" ? "mes" : "dia");
                         setFAdm("");
                       }}
-                    >
-                      <option value="dia">Data</option>
-                      <option value="mes">Mês</option>
-                    </select>
+                    />
                     <input
                       className="input"
                       style={{ flex: 1, minWidth: 74, fontSize: 12, padding: "4px 8px", fontWeight: 400, minHeight: 28, fontFamily: "var(--mono)" }}
@@ -304,18 +303,13 @@ export function ColabsClient({
                   </div>
                 </th>
                 <th style={{ padding: "4px 8px" }}>
-                  <select
+                  <SelectCustom
                     className="input"
-                    style={{ width: "100%", fontSize: 12, padding: "4px 6px", fontWeight: 400, minHeight: 28, fontFamily: "var(--font-body)" }}
+                    style={{ width: "fit-content", minWidth: 100, maxWidth: 130, fontSize: 12, padding: "4px 8px", fontWeight: 400, minHeight: 28, fontFamily: "var(--font-body)" }}
                     value={fStatus || "Todos"}
-                    onChange={(e) => setFStatus(e.target.value === "Todos" ? "" : e.target.value)}
-                  >
-                    {STATUS_OPTS.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </select>
+                    options={STATUS_OPTS}
+                    onChange={(v) => setFStatus(v === "Todos" ? "" : v)}
+                  />
                 </th>
                 <th style={{ padding: "4px 8px" }}>
                   <input

@@ -379,6 +379,10 @@ select.input option {
 .table tbody tr:last-child td { border-bottom: none; }
 .table tbody tr:hover { background: color-mix(in srgb, var(--color-accent) 5%, transparent); }
 
+/* esconde a barra de rolagem sem tirar o scroll (menu lateral, listas de select) */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+
 /* ── Diálogos ── */
 .dialog-backdrop {
   position: fixed;

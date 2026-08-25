@@ -98,3 +98,16 @@ export function unidadeFull(c: { cidade?: string | null; unidade?: string | null
 export function primeiroNome(nome: string) {
   return nome.split(" ")[0];
 }
+
+/** Nome em Title Case (preposições minúsculas) — o Workspace importa nomes em
+ *  caixas inconsistentes (TUDO MAIÚSCULO, tudo minúsculo); isto padroniza só
+ *  na exibição, sem alterar o que está gravado. */
+const PREPOSICOES = new Set(["de", "da", "do", "das", "dos", "e"]);
+export function capitalizarNome(nome: string): string {
+  return nome
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((p, i) => (i > 0 && PREPOSICOES.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1)))
+    .join(" ");
+}

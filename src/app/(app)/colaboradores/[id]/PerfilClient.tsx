@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { AvatarCircle, StatusPill, useNow } from "@/components/ui";
+import { SelectCustom } from "@/components/SelectCustom";
 import { InputMascarado } from "@/components/Mascaras";
 import { dataBR, quandoBR, sla } from "@/lib/format";
 import {
@@ -505,46 +506,31 @@ export function PerfilClient({
             </div>
             <div className="field">
               <label>Status</label>
-              <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                <option value="">— a definir —</option>
-                <option value="Pré-admissão">Pré-admissão</option>
-                <option value="Ativo">Ativo</option>
-                <option value="Afastado">Afastado</option>
-                <option value="Desligado">Desligado</option>
-              </select>
+              <SelectCustom
+                className="input"
+                value={form.status || "— a definir —"}
+                options={["— a definir —", "Pré-admissão", "Ativo", "Afastado", "Desligado"]}
+                onChange={(v) => setForm({ ...form, status: v === "— a definir —" ? "" : v })}
+              />
             </div>
             <div className="field">
               <label>Cidade</label>
-              <select
+              <SelectCustom
                 className="input"
-                value={form.cidade}
-                onChange={(e) => setForm({ ...form, cidade: e.target.value, unidade: "" })}
-              >
-                <option value="">— a definir —</option>
-                {Object.keys(unidadesMap)
-                  .sort((a, b) => a.localeCompare(b))
-                  .map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-              </select>
+                value={form.cidade || "— a definir —"}
+                options={["— a definir —", ...Object.keys(unidadesMap).sort((a, b) => a.localeCompare(b))]}
+                onChange={(v) => setForm({ ...form, cidade: v === "— a definir —" ? "" : v, unidade: "" })}
+              />
             </div>
             <div className="field">
               <label>Unidade</label>
-              <select
+              <SelectCustom
                 className="input"
-                value={form.unidade}
+                value={form.unidade || "— a definir —"}
+                options={["— a definir —", ...(unidadesMap[form.cidade] ?? [])]}
                 disabled={!form.cidade}
-                onChange={(e) => setForm({ ...form, unidade: e.target.value })}
-              >
-                <option value="">— a definir —</option>
-                {(unidadesMap[form.cidade] ?? []).map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setForm({ ...form, unidade: v === "— a definir —" ? "" : v })}
+              />
             </div>
             <div className="field">
               <label>E-mail corporativo</label>
@@ -772,23 +758,16 @@ export function PerfilClient({
               </div>
               <div className="field">
                 <label>Motivo</label>
-                <select className="input" value={dMotivo} onChange={(e) => setDMotivo(e.target.value)}>
-                  {["Pedido de demissão", "Demitido", "Justa causa"].map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
+                <SelectCustom
+                  className="input"
+                  value={dMotivo}
+                  options={["Pedido de demissão", "Demitido", "Justa causa"]}
+                  onChange={setDMotivo}
+                />
               </div>
               <div className="field">
                 <label>Responsável T.I · o chamado cai direto na fila dele</label>
-                <select className="input" value={dAnalista} onChange={(e) => setDAnalista(e.target.value)}>
-                  {analistas.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
-                    </option>
-                  ))}
-                </select>
+                <SelectCustom className="input" value={dAnalista} options={analistas} onChange={setDAnalista} />
               </div>
               {colab.email && (
                 <div

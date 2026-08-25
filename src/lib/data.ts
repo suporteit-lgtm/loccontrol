@@ -11,7 +11,7 @@ import {
   TODAS_CIDADES,
   type UnidadeFiltro,
 } from "./session";
-import type { Chamado, Colaborador, UnidadesMap, Usuario } from "./types";
+import type { Chamado, Colaborador, FatiaStatus, UnidadesMap, Usuario } from "./types";
 
 /** Mapa cidade → unidades. Deduplicado por request via React cache. */
 export const unidadesMap = cache(async (): Promise<UnidadesMap> => {
@@ -134,6 +134,38 @@ export async function chamadosAbertos(): Promise<Chamado[]> {
   // concluídos ficam no banco como histórico — as filas só veem os abertos
   const { data } = await db().from("chamados").select("*").is("concluido_em", null).order("criado_em");
   return (data ?? []) as Chamado[];
+}
+
+/** Abertos + histórico — usado só para estatísticas (distribuição por status). */
+export async function todosChamados(): Promise<Chamado[]> {
+  const { data } = await db().from("chamados").select("*").order("criado_em");
+  return (data ?? []) as Chamado[];
+}
+
+/** Agrupa os chamados nos 4 status que o LOCCONTROL de fato acompanha —
+ *  não existe um pipeline "Em Progresso" separado aqui, só aberto/pausado
+ *  (silenciado) e, uma vez concluído, resolvido ou fechado sem sucesso. */
+export function distribuicaoChamados(chamados: Chamado[]): { dados: FatiaStatus[]; total: number } {
+  let aberto = 0, pausado = 0, resolvido = 0, fechado = 0;
+  for (const c of chamados) {
+    if (!c.concluido_em) {
+      if (c.silenciado) pausado++;
+      else aberto++;
+    } else if (c.resultado === "concluido") {
+      resolvido++;
+    } else {
+      fechado++; // cancelado | negado
+    }
+  }
+  return {
+    dados: [
+      { st: "Aberto", n: aberto, cor: "var(--color-accent)" },
+      { st: "Pausado", n: pausado, cor: "#8a6fa6" },
+      { st: "Resolvido", n: resolvido, cor: "var(--ok)" },
+      { st: "Fechado", n: fechado, cor: "var(--color-neutral-400)" },
+    ],
+    total: chamados.length,
+  };
 }
 
 /** Conclusão vira arquivamento: a linha permanece para o histórico. */

@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { PageHeader, StatCard, AvatarCircle, useNow } from "@/components/ui";
-import { sla, dataBR } from "@/lib/format";
+import { PageHeader, StatCard, AvatarCircle, DistribuicaoStatus, useNow } from "@/components/ui";
+import { sla, dataBR, capitalizarNome } from "@/lib/format";
+import type { FatiaStatus } from "@/lib/types";
 
 interface Props {
   unidadeAtual: string;
@@ -17,17 +18,53 @@ interface Props {
     slaAlvo: string | null;
     silenciado: boolean;
   }[];
+  distribuicao: { dados: FatiaStatus[]; total: number };
 }
 
-export function DashClient({ unidadeAtual, stats, chart, proximas }: Props) {
+interface Ponto {
+  x: number;
+  y: number;
+  v: number;
+  mes: string;
+}
+
+/** Curva suave entre os pontos (spline simples via bézier cúbica, ponto de
+ *  controle na metade do trecho horizontal — sem depender de lib de gráfico). */
+function curvaSuave(pontos: Ponto[]): string {
+  if (pontos.length === 0) return "";
+  let d = `M ${pontos[0].x} ${pontos[0].y}`;
+  for (let i = 0; i < pontos.length - 1; i++) {
+    const p0 = pontos[i];
+    const p1 = pontos[i + 1];
+    const meioX = (p0.x + p1.x) / 2;
+    d += ` C ${meioX} ${p0.y}, ${meioX} ${p1.y}, ${p1.x} ${p1.y}`;
+  }
+  return d;
+}
+
+export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao }: Props) {
   const router = useRouter();
   const now = useNow();
 
-  // As barras são proporcionais ao maior mês — com dados reais (dezenas de
-  // admissões) uma altura fixa por unidade estourava o card.
-  const ALTURA = 104;
+  // Gráfico em área/linha (SVG puro, sem lib): mais fácil de ler tendência
+  // ao longo de 6 meses do que barras — e não fica esquisito quando quase
+  // todo mês é zero e só um tem movimento.
+  const W = 600;
+  const H = 150;
+  const PAD_TOP = 24;
+  const PAD_BOTTOM = 6;
+  const baseY = H - PAD_BOTTOM;
+  const plotH = baseY - PAD_TOP;
+  const stepX = chart.length > 1 ? W / (chart.length - 1) : W;
   const pico = Math.max(1, ...chart.flatMap((m) => [m.a, m.d]));
-  const altura = (v: number) => (v === 0 ? 2 : Math.max(4, Math.round((v / pico) * ALTURA)));
+  const yPara = (v: number) => baseY - (v / pico) * plotH;
+
+  const pontosAdm: Ponto[] = chart.map((m, i) => ({ x: i * stepX, y: yPara(m.a), v: m.a, mes: m.mes }));
+  const pontosDesl: Ponto[] = chart.map((m, i) => ({ x: i * stepX, y: yPara(m.d), v: m.d, mes: m.mes }));
+  const areaAdm = pontosAdm.length
+    ? `${curvaSuave(pontosAdm)} L ${pontosAdm[pontosAdm.length - 1].x} ${baseY} L ${pontosAdm[0].x} ${baseY} Z`
+    : "";
+  const picoAdm = Math.max(0, ...pontosAdm.map((p) => p.v));
 
   const cards = [
     { label: "Ativos", n: stats.ativos, cor: "var(--ok)", on: () => router.push("/colaboradores?status=Ativo") },
@@ -69,62 +106,74 @@ export function DashClient({ unidadeAtual, stats, chart, proximas }: Props) {
         <div className="card">
           <span className="card-kicker">Últimos 6 meses</span>
           <span className="card-title">Admissões × desligamentos</span>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 14, paddingTop: 8 }}>
-            {chart.map((m) => (
-              <div
-                key={m.mes}
-                className="chart-col"
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 6,
-                  justifyContent: "flex-end",
-                  position: "relative",
-                }}
-              >
-                <div className="chart-tip">
-                  <span style={{ color: "var(--ok)" }}>▪</span> {m.a} admiss{m.a === 1 ? "ão" : "ões"} ·{" "}
-                  <span style={{ color: "var(--color-neutral-400)" }}>▪</span> {m.d} deslig.
-                </div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: ALTURA }}>
-                  <div
-                    title={`${m.a} admissão(ões) em ${m.mes}`}
-                    style={{ 
-                      width: 16, 
-                      height: altura(m.a), 
-                      background: "var(--ok)",
-                      borderRadius: "4px 4px 0 0",
-                      boxShadow: "0 -4px 12px color-mix(in srgb, var(--ok) 25%, transparent)",
-                      transition: "height 0.5s ease"
-                    }}
+          <div style={{ paddingTop: 10 }}>
+            <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
+              <defs>
+                <linearGradient id="gradAdmissoes" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--ok)" stopOpacity="0.32" />
+                  <stop offset="100%" stopColor="var(--ok)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+
+              {/* linhas de grade */}
+              {[PAD_TOP, PAD_TOP + plotH / 2, baseY].map((y, i) => (
+                <line key={i} x1={0} x2={W} y1={y} y2={y} stroke="var(--color-divider)" strokeWidth={1} strokeDasharray="2 6" />
+              ))}
+
+              {/* área sob a curva de admissões */}
+              <path d={areaAdm} fill="url(#gradAdmissoes)" />
+
+              {/* linha de desligamentos — tracejada, discreta */}
+              <path d={curvaSuave(pontosDesl)} fill="none" stroke="var(--color-neutral-400)" strokeWidth={1.5} strokeDasharray="4 4" strokeLinecap="round" />
+              {pontosDesl.map(
+                (p, i) => p.v > 0 && <circle key={i} cx={p.x} cy={p.y} r={3} fill="var(--color-surface)" stroke="var(--color-neutral-400)" strokeWidth={1.5} />
+              )}
+
+              {/* linha de admissões — em destaque */}
+              <path d={curvaSuave(pontosAdm)} fill="none" stroke="var(--ok)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+              {pontosAdm.map((p, i) => (
+                <g key={i}>
+                  {p.v > 0 && p.v === picoAdm && <circle cx={p.x} cy={p.y} r={9} fill="var(--ok)" opacity={0.18} />}
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={p.v > 0 ? 4 : 2.5}
+                    fill={p.v > 0 ? "var(--ok)" : "var(--color-surface)"}
+                    stroke="var(--ok)"
+                    strokeWidth={p.v > 0 ? 0 : 1.5}
                   />
-                  <div
-                    title={`${m.d} desligamento(s) em ${m.mes}`}
-                    style={{ 
-                      width: 16, 
-                      height: altura(m.d), 
-                      background: "var(--color-neutral-400)",
-                      borderRadius: "4px 4px 0 0",
-                      boxShadow: "0 -4px 12px color-mix(in srgb, var(--color-text) 12%, transparent)",
-                      transition: "height 0.5s ease"
-                    }}
-                  />
-                </div>
-                <span className="text-muted" style={{ fontSize: 11, fontFamily: "var(--mono)" }}>
+                  {p.v > 0 && (
+                    <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize={12} fontFamily="var(--mono)" fontWeight={700} fill="var(--color-text)">
+                      {p.v}
+                    </text>
+                  )}
+                  <title>
+                    {p.mes}: {p.v} admiss{p.v === 1 ? "ão" : "ões"}
+                  </title>
+                </g>
+              ))}
+            </svg>
+            <div style={{ display: "flex" }}>
+              {chart.map((m) => (
+                <span key={m.mes} className="text-muted" style={{ flex: 1, textAlign: "center", fontSize: 11, fontFamily: "var(--mono)" }}>
                   {m.mes}
                 </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           <div className="card-meta" style={{ gap: 14 }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <i style={{ width: 10, height: 10, background: "var(--ok)" }} />
+              <i style={{ width: 12, height: 2, borderRadius: 1, background: "var(--ok)" }} />
               admissões
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <i style={{ width: 10, height: 10, background: "var(--color-neutral-400)" }} />
+              <i
+                style={{
+                  width: 12,
+                  height: 0,
+                  borderTop: "1.5px dashed var(--color-neutral-400)",
+                }}
+              />
               desligamentos
             </span>
           </div>
@@ -150,21 +199,23 @@ export function DashClient({ unidadeAtual, stats, chart, proximas }: Props) {
                 >
                   <AvatarCircle nome={p.nome} tamanho={32} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14 }}>{p.nome}</div>
+                    <div style={{ fontSize: 14 }}>{capitalizarNome(p.nome)}</div>
                     <div className="text-muted" style={{ fontSize: 12 }}>
                       {p.cargo} · {dataBR(p.admissao)}
                     </div>
                   </div>
-                  <span
-                    style={{
-                      fontFamily: "var(--mono)",
-                      fontSize: 13,
-                      color: p.silenciado ? "var(--color-neutral-500)" : sl?.cor ?? "var(--color-neutral-500)",
-                      fontWeight: p.silenciado ? 400 : sl?.peso ?? 400,
-                    }}
-                  >
-                    {p.silenciado ? "🔕 silenciado" : sl?.txt ?? "—"}
-                  </span>
+                  {(p.silenciado || sl) && (
+                    <span
+                      style={{
+                        fontFamily: "var(--mono)",
+                        fontSize: 13,
+                        color: p.silenciado ? "var(--color-neutral-500)" : sl?.cor,
+                        fontWeight: p.silenciado ? 400 : sl?.peso,
+                      }}
+                    >
+                      {p.silenciado ? "🔕 silenciado" : sl?.txt}
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -176,6 +227,7 @@ export function DashClient({ unidadeAtual, stats, chart, proximas }: Props) {
           </div>
         </div>
       </div>
+      <DistribuicaoStatus dados={distribuicao.dados} total={distribuicao.total} />
     </div>
   );
 }

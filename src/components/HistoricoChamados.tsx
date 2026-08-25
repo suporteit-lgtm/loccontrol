@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { PageHeader, StatusPill } from "@/components/ui";
+import { SelectCustom } from "@/components/SelectCustom";
 import { quandoBR } from "@/lib/format";
 
 export interface LinhaHistorico {
@@ -73,19 +74,13 @@ export function HistoricoChamados({
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-        <select
+        <SelectCustom
           className="input"
           style={{ maxWidth: 220, fontSize: 13, background: "var(--color-bg)", border: "1px solid var(--color-divider)", borderRadius: 12, padding: "8px 12px" }}
-          value={fTipo}
-          onChange={(e) => setFTipo(e.target.value)}
-        >
-          <option value="">Todos os tipos</option>
-          {tipos.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+          value={fTipo || "Todos os tipos"}
+          options={["Todos os tipos", ...tipos]}
+          onChange={(v) => setFTipo(v === "Todos os tipos" ? "" : v)}
+        />
         <span style={{ 
           fontFamily: "var(--mono)", fontSize: 12, fontWeight: 600,
           background: "var(--color-bg)", padding: "4px 12px", borderRadius: "999px",
