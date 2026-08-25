@@ -74,10 +74,10 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
   const saldo = totalAdm - totalDesl;
 
   const cards = [
-    { label: "Ativos", n: stats.ativos, cor: "var(--ok)", on: () => router.push("/colaboradores?status=Ativo") },
-    { label: "Afastados", n: stats.afastados, cor: "var(--warn-forte)", on: () => router.push("/colaboradores?status=Afastado") },
-    { label: "Pré-admissões", n: stats.pre, cor: "var(--color-accent-700)", on: () => router.push("/colaboradores?status=Pré-admissão") },
-    { label: "Chamados pendentes", n: stats.chamados, cor: "var(--color-text)", on: () => router.push("/fila-ti") },
+    { label: "Ativos", n: stats.ativos, cor: "var(--ok)", icone: "colabs", on: () => router.push("/colaboradores?status=Ativo") },
+    { label: "Afastados", n: stats.afastados, cor: "var(--warn-forte)", icone: "afastado", on: () => router.push("/colaboradores?status=Afastado") },
+    { label: "Pré-admissões", n: stats.pre, cor: "var(--color-accent-700)", icone: "wizard", on: () => router.push("/colaboradores?status=Pré-admissão") },
+    { label: "Chamados pendentes", n: stats.chamados, cor: "var(--color-text)", icone: "fila", on: () => router.push("/fila-ti") },
   ];
 
   return (
@@ -100,7 +100,7 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
         }}
       >
         {cards.map((s) => (
-          <StatCard key={s.label} label={s.label} n={s.n} cor={s.cor} onClick={s.on} />
+          <StatCard key={s.label} label={s.label} n={s.n} cor={s.cor} icone={s.icone} onClick={s.on} />
         ))}
       </div>
       <div

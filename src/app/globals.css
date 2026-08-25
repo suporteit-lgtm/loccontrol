@@ -568,6 +568,14 @@ select.input option {
 
 /* hover de linhas/cartões clicáveis */
 .hover-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+/* filete de cor do StatCard: desliza da esquerda pra direita ao passar o mouse */
+.stat-topline {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+}
+.blueprint:hover .stat-topline { transform: scaleX(1); }
 .nav-item { transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease; }
 .nav-item:hover {
   background: color-mix(in srgb, var(--color-text) 6%, transparent);

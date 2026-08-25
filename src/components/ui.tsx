@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { avatar, pill } from "@/lib/format";
 import type { FatiaStatus } from "@/lib/types";
 import { ThemeToggleButton } from "./ThemeToggle";
+import { Icone } from "./Icone";
 
 /** Relógio que atualiza a cada 30s (SLA), como no protótipo. */
 export function useNow(intervaloMs = 30000) {
@@ -143,11 +144,13 @@ export function StatCard({
   n,
   cor,
   onClick,
+  icone,
 }: {
   label: string;
   n: number;
   cor: string;
   onClick?: () => void;
+  icone?: string;
 }) {
   return (
     <div
@@ -177,9 +180,10 @@ export function StatCard({
           pointerEvents: "none"
         }}
       />
-      {/* filete de cor no topo: identifica o número de longe sem pesar */}
+      {/* filete de cor no topo: identifica o número de longe sem pesar — anima no hover do card */}
       <span
         aria-hidden
+        className="stat-topline"
         style={{
           position: "absolute",
           top: 0,
@@ -190,12 +194,31 @@ export function StatCard({
           opacity: 0.9,
         }}
       />
-      <span
-        className="text-muted"
-        style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}
-      >
-        {label}
-      </span>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+        <span
+          className="text-muted"
+          style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}
+        >
+          {label}
+        </span>
+        {icone && (
+          <span
+            aria-hidden
+            style={{
+              flex: "none",
+              width: 32,
+              height: 32,
+              display: "grid",
+              placeItems: "center",
+              borderRadius: 10,
+              background: `color-mix(in srgb, ${cor} 14%, transparent)`,
+              color: cor,
+            }}
+          >
+            <Icone nome={icone} tamanho={17} />
+          </span>
+        )}
+      </div>
       <span
         style={{
           fontFamily: "var(--font-heading)",
@@ -208,6 +231,7 @@ export function StatCard({
       >
         {n}
       </span>
+      <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--color-divider)" }} />
     </div>
   );
 }

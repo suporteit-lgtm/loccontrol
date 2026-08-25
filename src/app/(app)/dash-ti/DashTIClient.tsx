@@ -52,10 +52,10 @@ export function DashTIClient({
         sub={`${unidadeAtual} · equipamentos calculados a partir do que o RH marcou em cada pré-admissão e desligamento`}
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "var(--space-3)" }}>
-        <StatCard label="Admissões na fila" n={stats.admissoes} cor="var(--color-accent-700)" onClick={() => router.push("/fila-ti")} />
-        <StatCard label="Desligamentos" n={stats.desligamentos} cor="var(--warn-forte)" onClick={() => router.push("/fila-ti")} />
-        <StatCard label="Equipamentos a separar" n={stats.separar} cor="var(--color-text)" />
-        <StatCard label="Equipamentos a receber" n={stats.receber} cor="var(--ok)" />
+        <StatCard label="Admissões na fila" n={stats.admissoes} cor="var(--color-accent-700)" icone="wizard" onClick={() => router.push("/fila-ti")} />
+        <StatCard label="Desligamentos" n={stats.desligamentos} cor="var(--warn-forte)" icone="sair" onClick={() => router.push("/fila-ti")} />
+        <StatCard label="Equipamentos a separar" n={stats.separar} cor="var(--color-text)" icone="equipamento" />
+        <StatCard label="Equipamentos a receber" n={stats.receber} cor="var(--ok)" icone="equipamento" />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "var(--space-4)" }}>
         <div className="card">
