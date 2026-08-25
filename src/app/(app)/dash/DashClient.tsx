@@ -53,14 +53,18 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
   const H = 150;
   const PAD_TOP = 24;
   const PAD_BOTTOM = 6;
+  // margem horizontal: sem isso o primeiro/último ponto caem exatamente na
+  // borda do viewBox e o glow/círculo do pico fica cortado pela lateral.
+  const PAD_X = 14;
   const baseY = H - PAD_BOTTOM;
   const plotH = baseY - PAD_TOP;
-  const stepX = chart.length > 1 ? W / (chart.length - 1) : W;
+  const plotW = W - 2 * PAD_X;
+  const stepX = chart.length > 1 ? plotW / (chart.length - 1) : plotW;
   const pico = Math.max(1, ...chart.flatMap((m) => [m.a, m.d]));
   const yPara = (v: number) => baseY - (v / pico) * plotH;
 
-  const pontosAdm: Ponto[] = chart.map((m, i) => ({ x: i * stepX, y: yPara(m.a), v: m.a, mes: m.mes }));
-  const pontosDesl: Ponto[] = chart.map((m, i) => ({ x: i * stepX, y: yPara(m.d), v: m.d, mes: m.mes }));
+  const pontosAdm: Ponto[] = chart.map((m, i) => ({ x: PAD_X + i * stepX, y: yPara(m.a), v: m.a, mes: m.mes }));
+  const pontosDesl: Ponto[] = chart.map((m, i) => ({ x: PAD_X + i * stepX, y: yPara(m.d), v: m.d, mes: m.mes }));
   const areaAdm = pontosAdm.length
     ? `${curvaSuave(pontosAdm)} L ${pontosAdm[pontosAdm.length - 1].x} ${baseY} L ${pontosAdm[0].x} ${baseY} Z`
     : "";
