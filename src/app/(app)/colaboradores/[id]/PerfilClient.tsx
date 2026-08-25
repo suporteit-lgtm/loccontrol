@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
-import { useNow } from "@/components/ui";
+import { AvatarCircle, StatusPill, useNow } from "@/components/ui";
 import { InputMascarado } from "@/components/Mascaras";
 import { dataBR, quandoBR, sla } from "@/lib/format";
 import {
@@ -105,22 +105,37 @@ export function PerfilClient({
     if (atual && colab.status === "Desligado") prazo = `em ${dataBR(colab.desligamento)}`;
     if (atual && colab.status === "Afastado" && afastadoDesde) prazo = `desde ${dataBR(afastadoDesde)}`;
     const evs = eventos.filter((e) => e.fase === f.key);
-    return { ...f, num: `0${i + 1}`, ...c, prazo, evs };
+    return { ...f, num: `0${i + 1}`, ...c, prazo, evs, atual };
   });
 
   // "a preencher" deixa explícito o que veio em branco do Workspace
   const vazio = "a preencher";
-  const pCampos = useMemo(
+  const pGrupos = useMemo(
     () => [
-      { k: "Nome completo", v: colab.nome || vazio },
-      { k: "CPF", v: colab.cpf || vazio, mono: true },
-      { k: "Cargo", v: colab.cargo || vazio },
-      { k: "Departamento", v: colab.dept || vazio },
-      { k: "Unidade", v: colab.unidade ? unidade : vazio },
-      { k: "Data de admissão", v: colab.admissao ? dataBR(colab.admissao) : vazio, mono: true },
-      { k: "E-mail corporativo", v: colab.email || vazio, mono: true },
-      { k: "Telefone", v: colab.telefone || vazio, mono: true },
-      { k: "Status", v: colab.status || vazio },
+      {
+        titulo: "Identificação",
+        campos: [
+          { k: "Nome completo", v: colab.nome || vazio },
+          { k: "CPF", v: colab.cpf || vazio, mono: true },
+          { k: "Telefone", v: colab.telefone || vazio, mono: true },
+        ],
+      },
+      {
+        titulo: "Cargo e lotação",
+        campos: [
+          { k: "Cargo", v: colab.cargo || vazio },
+          { k: "Departamento", v: colab.dept || vazio },
+          { k: "Unidade", v: colab.unidade ? unidade : vazio },
+          { k: "Data de admissão", v: colab.admissao ? dataBR(colab.admissao) : vazio, mono: true },
+        ],
+      },
+      {
+        titulo: "Acesso",
+        campos: [
+          { k: "E-mail corporativo", v: colab.email || vazio, mono: true },
+          { k: "Status", v: colab.status || vazio },
+        ],
+      },
     ],
     [colab, unidade]
   );
@@ -177,12 +192,18 @@ export function PerfilClient({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-        <div>
-          <h6 className="text-muted" style={{ margin: 0 }}>Colaborador</h6>
-          <h2 style={{ margin: 0 }}>{colab.nome}</h2>
-          <div className="text-muted" style={{ fontSize: 13 }}>
-            {colab.cargo} · {colab.dept ?? "—"} · {unidade} ·{" "}
-            <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{colab.cpf}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <AvatarCircle nome={colab.nome} tamanho={52} />
+          <div>
+            <h6 className="text-muted" style={{ margin: 0 }}>Colaborador</h6>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <h2 style={{ margin: 0 }}>{colab.nome}</h2>
+              <StatusPill status={colab.status ?? "—"} />
+            </div>
+            <div className="text-muted" style={{ fontSize: 13 }}>
+              {colab.cargo} · {colab.dept ?? "—"} · {unidade} ·{" "}
+              <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{colab.cpf}</span>
+            </div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -276,8 +297,25 @@ export function PerfilClient({
                   background: t.bg,
                   color: t.cor,
                   borderRadius: 8,
+                  position: "relative",
+                  overflow: "hidden",
+                  boxShadow: t.atual ? `0 0 0 1px ${t.borda}, 0 4px 14px color-mix(in srgb, ${t.borda} 30%, transparent)` : "none",
                 }}
               >
+                {t.atual && (
+                  <span
+                    aria-hidden
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 3,
+                      background: t.cor,
+                      opacity: 0.8,
+                    }}
+                  />
+                )}
                 <span
                   style={{
                     display: "block",
@@ -373,36 +411,46 @@ export function PerfilClient({
               </button>
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "var(--space-3)" }}>
-            {pCampos.map((f) => {
-              const pendente = f.v === vazio;
-              return (
-                <div
-                  key={f.k}
-                  style={{
-                    border: `1px solid ${pendente ? "var(--warn)" : "var(--color-divider)"}`,
-                    background: pendente ? "var(--warn-bg)" : "var(--color-surface)",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                  }}
-                >
-                  <div className="text-muted" style={{ fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                    {f.k}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontFamily: pendente ? "inherit" : f.mono ? "var(--mono)" : "inherit",
-                      color: pendente ? "var(--warn-forte)" : "inherit",
-                      fontStyle: pendente ? "italic" : "normal",
-                    }}
-                  >
-                    {f.v}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {pGrupos.map((g) => (
+            <div key={g.titulo} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <h6
+                className="text-muted"
+                style={{ margin: 0, fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7 }}
+              >
+                {g.titulo}
+              </h6>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "var(--space-3)" }}>
+                {g.campos.map((f) => {
+                  const pendente = f.v === vazio;
+                  return (
+                    <div
+                      key={f.k}
+                      style={{
+                        border: `1px solid ${pendente ? "var(--warn)" : "var(--color-divider)"}`,
+                        background: pendente ? "var(--warn-bg)" : "var(--color-surface)",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                      }}
+                    >
+                      <div className="text-muted" style={{ fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        {f.k}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontFamily: pendente ? "inherit" : f.mono ? "var(--mono)" : "inherit",
+                          color: pendente ? "var(--warn-forte)" : "inherit",
+                          fontStyle: pendente ? "italic" : "normal",
+                        }}
+                      >
+                        {f.v}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
