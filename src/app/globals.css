@@ -731,4 +731,9 @@ select.input option {
   .table { font-size: 13px; }
 }
 
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
 @keyframes splashSuccess { 0% { transform: scale(0.85); opacity: 0; filter: blur(8px); } 60% { transform: scale(1.02); opacity: 1; filter: blur(0); box-shadow: 0 0 40px color-mix(in srgb, var(--ok) 50%, transparent); } 100% { transform: scale(1); box-shadow: 0 4px 14px color-mix(in srgb, var(--ok) 20%, transparent); } }

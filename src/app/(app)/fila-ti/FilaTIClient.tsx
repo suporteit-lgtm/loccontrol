@@ -69,14 +69,17 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
     start(async () => {
       const res = await fn();
       if (undoId && res.ok) {
-        toast(res.msg, () =>
-          start(async () => {
-            await reativarChamado(undoId);
-            router.refresh();
-          })
+        toast(
+          res.msg,
+          () =>
+            start(async () => {
+              await reativarChamado(undoId);
+              router.refresh();
+            }),
+          "ok"
         );
       } else {
-        toast(res.msg);
+        toast(res.msg, res.ok ? "ok" : "erro");
       }
       router.refresh();
     });
@@ -323,7 +326,7 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
                   onClick={() =>
                     start(async () => {
                       const res = await excluirChamado(excluindo.id);
-                      toast(res.msg);
+                      toast(res.msg, res.ok ? "ok" : "erro");
                       setExcluindo(null);
                       router.refresh();
                     })

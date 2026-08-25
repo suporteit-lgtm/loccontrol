@@ -2,13 +2,22 @@
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 
+export type ToastTipo = "ok" | "erro" | "info";
+
 interface ToastState {
   msg: string;
   undo?: () => void;
+  tipo: ToastTipo;
 }
 
+const CORES: Record<ToastTipo, { icone: string; cor: string }> = {
+  ok: { icone: "✓", cor: "var(--ok)" },
+  erro: { icone: "✕", cor: "var(--danger)" },
+  info: { icone: "", cor: "var(--color-neutral-500)" },
+};
+
 const ToastContext = createContext<{
-  toast: (msg: string, undo?: () => void) => void;
+  toast: (msg: string, undo?: (() => void) | ToastTipo, tipo?: ToastTipo) => void;
 }>({ toast: () => {} });
 
 export function useToast() {
@@ -19,9 +28,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [atual, setAtual] = useState<ToastState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const toast = useCallback((msg: string, undo?: () => void) => {
+  // toast(msg), toast(msg, undo) ou toast(msg, "ok" | "erro" | "info", undo?)
+  const toast = useCallback((msg: string, undoOuTipo?: (() => void) | ToastTipo, tipo?: ToastTipo) => {
+    const ehTipo = typeof undoOuTipo === "string";
     if (timer.current) clearTimeout(timer.current);
-    setAtual({ msg, undo });
+    setAtual({
+      msg,
+      undo: ehTipo ? undefined : undoOuTipo,
+      tipo: (ehTipo ? undoOuTipo : tipo) ?? "info",
+    });
     timer.current = setTimeout(() => setAtual(null), 8000);
   }, []);
 
@@ -35,8 +50,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           style={{
             position: "fixed",
             bottom: 20,
-            left: "50%",
-            transform: "translateX(-50%)",
+            left: 20,
             zIndex: 60,
             background: "var(--color-neutral-900)",
             color: "var(--color-neutral-100)",
@@ -45,10 +59,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             alignItems: "center",
             gap: 14,
             fontSize: 14,
-            maxWidth: "calc(100vw - 32px)",
+            maxWidth: "calc(100vw - 40px)",
             borderRadius: 10,
+            borderLeft: `3px solid ${CORES[atual.tipo].cor}`,
+            animation: "toast-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2) both",
           }}
         >
+          {CORES[atual.tipo].icone && (
+            <span style={{ color: CORES[atual.tipo].cor, fontWeight: 700, flex: "none" }}>
+              {CORES[atual.tipo].icone}
+            </span>
+          )}
           <span>{atual.msg}</span>
           {atual.undo && (
             <button
