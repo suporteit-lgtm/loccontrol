@@ -118,6 +118,33 @@ export async function executarSolicitacaoGrupo(chamadoId: string) {
   return { ok: true, msg: gTipo === "criacao" ? `Grupo ${email} criado` : `Grupo ${email} excluído` };
 }
 
+/** Exclui (cancela) um chamado de admissão/desligamento direto da fila da TI. */
+export async function excluirChamado(chamadoId: string) {
+  const u = await exigirTI();
+  const { data: f } = await db()
+    .from("chamados")
+    .select("id, tipo, concluido_em, colaboradores(nome)")
+    .eq("id", chamadoId)
+    .maybeSingle();
+  if (!f) return { ok: false, msg: "Chamado não encontrado" };
+  if (f.concluido_em) return { ok: false, msg: "Este chamado já foi concluído" };
+
+  const nome = (f as { colaboradores?: { nome?: string } }).colaboradores?.nome;
+
+  await arquivarChamado(chamadoId, "cancelado", u.nome);
+  await atualizarTicket(chamadoId, "cancelado", `Chamado excluído por ${u.nome} na fila da TI`);
+  await auditar({
+    pessoa: nome ?? chamadoId,
+    ator: u.nome,
+    tabela: "chamados",
+    campo: chamadoId,
+    antes: "na fila da TI",
+    depois: "excluído",
+  });
+  revalidarFilas();
+  return { ok: true, msg: `Chamado ${chamadoId}${nome ? ` (${nome})` : ""} excluído` };
+}
+
 export async function negarSolicitacao(chamadoId: string) {
   const u = await exigirSessao();
   const { data: f } = await db().from("chamados").select("*").eq("id", chamadoId).maybeSingle();

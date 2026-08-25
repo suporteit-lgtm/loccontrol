@@ -719,15 +719,11 @@ select.input option {
   /* cartões e diálogos mais econômicos */
   .card { padding: var(--space-3); }
   .dialog {
-    /* vira folha ancorada embaixo — padrão de app, muito melhor de alcançar */
     width: 100%;
     max-height: 88vh;
     overflow-y: auto;
-    align-self: end;
-    border-radius: 18px 18px 0 0;
     padding: var(--space-4);
   }
-  .dialog-backdrop { padding: 0; place-items: end center; }
   .dialog-actions { position: sticky; bottom: 0; background: var(--color-surface); padding-top: var(--space-2); }
   .dialog-actions .btn { flex: 1; }
 

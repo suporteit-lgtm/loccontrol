@@ -1,6 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, useNow } from "@/components/ui";
@@ -12,6 +13,7 @@ import {
   executarSolicitacaoUnidade,
   executarSolicitacaoGrupo,
   negarSolicitacao,
+  excluirChamado,
 } from "@/app/actions/chamados";
 
 export interface CardTI {
@@ -50,6 +52,18 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
   const { toast } = useToast();
   const now = useNow();
   const [pending, start] = useTransition();
+  const [excluindo, setExcluindo] = useState<CardTI | null>(null);
+
+  // trava o scroll da página com o dialog aberto — sem isso o fixed centraliza
+  // no viewport todo (inclusive o que já rolou pra fora da tela)
+  useEffect(() => {
+    if (!excluindo) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [excluindo]);
 
   const acao = (fn: () => Promise<{ ok: boolean; msg: string }>, undoId?: string) =>
     start(async () => {
@@ -245,6 +259,16 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
                       )}
                       {k.kind === "colab" && (
                         <button
+                          className="btn btn-ghost"
+                          disabled={pending}
+                          style={{ fontSize: 13, padding: "4px 8px", color: "var(--danger-forte)" }}
+                          onClick={() => setExcluindo(k)}
+                        >
+                          Excluir
+                        </button>
+                      )}
+                      {k.kind === "colab" && (
+                        <button
                           className="btn btn-secondary"
                           style={{ fontSize: 13, padding: "4px 16px" }}
                           onClick={() =>
@@ -276,6 +300,42 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
           );
         })}
       </div>
+
+      {excluindo &&
+        createPortal(
+          <div className="dialog-backdrop" onClick={() => !pending && setExcluindo(null)}>
+            <div className="dialog" onClick={(e) => e.stopPropagation()}>
+              <span className="dialog-title">Excluir chamado {excluindo.id}?</span>
+              <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <span>
+                  <strong>{excluindo.nome}</strong> · {excluindo.tipo} sai da fila da TI e vai pro histórico como
+                  cancelado. <strong>Não tem desfazer.</strong>
+                </span>
+              </div>
+              <div className="dialog-actions">
+                <button className="btn btn-secondary" disabled={pending} onClick={() => setExcluindo(null)}>
+                  Cancelar
+                </button>
+                <button
+                  className="btn btn-primary"
+                  style={{ background: "var(--danger-forte)", borderColor: "var(--danger-forte)" }}
+                  disabled={pending}
+                  onClick={() =>
+                    start(async () => {
+                      const res = await excluirChamado(excluindo.id);
+                      toast(res.msg);
+                      setExcluindo(null);
+                      router.refresh();
+                    })
+                  }
+                >
+                  Excluir chamado
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
