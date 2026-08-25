@@ -44,7 +44,7 @@ export function DashClient({ unidadeAtual, stats, chart, proximas }: Props) {
         sub={unidadeAtual}
         acoes={
           <Link href="/pre-admissao" className="btn btn-primary">
-            + Nova pré-admissão
+            <span style={{ fontSize: 18, fontWeight: 400, marginRight: 4, lineHeight: 0.8 }}>+</span> Nova pré-admissão
           </Link>
         }
       />
@@ -88,14 +88,28 @@ export function DashClient({ unidadeAtual, stats, chart, proximas }: Props) {
                   <span style={{ color: "var(--ok)" }}>▪</span> {m.a} admiss{m.a === 1 ? "ão" : "ões"} ·{" "}
                   <span style={{ color: "var(--color-neutral-400)" }}>▪</span> {m.d} deslig.
                 </div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: ALTURA }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: ALTURA }}>
                   <div
                     title={`${m.a} admissão(ões) em ${m.mes}`}
-                    style={{ width: 14, height: altura(m.a), background: "var(--ok)" }}
+                    style={{ 
+                      width: 16, 
+                      height: altura(m.a), 
+                      background: "var(--ok)",
+                      borderRadius: "4px 4px 0 0",
+                      boxShadow: "0 -4px 12px color-mix(in srgb, var(--ok) 25%, transparent)",
+                      transition: "height 0.5s ease"
+                    }}
                   />
                   <div
                     title={`${m.d} desligamento(s) em ${m.mes}`}
-                    style={{ width: 14, height: altura(m.d), background: "var(--color-neutral-400)" }}
+                    style={{ 
+                      width: 16, 
+                      height: altura(m.d), 
+                      background: "var(--color-neutral-400)",
+                      borderRadius: "4px 4px 0 0",
+                      boxShadow: "0 -4px 12px color-mix(in srgb, var(--color-text) 12%, transparent)",
+                      transition: "height 0.5s ease"
+                    }}
                   />
                 </div>
                 <span className="text-muted" style={{ fontSize: 11, fontFamily: "var(--mono)" }}>

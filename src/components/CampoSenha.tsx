@@ -10,6 +10,7 @@ export function CampoSenha({
   autoFocus,
   autoComplete = "new-password",
   onEnter,
+  style,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -17,6 +18,7 @@ export function CampoSenha({
   autoFocus?: boolean;
   autoComplete?: string;
   onEnter?: () => void;
+  style?: React.CSSProperties;
 }) {
   const [ver, setVer] = useState(false);
   return (
@@ -32,7 +34,7 @@ export function CampoSenha({
         onKeyDown={(e) => {
           if (e.key === "Enter" && onEnter) onEnter();
         }}
-        style={{ paddingRight: 40 }}
+        style={{ paddingRight: 40, ...style }}
       />
       <button
         type="button"

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui";
+import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
 import { EQUIPAMENTOS, KIT_PADRAO } from "@/lib/types";
 import { InputMascarado, mascaraCpf, type TipoMascara } from "@/components/Mascaras";
@@ -179,7 +180,7 @@ export function WizardClient({
   const passos = ["1 · Importar", "2 · Acessos e grupos", "3 · Chamado"];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", maxWidth: 860 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)", width: "100%" }}>
       <PageHeader
         eyebrow="Visão RH"
         titulo="Nova pré-admissão"
@@ -198,26 +199,51 @@ export function WizardClient({
           </button>
         }
       />
-      <div style={{ display: "flex", gap: 0, border: "1px solid var(--color-divider)", borderRadius: 10, overflow: "hidden" }}>
-        {passos.map((label, i) => (
-          <div
-            key={label}
-            style={{
-              flex: 1,
-              padding: "8px 14px",
-              fontSize: 13,
-              fontFamily: "var(--font-body)",
-              fontWeight: 700,
-              letterSpacing: "0.02em",
-              background:
-                d.step === i + 1 ? "var(--color-accent)" : d.step > i + 1 ? "var(--color-accent-100)" : "transparent",
-              color: d.step === i + 1 ? "#fff" : d.step > i + 1 ? "var(--color-accent-700)" : "var(--color-neutral-600)",
-              borderRight: "1px solid var(--color-divider)",
-            }}
-          >
-            {label}
-          </div>
-        ))}
+      <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
+        {passos.map((label, i) => {
+          const isAtivo = d.step === i + 1;
+          const isConcluido = d.step > i + 1;
+          return (
+            <div
+              key={label}
+              style={{
+                flex: 1,
+                minWidth: 200,
+                padding: "10px 16px",
+                fontSize: 14,
+                fontFamily: "var(--font-body)",
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+                borderRadius: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                transition: "all 0.2s ease",
+                background: isAtivo 
+                  ? "var(--color-accent)" 
+                  : isConcluido 
+                    ? "color-mix(in srgb, var(--color-accent) 12%, transparent)" 
+                    : "color-mix(in srgb, var(--color-text) 4%, transparent)",
+                color: isAtivo 
+                  ? "#fff" 
+                  : isConcluido 
+                    ? "var(--color-accent-700)" 
+                    : "var(--color-neutral-500)",
+                boxShadow: isAtivo ? "0 6px 20px color-mix(in srgb, var(--color-accent) 40%, transparent), inset 0 1px 1px rgb(255 255 255 / 0.2)" : "none",
+                border: isAtivo ? "none" : `1px solid color-mix(in srgb, ${isConcluido ? 'var(--color-accent)' : 'var(--color-text)'} 10%, transparent)`
+              }}
+            >
+              <div style={{
+                width: 26, height: 26, borderRadius: "50%", display: "grid", placeItems: "center", fontSize: 13, flex: "none",
+                background: isAtivo ? "rgba(255,255,255,0.25)" : isConcluido ? "var(--color-accent)" : "color-mix(in srgb, var(--color-text) 10%, transparent)",
+                color: isConcluido ? "#fff" : "inherit"
+              }}>
+                {isConcluido ? "✓" : (i + 1)}
+              </div>
+              <span>{label.replace(/^\d\s*·\s*/, "")}</span>
+            </div>
+          );
+        })}
       </div>
 
       {d.step === 1 && (
@@ -376,27 +402,23 @@ export function WizardClient({
                 })}
               </div>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <div className="field" style={{ minWidth: 200 }}>
+                <div className="field" style={{ flex: 1, minWidth: 200 }}>
                   <label>Cidade</label>
-                  <select className="input" value={d.cidade} onChange={(e) => setCidade(e.target.value)}>
-                    {Object.keys(unidadesMap)
-                      .sort((a, b) => a.localeCompare(b))
-                      .map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                  </select>
+                  <SelectCustom 
+                    className="input" 
+                    value={d.cidade} 
+                    onChange={setCidade}
+                    options={Object.keys(unidadesMap).sort((a, b) => a.localeCompare(b))}
+                  />
                 </div>
-                <div className="field" style={{ minWidth: 200 }}>
+                <div className="field" style={{ flex: 1, minWidth: 200 }}>
                   <label>Unidade</label>
-                  <select className="input" value={d.unidade} onChange={(e) => setUnidade(e.target.value)}>
-                    {(unidadesMap[d.cidade] ?? []).map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
+                  <SelectCustom 
+                    className="input" 
+                    value={d.unidade} 
+                    onChange={setUnidade}
+                    options={unidadesMap[d.cidade] ?? []}
+                  />
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -415,17 +437,12 @@ export function WizardClient({
             <span className="card-title">Acessos do cargo</span>
             <div className="field">
               <label>Cargo</label>
-              <select
+              <SelectCustom
                 className="input"
                 value={d.cargo}
-                onChange={(e) => upd({ cargo: e.target.value, acc: montarAcc(e.target.value) })}
-              >
-                {cargos.map((cg) => (
-                  <option key={cg} value={cg}>
-                    {cg}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => upd({ cargo: v, acc: montarAcc(v) })}
+                options={cargos}
+              />
             </div>
             <span className="text-muted" style={{ fontSize: 12, fontFamily: "var(--mono)" }}>
               {marcados} de {totalDoCargo} acessos
@@ -691,24 +708,46 @@ export function WizardClient({
 
       {d.step === 3 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "var(--space-4)" }}>
-          <div className="card" style={{ gap: "var(--space-3)" }}>
+          <div 
+            className="card" 
+            style={{ 
+              gap: "var(--space-3)",
+              transform: pending ? "translateX(20%) scale(0.9)" : "none",
+              opacity: pending ? 0 : 1,
+              filter: pending ? "blur(4px)" : "none",
+              transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
+            }}
+          >
             <span className="card-title">Analista responsável</span>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {analistas.map((an) => (
-                <label className="radio" key={an.nome}>
+                <label 
+                  key={an.nome} 
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12, 
+                    padding: "12px 16px",
+                    borderRadius: 12,
+                    cursor: "pointer",
+                    border: d.analista === an.nome ? "1px solid var(--color-accent-600)" : "1px solid var(--color-divider)",
+                    background: d.analista === an.nome ? "color-mix(in srgb, var(--color-accent) 12%, transparent)" : "var(--color-bg)",
+                    transition: "all 0.2s ease"
+                  }}
+                >
                   <input
                     type="radio"
                     name="analista"
                     checked={d.analista === an.nome}
                     onChange={() => upd({ analista: an.nome })}
+                    style={{ accentColor: "var(--color-accent)", width: 18, height: 18, margin: 0 }}
                   />
-                  <span className="dot"></span>
-                  <span>
-                    {an.nome}{" "}
-                    <span className="text-muted" style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
-                      · {an.fila} na fila
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <span style={{ fontWeight: d.analista === an.nome ? 600 : 400, color: d.analista === an.nome ? "var(--color-accent-700)" : "inherit" }}>
+                      {an.nome}
                     </span>
-                  </span>
+                    <span className="text-muted" style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
+                      {an.fila} na fila
+                    </span>
+                  </div>
                 </label>
               ))}
             </div>
@@ -721,36 +760,87 @@ export function WizardClient({
               </button>
             </div>
           </div>
-          <div className="blueprint" style={{ padding: "var(--space-4)", display: "flex", flexDirection: "column", gap: 10 }}>
-            <h6 className="text-muted" style={{ margin: 0 }}>Revisão · isto vira o chamado</h6>
-            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 19 }}>
-              {campo("Nome completo") || "—"}
+          <div 
+            className="blueprint" 
+            style={{ 
+              padding: "var(--space-4)", display: "flex", flexDirection: "column", gap: 10,
+              transform: pending ? "translateX(-20%) scale(0.9)" : "none",
+              opacity: pending ? 0 : 1,
+              filter: pending ? "blur(4px)" : "none",
+              transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+              transitionDelay: "0.05s"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <h6 className="text-muted" style={{ margin: 0, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: 11, fontWeight: 700 }}>
+                Revisão · isto vira o chamado
+              </h6>
             </div>
-            <div className="text-muted" style={{ fontSize: 13 }}>
-              {d.cargo} · {d.cidade} · {d.unidade} · admissão {campo("Data de admissão") || "—"}
-            </div>
-            <div style={{ fontSize: 13 }}>
-              <span className="text-muted">Acessos:</span>{" "}
-              {listaAcessos.filter((a) => acc[a]?.on).join(", ") || "nenhum"}
-            </div>
-            <div style={{ fontSize: 13 }}>
-              <span className="text-muted">Grupos:</span>{" "}
-              <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{d.grupos.join("  ") || "nenhum"}</span>
-            </div>
-            <div style={{ fontSize: 13 }}>
-              <span className="text-muted">Equipamentos:</span> {equipSel.join(", ") || "nenhum"}
-            </div>
-            {d.obs.trim() && (
-              <div style={{ fontSize: 13, borderLeft: "2px solid var(--color-accent-300)", paddingLeft: 10 }}>
-                {d.obs}
+            
+            <div style={{ padding: "16px", background: "color-mix(in srgb, var(--color-bg) 50%, transparent)", borderRadius: 12, border: "1px solid var(--color-divider)", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 19, color: campo("Nome completo") ? "var(--color-text)" : "var(--color-neutral-400)" }}>
+                  {campo("Nome completo") || "Nome não informado"}
+                </div>
+                <div className="text-muted" style={{ fontSize: 13, marginTop: 4 }}>
+                  {d.cargo} · {d.cidade} · {d.unidade} {campo("Data de admissão") ? `· admissão ${campo("Data de admissão")}` : ""}
+                </div>
               </div>
-            )}
+              
+              <div style={{ height: 1, background: "var(--color-divider)" }} />
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <span className="text-muted" style={{ fontSize: 12, minWidth: 80, paddingTop: 1 }}>Acessos</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4 }}>
+                    {listaAcessos.filter((a) => acc[a]?.on).join(", ") || "Nenhum acesso marcado"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <span className="text-muted" style={{ fontSize: 12, minWidth: 80, paddingTop: 2 }}>Grupos</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {d.grupos.length > 0 ? d.grupos.map(g => (
+                      <span key={g} style={{ fontFamily: "var(--mono)", fontSize: 11, background: "var(--color-neutral-200)", color: "var(--color-neutral-800)", padding: "2px 8px", borderRadius: 6 }}>{g}</span>
+                    )) : <span style={{ fontSize: 13, fontWeight: 500 }}>Nenhum grupo selecionado</span>}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <span className="text-muted" style={{ fontSize: 12, minWidth: 80, paddingTop: 1 }}>Equip.</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4 }}>
+                    {equipSel.join(", ") || "Nenhum equipamento"}
+                  </span>
+                </div>
+              </div>
+              
+              {d.obs.trim() && (
+                <div style={{ 
+                  fontSize: 13, 
+                  borderLeft: "3px solid var(--color-accent)", 
+                  padding: "10px 14px",
+                  background: "color-mix(in srgb, var(--color-accent) 8%, transparent)",
+                  borderRadius: "0 8px 8px 0",
+                  marginTop: 2,
+                  lineHeight: 1.5
+                }}>
+                  <strong style={{ display: "block", fontSize: 11, color: "var(--color-accent-700)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>Observação da TI</strong>
+                  {d.obs}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {d.step === 4 && (
-        <div className="card" style={{ gap: "var(--space-3)", borderColor: "var(--ok)", background: "var(--ok-bg)" }}>
+        <div 
+          className="card" 
+          style={{ 
+            gap: "var(--space-3)", 
+            borderColor: "var(--ok)", 
+            background: "var(--ok-bg)",
+            animation: "splashSuccess 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both"
+          }}
+        >
           <span className="card-title" style={{ color: "var(--ok-forte)" }}>
             Chamado aberto
           </span>

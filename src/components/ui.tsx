@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { avatar, pill } from "@/lib/format";
+import { ThemeToggleButton } from "./ThemeToggle";
 
 /** Relógio que atualiza a cada 30s (SLA), como no protótipo. */
 export function useNow(intervaloMs = 30000) {
@@ -91,7 +92,10 @@ export function PageHeader({
           </div>
         )}
       </div>
-      {acoes}
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        {acoes}
+        <ThemeToggleButton style={{ borderRadius: 999, background: "color-mix(in srgb, var(--color-text) 5%, transparent)", border: "none" }} />
+      </div>
     </div>
   );
 }
@@ -111,16 +115,30 @@ export function StatCard({
     <div
       className="blueprint hover-lift"
       style={{
-        padding: "var(--space-4)",
+        padding: "calc(var(--space-4) * 1.25)",
         display: "flex",
         flexDirection: "column",
-        gap: 6,
+        gap: 8,
         cursor: onClick ? "pointer" : "default",
         overflow: "hidden",
         position: "relative",
       }}
       onClick={onClick}
     >
+      {/* Glow suave ao fundo baseado na cor do card para dar volume */}
+      <div 
+        style={{
+          position: "absolute",
+          top: -40,
+          right: -40,
+          width: 100,
+          height: 100,
+          background: cor,
+          filter: "blur(50px)",
+          opacity: 0.15,
+          pointerEvents: "none"
+        }}
+      />
       {/* filete de cor no topo: identifica o número de longe sem pesar */}
       <span
         aria-hidden
@@ -131,22 +149,23 @@ export function StatCard({
           right: 0,
           height: 3,
           background: `linear-gradient(90deg, ${cor}, transparent 70%)`,
-          opacity: 0.75,
+          opacity: 0.9,
         }}
       />
       <span
         className="text-muted"
-        style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" }}
+        style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}
       >
         {label}
       </span>
       <span
         style={{
           fontFamily: "var(--font-heading)",
-          fontWeight: 700,
-          fontSize: 36,
+          fontWeight: 800,
+          fontSize: 42,
           lineHeight: 1,
           color: cor,
+          textShadow: `0 2px 14px color-mix(in srgb, ${cor} 35%, transparent)`
         }}
       >
         {n}

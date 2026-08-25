@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+/** Caminho da foto real da moto (opcional). Se não existir em /public, cai no SVG desenhado. */
+const MOTO_PHOTO_SRC = "/moto.png";
+
 /** Tela de carregamento — logo com arcos girando, moto na pista e progresso. */
 export function Splash() {
   const [pct, setPct] = useState(7);
+  const [motoPhotoOk, setMotoPhotoOk] = useState(true);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -19,18 +23,23 @@ export function Splash() {
         position: "fixed",
         inset: 0,
         zIndex: 100,
-        background: "var(--color-bg)",
         display: "grid",
         placeItems: "center",
+        background:
+          "radial-gradient(900px 480px at 50% -8%, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 70%), var(--color-bg)",
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 28, width: "min(380px, 86vw)" }}>
-        {/* logo com arcos orbitando */}
+      <div
+        className="splash-in"
+        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 28, width: "min(380px, 86vw)" }}
+      >
+        {/* logo com arcos orbitando + glow */}
         <div style={{ position: "relative", width: 190, height: 190, display: "grid", placeItems: "center" }}>
+          <span className="splash-glow" />
           <span className="splash-arco splash-arco-1" />
           <span className="splash-arco splash-arco-2" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Locagora" data-logo="1" style={{ width: 120 }} />
+          <img src="/logo.png" alt="Locagora" data-logo="1" style={{ width: 120, position: "relative" }} />
         </div>
 
         <div style={{ textAlign: "center" }}>
@@ -53,26 +62,44 @@ export function Splash() {
         </div>
 
         {/* pista com a moto */}
-        <div style={{ width: "100%", position: "relative", height: 46 }}>
+        <div style={{ width: "100%", position: "relative", height: 54 }}>
           <div className="splash-moto">
-            <MotoSvg />
+            <span className="splash-moto-rastro" />
+            {motoPhotoOk ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={MOTO_PHOTO_SRC}
+                alt="Moto"
+                className="splash-moto-foto"
+                onError={() => setMotoPhotoOk(false)}
+              />
+            ) : (
+              <MotoSvg />
+            )}
           </div>
           <div className="splash-pista" />
         </div>
 
-        <div
-          style={{
-            width: "100%",
-            display: "flex",
-            justifyContent: "space-between",
-            fontFamily: "var(--mono)",
-            fontSize: 11,
-            letterSpacing: "0.18em",
-            color: "var(--color-neutral-600)",
-          }}
-        >
-          <span>INICIALIZANDO</span>
-          <span>{pct}%</span>
+        {/* barra de progresso */}
+        <div style={{ width: "100%" }}>
+          <div className="splash-bar-track">
+            <div className="splash-bar-fill" style={{ width: `${pct}%` }} />
+          </div>
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-between",
+              fontFamily: "var(--mono)",
+              fontSize: 11,
+              letterSpacing: "0.18em",
+              color: "var(--color-neutral-600)",
+              marginTop: 8,
+            }}
+          >
+            <span>INICIALIZANDO</span>
+            <span>{pct}%</span>
+          </div>
         </div>
       </div>
     </div>

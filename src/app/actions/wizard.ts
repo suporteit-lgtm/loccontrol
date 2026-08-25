@@ -112,6 +112,18 @@ function isoDeBR(d: string): string | null {
 
 export async function abrirChamadoWizard(draft: DraftWizard) {
   const u = await exigirRH();
+
+  // Em modo de desenvolvimento, simula a criação para poupar o banco de dados real (Supabase)
+  if (process.env.NODE_ENV === "development") {
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simula tempo de rede para a animação
+    return { 
+      ok: true as const, 
+      msg: "[Local] Chamado simulado · Banco de dados preservado", 
+      chamadoId: `CH-DEV-${Math.floor(Math.random() * 1000)}`, 
+      colabId: "simulado-123" 
+    };
+  }
+
   const campo = (k: string) => draft.campos?.find((c) => c.k === k)?.v?.trim() ?? "";
   const nome = campo("Nome completo");
   if (!nome) return { ok: false as const, msg: "Preencha o nome no passo 1" };

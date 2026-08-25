@@ -81,60 +81,119 @@ export function FilaRHClient({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: "var(--space-3)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "var(--space-4)",
           alignItems: "start",
+          flex: 1
         }}
       >
         {cols.map((col) => (
-          <div key={col.label} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <h6 style={{ margin: 0, display: "flex", alignItems: "center", gap: 7, color: col.cor }}>
-              <span style={{ width: 8, height: 8, flex: "none", borderRadius: "50%", background: col.cor }} />
-              {col.label}
-              <span style={{ fontFamily: "var(--mono)", marginLeft: "auto" }}>{col.cards.length}</span>
-            </h6>
+          <div 
+            key={col.label} 
+            style={{ 
+              display: "flex", flexDirection: "column", gap: 12,
+              background: "color-mix(in srgb, var(--color-surface) 60%, transparent)",
+              padding: "16px",
+              borderRadius: "16px",
+              border: "1px solid color-mix(in srgb, var(--color-divider) 50%, transparent)",
+              minHeight: "500px"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <h6 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, color: col.cor, fontSize: 12, letterSpacing: "0.08em" }}>
+                <span style={{ width: 8, height: 8, flex: "none", borderRadius: "50%", background: col.cor, boxShadow: `0 0 8px ${col.cor}` }} />
+                {col.label}
+              </h6>
+              <span style={{ 
+                fontFamily: "var(--mono)", fontSize: 11, fontWeight: 700,
+                background: "var(--color-bg)", padding: "2px 8px", borderRadius: "999px",
+                color: "var(--color-text)", border: "1px solid var(--color-divider)"
+              }}>
+                {col.cards.length}
+              </span>
+            </div>
+
             {col.cards.length === 0 && (
               <div
                 className="text-muted"
-                style={{ border: "1px dashed var(--color-divider)", padding: 16, fontSize: 12, borderRadius: 10 }}
+                style={{ 
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  border: "1px dashed var(--color-divider)", padding: "32px 16px", 
+                  fontSize: 13, borderRadius: 12, background: "color-mix(in srgb, var(--color-bg) 50%, transparent)"
+                }}
               >
-                Nada aqui — bom sinal
+                <span style={{ fontSize: 16 }}>✨</span> Nada aqui — bom sinal
               </div>
             )}
+            
             {col.cards.map((k) => {
               const sl = sla(k.slaAlvo, now);
               return (
-                <div key={k.key} className="card elev-sm" style={{ borderLeft: `3px solid ${k.urgCor}`, gap: 6, minHeight: 148 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                    <span style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 15 }}>{k.nome}</span>
-                    <span style={{ fontFamily: "var(--mono)", fontSize: 11 }} className="text-muted">
-                      {k.id}
+                <div key={k.key} className="card hover-lift" style={{ 
+                  borderTop: `3px solid ${k.urgCor}`, 
+                  gap: 12, 
+                  minHeight: 148,
+                  padding: "16px",
+                  background: "var(--color-surface)",
+                  boxShadow: "var(--shadow-sm)",
+                  position: "relative",
+                  overflow: "hidden"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                    <span style={{ 
+                      fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 15, lineHeight: 1.3, 
+                      flex: 1, wordBreak: "break-word"
+                    }}>
+                      {k.nome}
                     </span>
+                    {k.id && (
+                      <span style={{ 
+                        fontFamily: "var(--mono)", fontSize: 11, background: "var(--color-bg)", 
+                        padding: "4px 8px", borderRadius: 6, border: "1px solid var(--color-divider)",
+                        flex: "none", whiteSpace: "nowrap"
+                      }} className="text-muted">
+                        {k.id}
+                      </span>
+                    )}
                   </div>
+
                   <div
                     className="text-muted"
                     title={k.sub}
-                    style={{ fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                    style={{ fontSize: 12, lineHeight: 1.5, display: "flex", flexDirection: "column", gap: 4 }}
                   >
-                    {k.sub}
+                    <div>{k.sub}</div>
                   </div>
+
                   {sl && (
-                    <div style={{ fontFamily: "var(--mono)", fontSize: 13, color: sl.cor, fontWeight: sl.peso }}>
-                      faltam {sl.txt}
+                    <div style={{ marginTop: 2 }}>
+                      <span style={{ 
+                        display: "inline-flex", alignItems: "center", gap: 6,
+                        fontFamily: "var(--mono)", fontSize: 11, 
+                        color: sl.cor, fontWeight: sl.peso,
+                        background: `color-mix(in srgb, ${sl.cor} 10%, transparent)`,
+                        padding: "4px 10px", borderRadius: 999,
+                        border: `1px solid color-mix(in srgb, ${sl.cor} 30%, transparent)`
+                      }}>
+                        ⏳ SLA: {sl.txt}
+                      </span>
                     </div>
                   )}
-                  <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
-                    <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 13, padding: "4px 12px" }}>
+
+                  {k.pendencias && <Chips itens={k.pendencias} cor={k.urgCor} />}
+
+                  <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap", paddingTop: 12, borderTop: "1px solid var(--color-divider)", justifyContent: "flex-end" }}>
+                    <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 13, padding: "4px 16px" }}>
                       {k.acao}
                     </Link>
                     {k.ativarColabId && (
                       <button
                         className="btn btn-primary"
-                        style={{ fontSize: 13, padding: "4px 12px" }}
+                        style={{ fontSize: 13, padding: "4px 16px" }}
                         disabled={pending}
                         onClick={() => ativar(k.ativarColabId!)}
                       >
-                        {pending ? "Ativando..." : "Ativar na empresa"}
+                        {pending ? "Ativando..." : "Ativar"}
                       </button>
                     )}
                   </div>

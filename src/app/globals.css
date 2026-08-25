@@ -211,17 +211,17 @@ img { display: block; max-width: 100%; }
 .btn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-primary {
-  /* leve gradiente + brilho interno no topo: dá volume sem chamar atenção */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 88%, #fff) 0%, var(--color-accent) 55%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 70%, #fff) 100%);
   color: #fff;
-  border-color: var(--color-accent-600);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 1px 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  border: none;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-accent) 40%, transparent), inset 0 1px 1px rgb(255 255 255 / 0.3);
 }
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 78%, #fff) 0%, var(--color-accent-600) 60%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 4px 14px color-mix(in srgb, var(--color-accent) 45%, transparent);
+  background: linear-gradient(135deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 60%, #fff) 100%);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--color-accent) 55%, transparent), inset 0 1px 1px rgb(255 255 255 / 0.4);
+  transform: translateY(-1px);
 }
-.btn-primary:active:not(:disabled) { background: var(--color-accent-700); box-shadow: none; }
+.btn-primary:active:not(:disabled) { background: var(--color-accent-700); box-shadow: none; transform: none; }
 .btn-secondary { border-color: var(--color-divider); }
 .btn-secondary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-text) 10%, transparent);
@@ -281,6 +281,10 @@ body { overflow-wrap: break-word; }
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 textarea.input { min-height: 90px; resize: vertical; }
+select.input option {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
 .radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
 .radio input {
   position: absolute;
@@ -309,11 +313,11 @@ textarea.input { min-height: 90px; resize: vertical; }
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-divider) 70%, transparent);
-  box-shadow: var(--shadow-sm);
+  padding: calc(var(--space-4) * 1.3);
+  border-radius: calc(var(--radius-lg) * 1.2);
+  background: linear-gradient(180deg, color-mix(in srgb, #fff 1.5%, var(--color-surface)) 0%, var(--color-surface) 100%);
+  border: 1px solid color-mix(in srgb, var(--color-divider) 80%, transparent);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 color-mix(in srgb, #fff 2.5%, transparent);
   transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 .card-kicker { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
@@ -333,10 +337,10 @@ textarea.input { min-height: 90px; resize: vertical; }
 /* painel "blueprint" do protótipo (fundo surface, cantos escondidos) */
 .blueprint {
   position: relative;
-  border: 1px solid color-mix(in srgb, var(--color-divider) 70%, transparent);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid color-mix(in srgb, var(--color-divider) 80%, transparent);
+  border-radius: calc(var(--radius-lg) * 1.2);
+  background: linear-gradient(180deg, color-mix(in srgb, #fff 1.5%, var(--color-surface)) 0%, var(--color-surface) 100%);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 color-mix(in srgb, #fff 2.5%, transparent);
   transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 .blueprint:hover, .card.elev-sm:hover { border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-divider)); }
@@ -361,7 +365,7 @@ textarea.input { min-height: 90px; resize: vertical; }
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  color: var(--color-text);
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-divider);
   background: color-mix(in srgb, var(--color-text) 3%, transparent);
@@ -418,6 +422,14 @@ textarea.input { min-height: 90px; resize: vertical; }
 @keyframes giro {
   to { transform: rotate(360deg); }
 }
+/* frases empilhadas no hero do login, cada uma some/aparece no seu turno —
+   percentuais assumem 3 frases (33.3% de "fatia" cada); ver hero-ticker */
+@keyframes hero-fade {
+  0%, 100% { opacity: 0; }
+  6% { opacity: 1; }
+  27% { opacity: 1; }
+  33% { opacity: 0; }
+}
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -426,6 +438,24 @@ textarea.input { min-height: 90px; resize: vertical; }
 }
 
 /* ── Splash de carregamento ── */
+.splash-in {
+  animation: splash-fade-up 0.5s ease both;
+}
+@keyframes splash-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.splash-glow {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 20%, transparent) 0%, transparent 70%);
+  animation: splash-pulse 2.4s ease-in-out infinite;
+}
+@keyframes splash-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
 .splash-arco {
   position: absolute;
   inset: 0;
@@ -465,14 +495,48 @@ textarea.input { min-height: 90px; resize: vertical; }
   position: absolute;
   bottom: 8px;
   left: -56px;
-  animation: moto-corre 2.8s linear infinite;
+  display: grid;
+  place-items: center;
+  animation: moto-corre 2.8s linear infinite, moto-solavanco 0.3s ease-in-out infinite;
 }
 @keyframes moto-corre {
   from { left: -56px; }
   to { left: 100%; }
 }
+@keyframes moto-solavanco {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
 .splash-roda {
   animation: giro 0.6s linear infinite;
+}
+.splash-moto-foto {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 3px color-mix(in srgb, var(--color-text) 25%, transparent));
+}
+.splash-moto-rastro {
+  position: absolute;
+  right: 100%;
+  bottom: 6px;
+  width: 40px;
+  height: 10px;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--color-text) 14%, transparent) 0%, transparent 75%);
+  filter: blur(1px);
+}
+.splash-bar-track {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  overflow: hidden;
+}
+.splash-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-accent), var(--warn));
+  transition: width 0.22s ease;
 }
 
 /* tooltip das barras do gráfico */
@@ -540,6 +604,103 @@ textarea.input { min-height: 90px; resize: vertical; }
 /* padding do conteúdo sai do inline para cá — só assim o mobile encolhe */
 .app-main { padding: var(--space-6); }
 
+/* ── Login (uma só cor azul de ponta a ponta; hero é só a metade com o texto) ── */
+.login-split {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(320px, 440px) 1fr;
+  overflow: hidden;
+  /* fundo único cobrindo as duas colunas — nada de branco sólido aqui,
+     só um brilho claro suave atrás do título pra dar profundidade */
+  background:
+    radial-gradient(620px 460px at 58% 40%, rgb(255 255 255 / 0.12) 0%, transparent 68%),
+    radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--accent-base) 55%, transparent) 0%, transparent 60%),
+    linear-gradient(150deg, #0a0e1a 0%, #101a3a 45%, color-mix(in srgb, var(--accent-base) 70%, #0a0e1a) 100%);
+}
+/* grade sutil por cima de tudo — mesmo motivo "blueprint" do restante do sistema */
+.login-split::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(circle at 70% 30%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 70% 30%, #000 0%, transparent 75%);
+}
+.login-form-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-6);
+  padding: clamp(32px, 6vw, 72px);
+}
+/* textos do formulário: sobre o mesmo azul do hero, precisam de contraste próprio
+   — não usam os tokens de tema (que assumem fundo claro) */
+.login-form-panel h1 { color: #fff; }
+.login-form-panel .text-muted { color: rgb(255 255 255 / 0.68); }
+.login-form-panel .field > label { color: rgb(255 255 255 / 0.8); }
+.login-form-panel .input {
+  background: rgb(255 255 255 / 0.94);
+  color: #1a1d21;
+  border-color: rgb(255 255 255 / 0.35);
+}
+.login-form-panel .input:hover { border-color: rgb(255 255 255 / 0.6); }
+.login-form-panel .input:focus,
+.login-form-panel .input:focus-visible {
+  background: #fff;
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.28);
+}
+/* botão primário em azul sobre fundo azul quase sumia — branco puxa muito mais o olho */
+.login-form-panel .btn-primary {
+  background: #fff;
+  color: var(--accent-base);
+  border-color: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.15), 0 10px 24px rgb(0 0 0 / 0.22);
+}
+.login-form-panel .btn-primary:hover:not(:disabled) {
+  background: #f2f4ff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.2), 0 14px 30px rgb(0 0 0 / 0.26);
+}
+.login-form-panel .btn-primary:active:not(:disabled) { background: #e4e9ff; }
+.login-form-panel .btn-primary:disabled { background: rgb(255 255 255 / 0.55); color: rgb(36 69 179 / 0.7); }
+/* olho de mostrar/ocultar senha: idem, mais contraste sobre o chip claro do input */
+.login-form-panel .field button {
+  color: var(--color-neutral-700);
+}
+.login-form-panel .field button:hover {
+  color: var(--accent-base);
+}
+.login-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(32px, 6vw, 72px);
+  color: #f2f4fa;
+}
+.login-hero > * { position: relative; }
+/* frase que troca sozinha, empilhada (cada <span> ocupa o mesmo lugar) */
+.hero-ticker { position: relative; height: 26px; }
+.hero-ticker span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  opacity: 0;
+  animation: hero-fade 18s ease-in-out infinite;
+}
+@media (max-width: 900px) {
+  .login-split { grid-template-columns: 1fr; }
+  .login-hero { display: none; }
+  .login-form-panel { min-height: 100vh; }
+}
+
 /* ── Responsividade — vale para o sistema inteiro ── */
 @media (max-width: 820px) {
   .app-main { padding: var(--space-3); gap: var(--space-4); }
@@ -573,3 +734,5 @@ textarea.input { min-height: 90px; resize: vertical; }
   /* tabelas nunca estouram a tela: o contêiner rola na horizontal */
   .table { font-size: 13px; }
 }
+
+@keyframes splashSuccess { 0% { transform: scale(0.85); opacity: 0; filter: blur(8px); } 60% { transform: scale(1.02); opacity: 1; filter: blur(0); box-shadow: 0 0 40px color-mix(in srgb, var(--ok) 50%, transparent); } 100% { transform: scale(1); box-shadow: 0 4px 14px color-mix(in srgb, var(--ok) 20%, transparent); } }
