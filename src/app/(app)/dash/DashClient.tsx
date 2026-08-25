@@ -69,6 +69,9 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
     ? `${curvaSuave(pontosAdm)} L ${pontosAdm[pontosAdm.length - 1].x} ${baseY} L ${pontosAdm[0].x} ${baseY} Z`
     : "";
   const picoAdm = Math.max(0, ...pontosAdm.map((p) => p.v));
+  const totalAdm = chart.reduce((s, m) => s + m.a, 0);
+  const totalDesl = chart.reduce((s, m) => s + m.d, 0);
+  const saldo = totalAdm - totalDesl;
 
   const cards = [
     { label: "Ativos", n: stats.ativos, cor: "var(--ok)", on: () => router.push("/colaboradores?status=Ativo") },
@@ -105,6 +108,7 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
           gap: "var(--space-4)",
+          alignItems: "start",
         }}
       >
         <div className="card">
@@ -180,6 +184,35 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
               />
               desligamentos
             </span>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 28,
+              marginTop: "auto",
+              paddingTop: 16,
+              borderTop: "1px solid var(--color-divider)",
+            }}
+          >
+            {[
+              { label: "Admissões · 6 meses", n: totalAdm, cor: "var(--ok)" },
+              { label: "Desligamentos · 6 meses", n: totalDesl, cor: "var(--color-neutral-500)" },
+              {
+                label: "Saldo",
+                n: saldo,
+                cor: saldo > 0 ? "var(--ok)" : saldo < 0 ? "var(--danger)" : "var(--color-neutral-500)",
+                sinal: saldo > 0,
+              },
+            ].map((s) => (
+              <div key={s.label}>
+                <div className="text-muted" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  {s.label}
+                </div>
+                <div style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 24, color: s.cor }}>
+                  {s.sinal ? `+${s.n}` : s.n}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
         <div className="card">
