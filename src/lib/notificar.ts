@@ -35,7 +35,9 @@ export async function emitir(
   titulo: string,
   corpo: string,
   ref?: string,
-  /** e-mail: a notificação do NAVEGADOR chega só para essa pessoa (o e-mail segue a regra por time) */
+  /** chamado com analista atribuído: navegador E e-mail chegam só para essa
+   *  pessoa (+ Superadmin, que sempre recebe) — não pro time inteiro. Sem
+   *  destinatário (ex.: pedido de grupo/unidade), segue a regra por time. */
   destinatario?: string | null
 ) {
   const { error } = await db()
@@ -46,7 +48,11 @@ export async function emitir(
 
   const { data: usuarios } = await db().from("usuarios").select("*").eq("status", "aprovado");
   const destinatarios = ((usuarios ?? []) as Usuario[]).filter(
-    (u) => papelNoAlvo(u.papel, alvo) && u.notif?.email && u.notif?.[tipo]
+    (u) =>
+      papelNoAlvo(u.papel, alvo) &&
+      u.notif?.email &&
+      u.notif?.[tipo] &&
+      (!destinatario || u.email === destinatario || u.papel === "Superadmin")
   );
 
   // e-mails em paralelo; falha de envio não derruba a ação que emitiu

@@ -26,9 +26,16 @@ export default async function FilaTIPage() {
     doCargo.set(m.cargos.nome, [...(doCargo.get(m.cargos.nome) ?? []), m.acessos.nome]);
   }
 
+  // pedidos de unidade/grupo não têm analista (a TI toda vê); chamados de
+  // colaborador (admissão/desligamento) só aparecem pra quem foi atribuído,
+  // pra quem ainda não tem analista definido (fila geral), ou pra admin —
+  // Kaique não vê chamado do Murillo e vice-versa.
+  const podeVer = (f: (typeof chamados)[number]) =>
+    !!f.payload || !f.analista || f.analista === usuario.nome || ehAdmin(usuario.papel);
+
   // ti_concluido: a ferramenta de chamados encerrou a parte da TI — o chamado
   // continua vivo para o RH (offboarding), mas não é mais pendência da TI
-  const cards: CardTI[] = chamados.filter((f) => !f.ti_concluido).map((f) => {
+  const cards: CardTI[] = chamados.filter((f) => !f.ti_concluido && podeVer(f)).map((f) => {
     if (f.payload && "acao" in f.payload) {
       const { acao, cidade, unidade } = f.payload;
       return {
