@@ -10,6 +10,7 @@ import { CHECKLIST_TEMPLATE } from "@/lib/types";
 import { abrirTicket } from "@/services/tickets";
 import * as workspace from "@/services/googleWorkspace";
 import { emitir } from "@/lib/notificar";
+import { templateChamado } from "@/services/emailChamado";
 import { salvarPlanilhasNoDrive, type PlanilhaExport } from "@/services/driveExport";
 import { exportacaoCompleta } from "@/services/quarkrh";
 import type { Colaborador } from "@/lib/types";
@@ -505,7 +506,17 @@ export async function desligarColaborador(
     `Desligamento de ${c.nome}`,
     `Chamado ${chamadoId} aberto · checklist de offboarding gerado.`,
     chamadoId,
-    analistaRow?.email ?? null // navegador: só o analista atribuído
+    analistaRow?.email ?? null, // navegador e e-mail: só o analista atribuído
+    templateChamado({
+      eyebrow: "Desligamento",
+      nome: c.nome,
+      cargo: c.cargo ?? "—",
+      unidade: [c.cidade, c.unidade].filter(Boolean).join(" · ") || "—",
+      responsavel: analista ?? "A definir",
+      chamadoId,
+      nota: "O chamado foi aberto automaticamente para dar continuidade ao processo de offboarding.",
+      rota: `/offboarding/${id}`,
+    })
   );
 
   await auditar({

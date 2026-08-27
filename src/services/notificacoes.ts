@@ -76,7 +76,7 @@ function corpoHtml(assunto: string, corpo: string): string {
 </html>`;
 }
 
-function mime(de: string, para: string, assunto: string, corpo: string, anexo?: Anexo): string {
+function mime(de: string, para: string, assunto: string, corpo: string, anexo?: Anexo, htmlCustom?: string): string {
   const cabecalho = [
     `From: LOCCONTROL <${de}>`,
     `To: ${para}`,
@@ -96,7 +96,7 @@ function mime(de: string, para: string, assunto: string, corpo: string, anexo?: 
     'Content-Type: text/html; charset="UTF-8"',
     "Content-Transfer-Encoding: base64",
     "",
-    linhas76(Buffer.from(corpoHtml(assunto, corpo)).toString("base64")),
+    linhas76(Buffer.from(htmlCustom ?? corpoHtml(assunto, corpo)).toString("base64")),
     "",
     `--${alt}--`,
   ].join("\r\n");
@@ -132,7 +132,9 @@ export async function enviarEmail(
   para: string,
   assunto: string,
   corpo: string,
-  anexo?: Anexo
+  anexo?: Anexo,
+  /** HTML pronto (ex.: templateChamado) — substitui o wrapper genérico */
+  htmlCustom?: string
 ): Promise<{ ok: boolean; erro?: string }> {
   if (!configurado()) {
     console.log(`[email:mock] para=${para} assunto="${assunto}"${anexo ? ` anexo=${anexo.nome}` : ""}`);
@@ -141,7 +143,7 @@ export async function enviarEmail(
   try {
     await gmail().users.messages.send({
       userId: "me",
-      requestBody: { raw: mime(process.env.GOOGLE_ADMIN_IMPERSONATE!, para, assunto, corpo, anexo) },
+      requestBody: { raw: mime(process.env.GOOGLE_ADMIN_IMPERSONATE!, para, assunto, corpo, anexo, htmlCustom) },
     });
     return { ok: true };
   } catch (e) {

@@ -8,6 +8,7 @@ import { proximoChamadoId } from "@/lib/data";
 import { buscarPreAdmissao } from "@/services/quarkrh";
 import { abrirTicket } from "@/services/tickets";
 import { emitir } from "@/lib/notificar";
+import { templateChamado } from "@/services/emailChamado";
 
 export interface CampoWizard {
   k: string;
@@ -217,7 +218,17 @@ export async function abrirChamadoWizard(draft: DraftWizard) {
     `Nova pré-admissão: ${nome}`,
     `${draft.cargo} · ${draft.cidade} · ${draft.unidade}. Chamado ${chamadoId} aberto para ${draft.analista}.`,
     chamadoId,
-    analistaRow?.email ?? null // navegador: só o analista atribuído
+    analistaRow?.email ?? null, // navegador e e-mail: só o analista atribuído
+    templateChamado({
+      eyebrow: "Nova pré-admissão",
+      nome,
+      cargo: draft.cargo,
+      unidade: `${draft.cidade} · ${draft.unidade}`,
+      responsavel: draft.analista,
+      chamadoId,
+      nota: "O chamado foi aberto automaticamente para dar continuidade ao processo de admissão.",
+      rota: `/chamados/${chamadoId}`,
+    })
   );
 
   // guarda o passo 4 no rascunho (persistência entre telas, como no protótipo)

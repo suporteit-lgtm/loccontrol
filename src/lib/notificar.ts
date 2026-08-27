@@ -38,7 +38,9 @@ export async function emitir(
   /** chamado com analista atribuído: navegador E e-mail chegam só para essa
    *  pessoa (+ Superadmin, que sempre recebe) — não pro time inteiro. Sem
    *  destinatário (ex.: pedido de grupo/unidade), segue a regra por time. */
-  destinatario?: string | null
+  destinatario?: string | null,
+  /** HTML pronto (templateChamado) — substitui o wrapper genérico do e-mail */
+  htmlCorpo?: string
 ) {
   const { error } = await db()
     .from("notificacoes")
@@ -58,9 +60,13 @@ export async function emitir(
   // e-mails em paralelo; falha de envio não derruba a ação que emitiu
   await Promise.all(
     destinatarios.map((u) =>
-      enviarEmail(u.email, `[LOCCONTROL] ${titulo}`, `${corpo}\n\n— LOCCONTROL · notificação automática`).catch(
-        () => null
-      )
+      enviarEmail(
+        u.email,
+        `[LOCCONTROL] ${titulo}`,
+        `${corpo}\n\n— LOCCONTROL · notificação automática`,
+        undefined,
+        htmlCorpo
+      ).catch(() => null)
     )
   );
 }
