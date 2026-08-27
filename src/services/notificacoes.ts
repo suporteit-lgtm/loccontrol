@@ -35,6 +35,47 @@ function linhas76(b64: string): string {
   return (b64.match(/.{1,76}/g) ?? []).join("\r\n");
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Corpo em HTML com a identidade visual do LOCCONTROL (azul da marca,
+ *  cartão branco, tipografia legível) — mantém o texto puro como fallback
+ *  (multipart/alternative), que é quem decide qual mostrar é o cliente de
+ *  e-mail, não a gente. A assinatura "— LOCCONTROL..." que os chamadores já
+ *  colam no fim do corpo sai daqui: o rodapé do template já cobre isso. */
+function corpoHtml(assunto: string, corpo: string): string {
+  const semAssinatura = corpo.replace(/\n+—\s*LOCCONTROL[^\n]*$/i, "").trim();
+  const paragrafos = semAssinatura
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 14px;">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+
+  return `<!doctype html>
+<html>
+  <body style="margin:0;padding:32px 16px;background:#eef0f4;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;border-collapse:collapse;">
+      <tr>
+        <td style="padding:0 4px 18px;">
+          <span style="font-size:13px;font-weight:800;letter-spacing:0.14em;color:#1a1d21;">LOC<span style="color:#2445b3;">CONTROL</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#ffffff;border-radius:14px;padding:28px;box-shadow:0 1px 2px rgba(27,42,74,.06),0 8px 24px rgba(27,42,74,.08);">
+          <h1 style="margin:0 0 16px;font-size:18px;line-height:1.35;color:#1a1d21;font-weight:700;">${escapeHtml(assunto)}</h1>
+          <div style="font-size:14px;line-height:1.6;color:#2b2b2d;">${paragrafos}</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:18px 4px 0;">
+          <span style="font-size:11px;color:#7a7a7d;">Notificação automática do LOCCONTROL · Grupo LOC</span>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
 function mime(de: string, para: string, assunto: string, corpo: string, anexo?: Anexo): string {
   const cabecalho = [
     `From: LOCCONTROL <${de}>`,
@@ -42,6 +83,23 @@ function mime(de: string, para: string, assunto: string, corpo: string, anexo?: 
     `Subject: =?UTF-8?B?${Buffer.from(assunto).toString("base64")}?=`,
     "MIME-Version: 1.0",
   ];
+
+  const alt = `lc_alt_${Date.now().toString(36)}`;
+  const alternativo = [
+    `--${alt}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    linhas76(Buffer.from(corpo).toString("base64")),
+    "",
+    `--${alt}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    linhas76(Buffer.from(corpoHtml(assunto, corpo)).toString("base64")),
+    "",
+    `--${alt}--`,
+  ].join("\r\n");
 
   let msg: string;
   if (anexo) {
@@ -51,10 +109,9 @@ function mime(de: string, para: string, assunto: string, corpo: string, anexo?: 
       `Content-Type: multipart/mixed; boundary="${sep}"`,
       "",
       `--${sep}`,
-      'Content-Type: text/plain; charset="UTF-8"',
-      "Content-Transfer-Encoding: base64",
+      `Content-Type: multipart/alternative; boundary="${alt}"`,
       "",
-      linhas76(Buffer.from(corpo).toString("base64")),
+      alternativo,
       "",
       `--${sep}`,
       `Content-Type: ${anexo.tipo ?? "application/pdf"}; name="${anexo.nome}"`,
@@ -66,13 +123,7 @@ function mime(de: string, para: string, assunto: string, corpo: string, anexo?: 
       `--${sep}--`,
     ].join("\r\n");
   } else {
-    msg = [
-      ...cabecalho,
-      'Content-Type: text/plain; charset="UTF-8"',
-      "Content-Transfer-Encoding: base64",
-      "",
-      linhas76(Buffer.from(corpo).toString("base64")),
-    ].join("\r\n");
+    msg = [...cabecalho, `Content-Type: multipart/alternative; boundary="${alt}"`, "", alternativo].join("\r\n");
   }
   return Buffer.from(msg).toString("base64url");
 }
