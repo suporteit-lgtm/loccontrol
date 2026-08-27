@@ -8,6 +8,7 @@
 
 import { google } from "googleapis";
 import { chaveServico, googleConfigurado } from "@/lib/googleKey";
+import { templateChamado } from "./emailChamado";
 
 const configurado = googleConfigurado;
 
@@ -163,6 +164,17 @@ export async function enviarTeste(para: string): Promise<{ ok: boolean; erro?: s
   return enviarEmail(
     para,
     "Notificação de teste — LOCCONTROL",
-    "Se você recebeu este e-mail, o canal de notificações por e-mail está funcionando.\n\n— LOCCONTROL"
+    "Se você recebeu este e-mail, o canal de notificações por e-mail está funcionando.\n\n— LOCCONTROL",
+    undefined,
+    templateChamado({
+      eyebrow: "Nova pré-admissão",
+      nome: "Fulano de Tal",
+      cargo: "Atendente de loja",
+      unidade: "Belo Horizonte · Centro",
+      responsavel: "Kaique Santos",
+      chamadoId: "CH-0000",
+      nota: "Isto é um teste — se você recebeu este e-mail com este visual, o canal está funcionando e o template está aplicado.",
+      rota: "/fila-ti",
+    })
   );
 }
