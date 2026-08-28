@@ -188,7 +188,20 @@ function GuiaCard({ guia, video, admin }: { guia: Guia; video?: string; admin: b
   );
 }
 
-export function AjudaClient({ videos, admin }: { videos: Record<string, string>; admin: boolean }) {
+export function AjudaClient({
+  videos,
+  admin,
+  mostraRH,
+  mostraTI,
+}: {
+  videos: Record<string, string>;
+  admin: boolean;
+  /** guias do RH: admins e Usuário RH */
+  mostraRH: boolean;
+  /** guias da TI: admins e Usuário T.I */
+  mostraTI: boolean;
+}) {
+  const areas = AREAS.filter((a) => (a === "RH" ? mostraRH : a === "TI" ? mostraTI : true));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
       <PageHeader
@@ -196,7 +209,7 @@ export function AjudaClient({ videos, admin }: { videos: Record<string, string>;
         titulo="Como mexer no sistema"
         sub="Passo a passo escrito de cada tarefa — e vídeo, quando disponível. Clique num guia para abrir."
       />
-      {AREAS.map((area) => {
+      {areas.map((area) => {
         const doGrupo = GUIAS.filter((g) => g.area === area);
         return (
           <section key={area} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
