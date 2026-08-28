@@ -41,14 +41,13 @@ import { SelectCustom } from "./SelectCustom";
 
 export interface ShellProps {
   usuario: { nome: string; email: string; papel: Papel };
+  /** já filtrado pelas unidades de acesso do usuário (mapaPermitido) */
   unidadesMap: UnidadesMap;
   filtro: { cidade: string; unidade: string };
-  /** false = usuário restrito a unidades específicas (sem "Todas as unidades") */
-  temTodas: boolean;
   children: React.ReactNode;
 }
 
-export function AppShell({ usuario, unidadesMap, filtro, temTodas, children }: ShellProps) {
+export function AppShell({ usuario, unidadesMap, filtro, children }: ShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { escuro } = useTema();
@@ -75,14 +74,11 @@ export function AppShell({ usuario, unidadesMap, filtro, temTodas, children }: S
   const veTI = ehAdmin || usuario.papel === "Usuário T.I";
 
   const cidades = Object.keys(unidadesMap).sort((a, b) => a.localeCompare(b));
-  // quem não é restrito pode ver o grupo inteiro de uma vez
-  const opcoesCidade = temTodas ? [TODAS_CIDADES, ...cidades] : cidades;
+  // "Todas as ..." aparece para todos: quem é restrito enxerga o conjunto
+  // das bases DELE (o servidor corta pelo acesso), não o grupo inteiro
+  const opcoesCidade = [TODAS_CIDADES, ...cidades];
   const todasAsBases = filtro.cidade === TODAS_CIDADES;
-  const minhasUnidades = todasAsBases
-    ? [TODAS]
-    : temTodas
-      ? [TODAS, ...(unidadesMap[filtro.cidade] ?? [])]
-      : unidadesMap[filtro.cidade] ?? [];
+  const minhasUnidades = todasAsBases ? [TODAS] : [TODAS, ...(unidadesMap[filtro.cidade] ?? [])];
 
   const iniciais = usuario.nome
     .trim()
@@ -94,9 +90,7 @@ export function AppShell({ usuario, unidadesMap, filtro, temTodas, children }: S
 
   const setCidade = (cidade: string) =>
     start(async () => {
-      const unidade =
-        cidade === TODAS_CIDADES ? TODAS : temTodas ? TODAS : unidadesMap[cidade]?.[0] ?? TODAS;
-      await mudarUnidade(cidade, unidade);
+      await mudarUnidade(cidade, TODAS);
       router.refresh();
     });
   const setUnidade = (unidade: string) =>

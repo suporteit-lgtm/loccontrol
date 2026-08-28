@@ -4,8 +4,12 @@ import { DashClient } from "./DashClient";
 export const dynamic = "force-dynamic";
 
 export default async function DashPage() {
-  const { filtro } = await contexto("rh");
-  const [colabs, chamados, todos] = await Promise.all([colaboradoresDaUnidade(filtro), chamadosAbertos(), todosChamados()]);
+  const { filtro, permitidas } = await contexto("rh");
+  const [colabs, chamados, todos] = await Promise.all([
+    colaboradoresDaUnidade(filtro, permitidas),
+    chamadosAbertos(),
+    todosChamados(),
+  ]);
   const distribuicao = distribuicaoChamados(todos);
 
   const conta = (st: string) => colabs.filter((c) => c.status === st).length;

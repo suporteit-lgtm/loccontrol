@@ -5,9 +5,9 @@ import { DashTIClient } from "./DashTIClient";
 export const dynamic = "force-dynamic";
 
 export default async function DashTIPage() {
-  const { filtro } = await contexto("ti");
+  const { filtro, permitidas } = await contexto("ti");
   const [colabsUnidade, todos, chamados, todosCh] = await Promise.all([
-    colaboradoresDaUnidade(filtro),
+    colaboradoresDaUnidade(filtro, permitidas),
     todosColaboradores(),
     chamadosAbertos().then((cs) => cs.filter((f) => !f.ti_concluido)),
     todosChamados(),
@@ -19,7 +19,7 @@ export default async function DashTIPage() {
   const desligCol = chamados
     .filter((f) => f.tipo === "Desligamento" && f.colaborador_id)
     .map((f) => porId.get(f.colaborador_id!))
-    .filter((c) => c && daUnidade(c, filtro)) as NonNullable<ReturnType<typeof porId.get>>[];
+    .filter((c) => c && daUnidade(c, filtro, permitidas)) as NonNullable<ReturnType<typeof porId.get>>[];
 
   const contaEq = (lista: { nome: string; equipamentos: string[] }[]) => {
     const m: Record<string, string[]> = {};

@@ -228,7 +228,8 @@ export async function abrirChamadoWizard(draft: DraftWizard) {
       chamadoId,
       nota: "O chamado foi aberto automaticamente para dar continuidade ao processo de admissão.",
       rota: `/chamados/${chamadoId}`,
-    })
+    }),
+    `${draft.cidade}|${draft.unidade}`
   );
 
   // guarda o passo 4 no rascunho (persistência entre telas, como no protótipo)

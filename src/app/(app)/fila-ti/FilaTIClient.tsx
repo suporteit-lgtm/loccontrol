@@ -27,6 +27,9 @@ export interface CardTI {
   silenciado: boolean;
   colabId: string | null;
   gTipo?: "criacao" | "exclusao";
+  /** Conta de admissão já criada e ainda não ativada — excluir o chamado
+   *  exclui essa conta do Workspace junto (mostrado no aviso). */
+  email?: string | null;
   /** O que falta informar/liberar — vira chip no card. */
   pendencias?: string[];
 }
@@ -312,7 +315,14 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
               <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <span>
                   <strong>{excluindo.nome}</strong> · {excluindo.tipo} sai da fila da TI e vai pro histórico como
-                  cancelado. <strong>Não tem desfazer.</strong>
+                  cancelado.
+                  {excluindo.email ? (
+                    <>
+                      {" "}A conta <strong>{excluindo.email}</strong> criada para esta admissão será{" "}
+                      <strong>excluída do Workspace</strong>.
+                    </>
+                  ) : null}{" "}
+                  <strong>Não tem desfazer.</strong>
                 </span>
               </div>
               <div className="dialog-actions">
