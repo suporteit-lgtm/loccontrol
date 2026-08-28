@@ -361,6 +361,8 @@ export interface DadosColaborador {
   unidade: string;
   telefone: string;
   email: string;
+  /** E-mail PESSOAL — destino das credenciais quando a TI cria a conta. */
+  email_pessoal: string;
 }
 
 /**
@@ -384,6 +386,7 @@ export async function salvarDadosColaborador(id: string, d: DadosColaborador) {
     unidade: limpo(d.unidade),
     telefone: limpo(d.telefone),
     email: limpo(d.email)?.toLowerCase() ?? null,
+    email_pessoal: limpo(d.email_pessoal)?.toLowerCase() ?? null,
   };
 
   if (patch.status && !["Pré-admissão", "Ativo", "Afastado", "Desligado"].includes(patch.status))
@@ -447,6 +450,7 @@ export async function salvarDadosColaborador(id: string, d: DadosColaborador) {
     unidade: "unidade",
     telefone: "telefone",
     email: "email",
+    email_pessoal: "e-mail pessoal",
   };
   for (const chave of Object.keys(patch) as (keyof typeof patch)[]) {
     const de = antes[chave] ?? null;

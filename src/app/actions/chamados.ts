@@ -7,6 +7,7 @@ import { auditar } from "@/lib/audit";
 import { arquivarChamado } from "@/lib/data";
 import { primeiroNome } from "@/lib/format";
 import * as workspace from "@/services/googleWorkspace";
+import { emailPessoalPorCpf } from "@/services/quarkrh";
 import { notificarConclusao, atualizarTicket } from "@/services/tickets";
 import { emitir } from "@/lib/notificar";
 import { enviarModelo } from "@/lib/boasVindas";
@@ -286,6 +287,17 @@ export async function ativarColaborador(
   // Credenciais no e-mail PESSOAL: é o único canal que a pessoa consegue ler
   // antes de entrar na conta nova pela primeira vez.
   const colab = c as Colaborador;
+
+  // O e-mail pessoal costuma entrar no Quark DEPOIS da pré-admissão ser criada
+  // aqui — se a ficha está sem ele, tenta buscar de lá agora, antes de desistir.
+  if (!colab.email_pessoal && colab.cpf && colab.cpf !== "—") {
+    const doQuark = await emailPessoalPorCpf(colab.cpf);
+    if (doQuark) {
+      colab.email_pessoal = doQuark;
+      await db().from("colaboradores").update({ email_pessoal: doQuark }).eq("id", c.id);
+    }
+  }
+
   let entrega = "sem e-mail pessoal cadastrado — entregue as credenciais manualmente";
   if (colab.email_pessoal) {
     // conta externa: mesmas credenciais (senha padrão), muda só a forma de

@@ -77,6 +77,7 @@ export function PerfilClient({
     unidade: colab.unidade ?? "",
     telefone: colab.telefone ?? "",
     email: colab.email ?? "",
+    email_pessoal: colab.email_pessoal ?? "",
   });
   const [pending, start] = useTransition();
 
@@ -134,6 +135,7 @@ export function PerfilClient({
         titulo: "Acesso",
         campos: [
           { k: "E-mail corporativo", v: colab.email || vazio, mono: true },
+          { k: "E-mail pessoal", v: colab.email_pessoal || vazio, mono: true },
           { k: "Status", v: colab.status || vazio },
         ],
       },
@@ -550,6 +552,15 @@ export function PerfilClient({
                 onChange={(v) => setForm({ ...form, telefone: v })}
               />
             </div>
+            <div className="field">
+              <label>E-mail pessoal</label>
+              <InputMascarado
+                tipo="email"
+                placeholder="nome@gmail.com"
+                value={form.email_pessoal}
+                onChange={(v) => setForm({ ...form, email_pessoal: v })}
+              />
+            </div>
           </div>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
             <button
@@ -567,6 +578,7 @@ export function PerfilClient({
                   unidade: colab.unidade ?? "",
                   telefone: colab.telefone ?? "",
                   email: colab.email ?? "",
+                  email_pessoal: colab.email_pessoal ?? "",
                 });
               }}
             >

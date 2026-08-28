@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { usuarioAtual, ehAdmin } from "@/lib/session";
 import { emitir, acessaUnidade } from "@/lib/notificar";
 import * as workspace from "@/services/googleWorkspace";
+import { emailPessoalPorCpf } from "@/services/quarkrh";
 import { dataBR } from "@/lib/format";
 import { agendarEnvio, enviarModelo, ATRASO_POS_LOGIN_MIN, type ChaveModelo } from "@/lib/boasVindas";
 import type { Usuario, Colaborador } from "@/lib/types";
@@ -29,6 +30,7 @@ const INTERVALO = {
   contas: 5 * 60_000,
   grupos: 5 * 60_000,
   membros: 30 * 60_000,
+  emailPessoal: 15 * 60_000,
 };
 
 async function venceu(chave: keyof typeof INTERVALO): Promise<boolean> {
@@ -180,6 +182,41 @@ async function sincronizarMembros(): Promise<number> {
     }
   }
   return linhas.length;
+}
+
+/**
+ * Completa o e-mail pessoal de quem ficou sem: o dado costuma entrar no Quark
+ * DEPOIS de a pré-admissão ser criada aqui (o colaborador preenche o
+ * formulário no tempo dele). Só preenche o campo — NÃO dispara e-mail nenhum:
+ * as credenciais continuam saindo apenas quando a TI cria a conta.
+ */
+async function completarEmailPessoal(): Promise<number> {
+  const { data } = await db()
+    .from("colaboradores")
+    .select("id, nome, cpf")
+    .in("status", ["Pré-admissão", "Ativo"])
+    .is("email_pessoal", null)
+    .not("cpf", "is", null)
+    .neq("cpf", "—")
+    .limit(60);
+  const candidatos = data ?? [];
+  if (!candidatos.length) return 0;
+
+  let n = 0;
+  for (const c of candidatos) {
+    // a primeira chamada carrega o quadro do Quark; as demais usam o cache
+    const email = await emailPessoalPorCpf(c.cpf as string);
+    if (!email) continue;
+    await db().from("colaboradores").update({ email_pessoal: email }).eq("id", c.id);
+    await db().from("eventos").insert({
+      colaborador_id: c.id,
+      fase: "pre",
+      ator: "Sistema",
+      descricao: `E-mail pessoal preenchido do QuarkRH: ${email}`,
+    });
+    n++;
+  }
+  return n;
 }
 
 /** Avisos de SLA: 24h e 12h antes do prazo de cada chamado (deduplicados por ref). */
@@ -338,6 +375,12 @@ export async function tick(): Promise<ResultadoTick> {
       const n = await sincronizarMembros();
       await marcar("membros", `${n} vínculo(s)`);
       if (n) partes.push(`${n} vínculo(s)`);
+    }
+    if (await venceu("emailPessoal")) {
+      await marcar("emailPessoal");
+      const n = await completarEmailPessoal();
+      await marcar("emailPessoal", `${n} e-mail(s) pessoais`);
+      if (n) partes.push(`${n} e-mail(s) pessoal(is) do Quark`);
     }
     await avisarSla();
     await agendarPosLogin();

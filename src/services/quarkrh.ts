@@ -248,6 +248,25 @@ export async function buscarPreAdmissao(termo: string): Promise<ResultadoBusca> 
   }
 }
 
+/**
+ * E-mail pessoal de um CPF, direto do quadro do Quark (cache de 10 min).
+ * Usado para COMPLETAR fichas cujo e-mail pessoal ainda não existia quando a
+ * pré-admissão foi criada — o colaborador costuma preencher o formulário do
+ * Quark depois. Null = pessoa não encontrada ou sem e-mail lá também.
+ */
+export async function emailPessoalPorCpf(cpf: string): Promise<string | null> {
+  if (!configurado()) return null;
+  const digitos = soDigitos(cpf).padStart(11, "0");
+  if (digitos.length !== 11) return null;
+  try {
+    const lista = await quadro();
+    const achado = lista.find((c) => soDigitos(c.cpf).padStart(11, "0") === digitos);
+    return achado?.email?.trim().toLowerCase() || null;
+  } catch {
+    return null; // Quark indisponível não pode derrubar quem chamou
+  }
+}
+
 // ── Exportação: o cadastro INTEIRO, não só os campos que o app usa ───────────
 
 const ROTULOS: Record<string, string> = {
