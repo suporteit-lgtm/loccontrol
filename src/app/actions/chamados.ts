@@ -118,18 +118,47 @@ export async function executarSolicitacaoGrupo(chamadoId: string) {
   return { ok: true, msg: gTipo === "criacao" ? `Grupo ${email} criado` : `Grupo ${email} excluído` };
 }
 
-/** Exclui (cancela) um chamado de admissão/desligamento direto da fila da TI. */
+/** Exclui (cancela) um chamado de admissão/desligamento direto da fila da TI.
+ *  Se a TI já tinha criado o e-mail da admissão, a conta sai junto do
+ *  Workspace — colaborador nunca ativado não pode ficar com conta órfã. */
 export async function excluirChamado(chamadoId: string) {
   const u = await exigirTI();
   const { data: f } = await db()
     .from("chamados")
-    .select("id, tipo, concluido_em, colaboradores(nome)")
+    .select("id, tipo, concluido_em, colaborador_id, colaboradores(nome, email, status)")
     .eq("id", chamadoId)
     .maybeSingle();
   if (!f) return { ok: false, msg: "Chamado não encontrado" };
   if (f.concluido_em) return { ok: false, msg: "Este chamado já foi concluído" };
 
-  const nome = (f as { colaboradores?: { nome?: string } }).colaboradores?.nome;
+  const colab = (f as { colaboradores?: { nome?: string; email?: string | null; status?: string | null } })
+    .colaboradores;
+  const nome = colab?.nome;
+
+  // só a conta de uma ADMISSÃO ainda não ativada — jamais a de alguém Ativo
+  // (desligamento tem fluxo próprio, com backup do Drive)
+  const avisos: string[] = [];
+  if (f.tipo === "Admissão" && colab?.email && colab.status !== "Ativo" && f.colaborador_id) {
+    const noWorkspace = await workspace.contaExiste(colab.email);
+    if (noWorkspace) {
+      const r = await workspace.excluirConta(colab.email);
+      if (!r.ok) return { ok: false, msg: `Conta Google: ${r.erro} — o chamado não foi excluído` };
+      avisos.push(`conta ${colab.email} excluída do Workspace`);
+    } else {
+      avisos.push(`a conta ${colab.email} não está no Workspace — se foi criada no webmail externo, exclua lá também`);
+    }
+    await db().from("envios_agendados").delete().eq("colaborador_id", f.colaborador_id);
+    await db()
+      .from("colaboradores")
+      .update({ email: null, google_id: null, aguarda_boas_vindas: false })
+      .eq("id", f.colaborador_id);
+    await db().from("eventos").insert({
+      colaborador_id: f.colaborador_id,
+      fase: "pre",
+      ator: `${u.nome} · TI`,
+      descricao: `Chamado ${chamadoId} excluído · ${avisos.join(" · ")}`,
+    });
+  }
 
   await arquivarChamado(chamadoId, "cancelado", u.nome);
   await atualizarTicket(chamadoId, "cancelado", `Chamado excluído por ${u.nome} na fila da TI`);
@@ -139,10 +168,13 @@ export async function excluirChamado(chamadoId: string) {
     tabela: "chamados",
     campo: chamadoId,
     antes: "na fila da TI",
-    depois: "excluído",
+    depois: `excluído${avisos.length ? ` · ${avisos[0]}` : ""}`,
   });
   revalidarFilas();
-  return { ok: true, msg: `Chamado ${chamadoId}${nome ? ` (${nome})` : ""} excluído` };
+  return {
+    ok: true,
+    msg: `Chamado ${chamadoId}${nome ? ` (${nome})` : ""} excluído${avisos.length ? ` · ${avisos.join(" · ")}` : ""}`,
+  };
 }
 
 export async function negarSolicitacao(chamadoId: string) {
@@ -295,7 +327,9 @@ export async function ativarColaborador(
       ? `A TI concluiu ${c.nome} — o e-mail ${alvo} foi registrado (conta criada fora do Workspace). Falta o RH ativar na empresa (Fila do RH).`
       : `A TI concluiu ${c.nome} — a conta ${alvo} está pronta e os grupos aplicados. Falta o RH ativar na empresa (Fila do RH).`,
     `conta-${chamadoId}`,
-    quemAbriu?.email ?? null
+    quemAbriu?.email ?? null,
+    undefined,
+    c.cidade && c.unidade ? `${c.cidade}|${c.unidade}` : null
   );
 
   // Criar a conta é só UMA parte do trabalho da TI — o chamado segue aberto

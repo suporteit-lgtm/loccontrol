@@ -7,7 +7,7 @@ import { FilaTIClient, type CardTI } from "./FilaTIClient";
 export const dynamic = "force-dynamic";
 
 export default async function FilaTIPage() {
-  const { usuario } = await contexto("ti");
+  const { usuario, permitidas } = await contexto("ti");
   const [chamados, colabs, { data: matriz }] = await Promise.all([
     chamadosAbertos(),
     todosColaboradores(),
@@ -27,15 +27,21 @@ export default async function FilaTIPage() {
   }
 
   // pedidos de unidade/grupo não têm analista (a TI toda vê); chamados de
-  // colaborador (admissão/desligamento) só aparecem pra quem foi atribuído,
-  // pra quem ainda não tem analista definido (fila geral), ou pra admin —
-  // Kaique não vê chamado do Murillo e vice-versa.
-  const podeVer = (f: (typeof chamados)[number]) =>
-    !!f.payload || !f.analista || f.analista === usuario.nome || ehAdmin(usuario.papel);
+  // colaborador (admissão/desligamento) com analista atribuído aparecem SÓ
+  // para ele — nem admin vê o chamado do outro. Sem analista = fila geral.
+  const podeVer = (f: (typeof chamados)[number]) => !!f.payload || !f.analista || f.analista === usuario.nome;
+
+  // usuário restrito a unidades só vê chamados de colaboradores das bases dele
+  const daMinhaBase = (f: (typeof chamados)[number]) => {
+    if (!permitidas || f.payload || !f.colaborador_id) return true;
+    const c = porId.get(f.colaborador_id);
+    if (!c?.cidade || !c?.unidade) return true; // sem lotação: não dá pra atribuir
+    return permitidas.has(`${c.cidade}|${c.unidade}`);
+  };
 
   // ti_concluido: a ferramenta de chamados encerrou a parte da TI — o chamado
   // continua vivo para o RH (offboarding), mas não é mais pendência da TI
-  const cards: CardTI[] = chamados.filter((f) => !f.ti_concluido && podeVer(f)).map((f) => {
+  const cards: CardTI[] = chamados.filter((f) => !f.ti_concluido && podeVer(f) && daMinhaBase(f)).map((f) => {
     if (f.payload && "acao" in f.payload) {
       const { acao, cidade, unidade } = f.payload;
       return {
@@ -84,6 +90,7 @@ export default async function FilaTIPage() {
       slaAlvo: f.sla_alvo,
       silenciado: f.silenciado,
       colabId: f.colaborador_id,
+      email: f.tipo === "Admissão" && c?.status !== "Ativo" ? c?.email ?? null : null,
       pendencias: f.tipo === "Admissão" ? pendenciasTI(c, acessos) : [],
     };
   });

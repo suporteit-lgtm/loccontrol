@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, useNow } from "@/components/ui";
+import { ComoFunciona, FLUXO_ADMISSAO_TI } from "@/components/ComoFunciona";
 import { useToast } from "@/components/Toast";
 import { sla } from "@/lib/format";
 import {
@@ -27,6 +28,9 @@ export interface CardTI {
   silenciado: boolean;
   colabId: string | null;
   gTipo?: "criacao" | "exclusao";
+  /** Conta de admissão já criada e ainda não ativada — excluir o chamado
+   *  exclui essa conta do Workspace junto (mostrado no aviso). */
+  email?: string | null;
   /** O que falta informar/liberar — vira chip no card. */
   pendencias?: string[];
 }
@@ -90,9 +94,12 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
         eyebrow="Visão TI"
         titulo="Fila da TI"
         acoes={
-          <Link href="/fila-ti/historico" className="btn btn-secondary">
-            Histórico
-          </Link>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <ComoFunciona titulo="Como funciona o chamado de admissão" passos={FLUXO_ADMISSAO_TI} />
+            <Link href="/fila-ti/historico" className="btn btn-secondary">
+              Histórico
+            </Link>
+          </div>
         }
       />
       <div
@@ -312,7 +319,14 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
               <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <span>
                   <strong>{excluindo.nome}</strong> · {excluindo.tipo} sai da fila da TI e vai pro histórico como
-                  cancelado. <strong>Não tem desfazer.</strong>
+                  cancelado.
+                  {excluindo.email ? (
+                    <>
+                      {" "}A conta <strong>{excluindo.email}</strong> criada para esta admissão será{" "}
+                      <strong>excluída do Workspace</strong>.
+                    </>
+                  ) : null}{" "}
+                  <strong>Não tem desfazer.</strong>
                 </span>
               </div>
               <div className="dialog-actions">

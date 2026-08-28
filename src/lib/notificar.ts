@@ -22,6 +22,18 @@ function papelNoAlvo(papel: Papel, alvo: AlvoNotif): boolean {
 }
 
 /**
+ * Notificação sem unidade vale para todos; com unidade ("Cidade|Unidade"),
+ * só recebe quem tem a unidade nas suas unidades de acesso — quem não está
+ * adicionado na unidade não recebe. `unidades_acesso` vazio = todas as bases.
+ */
+export function acessaUnidade(u: Usuario, unidadeRef: string | null | undefined): boolean {
+  if (!unidadeRef) return true;
+  const lista = u.unidades_acesso ?? [];
+  if (!lista.length || u.papel === "Superadmin") return true;
+  return lista.includes(unidadeRef);
+}
+
+/**
  * Emite uma notificação do sistema:
  *  · grava na tabela (o navegador entrega via AutoSync, se o usuário tiver o
  *    canal "No sistema" e o evento ligados em Configurações)
@@ -40,11 +52,19 @@ export async function emitir(
    *  destinatário (ex.: pedido de grupo/unidade), segue a regra por time. */
   destinatario?: string | null,
   /** HTML pronto (templateChamado) — substitui o wrapper genérico do e-mail */
-  htmlCorpo?: string
+  htmlCorpo?: string,
+  /** unidade do colaborador ("Cidade|Unidade") — corta quem não tem acesso a ela */
+  unidadeRef?: string | null
 ) {
-  const { error } = await db()
-    .from("notificacoes")
-    .insert({ tipo, alvo, titulo, corpo, ref: ref ?? null, destinatario: destinatario ?? null });
+  const { error } = await db().from("notificacoes").insert({
+    tipo,
+    alvo,
+    titulo,
+    corpo,
+    ref: ref ?? null,
+    destinatario: destinatario ?? null,
+    unidade: unidadeRef ?? null,
+  });
   // duplicada (mesmo tipo+ref): já foi emitida — não repete nem reenvia e-mail
   if (error) return;
 
@@ -54,6 +74,7 @@ export async function emitir(
       papelNoAlvo(u.papel, alvo) &&
       u.notif?.email &&
       u.notif?.[tipo] &&
+      acessaUnidade(u, unidadeRef) &&
       (!destinatario || u.email === destinatario || u.papel === "Superadmin")
   );
 

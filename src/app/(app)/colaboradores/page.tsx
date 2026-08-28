@@ -12,14 +12,14 @@ export default async function ColaboradoresPage({
 }: {
   searchParams: Promise<{ status?: string; semUnidade?: string }>;
 }) {
-  const { filtro, usuario } = await contexto("rh");
+  const { filtro, usuario, permitidas } = await contexto("rh");
   const sp = await searchParams;
   const soSemUnidade = sp.semUnidade === "1";
 
   // as contas sem unidade só entram quando o filtro pede — senão apareceriam
   // em toda cidade e dariam a impressão de que o filtro não funciona
   const [lista, nSemUnidade] = await Promise.all([
-    soSemUnidade ? colaboradoresSemUnidade() : colaboradoresDaUnidade(filtro),
+    soSemUnidade ? colaboradoresSemUnidade() : colaboradoresDaUnidade(filtro, permitidas),
     contarSemUnidade(),
   ]);
 

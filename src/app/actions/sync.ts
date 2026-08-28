@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { usuarioAtual, ehAdmin } from "@/lib/session";
-import { emitir } from "@/lib/notificar";
+import { emitir, acessaUnidade } from "@/lib/notificar";
 import * as workspace from "@/services/googleWorkspace";
 import { dataBR } from "@/lib/format";
 import { agendarEnvio, enviarModelo, ATRASO_POS_LOGIN_MIN, type ChaveModelo } from "@/lib/boasVindas";
@@ -186,7 +186,7 @@ async function sincronizarMembros(): Promise<number> {
 async function avisarSla(): Promise<void> {
   const { data: chamados } = await db()
     .from("chamados")
-    .select("id, sla_alvo, tipo, analista, colaborador_id, colaboradores(nome)")
+    .select("id, sla_alvo, tipo, analista, colaborador_id, colaboradores(nome, cidade, unidade)")
     .not("sla_alvo", "is", null)
     .is("concluido_em", null)
     .eq("silenciado", false);
@@ -197,7 +197,10 @@ async function avisarSla(): Promise<void> {
     const destinatario = f.analista ? emailDe.get(f.analista as string) ?? null : null;
     const restante = new Date(f.sla_alvo as string).getTime() - agora;
     if (restante <= 0) continue;
-    const nome = (f as { colaboradores?: { nome?: string } }).colaboradores?.nome ?? f.id;
+    const colab = (f as { colaboradores?: { nome?: string; cidade?: string | null; unidade?: string | null } })
+      .colaboradores;
+    const nome = colab?.nome ?? f.id;
+    const unidadeRef = colab?.cidade && colab?.unidade ? `${colab.cidade}|${colab.unidade}` : null;
     const dataAlvo = dataBR(f.sla_alvo as string);
     if (restante < 12 * 3600e3) {
       await emitir(
@@ -206,7 +209,9 @@ async function avisarSla(): Promise<void> {
         `SLA em menos de 12h: ${nome}`,
         `O chamado ${f.id} (${f.tipo}) vence em ${dataAlvo}. Menos de 12 horas restantes.`,
         `${f.id}:12h`,
-        destinatario
+        destinatario,
+        undefined,
+        unidadeRef
       );
     } else if (restante < 24 * 3600e3) {
       await emitir(
@@ -215,7 +220,9 @@ async function avisarSla(): Promise<void> {
         `SLA em menos de 24h: ${nome}`,
         `O chamado ${f.id} (${f.tipo}) vence em ${dataAlvo}.`,
         `${f.id}:24h`,
-        destinatario
+        destinatario,
+        undefined,
+        unidadeRef
       );
     }
   }
@@ -372,7 +379,7 @@ export async function novasNotificacoes(desdeId: number): Promise<{ ultimo: numb
 
   const { data } = await db()
     .from("notificacoes")
-    .select("id, tipo, alvo, titulo, corpo, destinatario")
+    .select("id, tipo, alvo, titulo, corpo, destinatario, unidade")
     .gt("id", desdeId)
     .order("id")
     .limit(20);
@@ -384,8 +391,15 @@ export async function novasNotificacoes(desdeId: number): Promise<{ ultimo: numb
   return {
     ultimo,
     itens: linhas
-      // com destinatário definido, só ele vê a notificação do navegador
-      .filter((n) => (!n.destinatario || n.destinatario === u.email) && alvoDoUsuario(u, n.alvo) && u.notif?.[n.tipo])
+      // com destinatário definido, só ele vê a notificação do navegador;
+      // com unidade definida, só quem tem acesso àquela base
+      .filter(
+        (n) =>
+          (!n.destinatario || n.destinatario === u.email) &&
+          acessaUnidade(u, n.unidade) &&
+          alvoDoUsuario(u, n.alvo) &&
+          u.notif?.[n.tipo]
+      )
       .map((n) => ({ id: Number(n.id), titulo: n.titulo, corpo: n.corpo })),
   };
 }

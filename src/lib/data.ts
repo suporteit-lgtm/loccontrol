@@ -44,36 +44,32 @@ export function mapaPermitido(usuario: Usuario, mapa: UnidadesMap): UnidadesMap 
   return Object.keys(out).length ? out : mapa;
 }
 
-/** Usuário restrito não tem a opção "Todas as unidades" (evita ver a cidade inteira). */
-export function ehRestrito(usuario: Usuario): boolean {
-  return usuario.papel !== "Superadmin" && (usuario.unidades_acesso ?? []).length > 0;
-}
-
-/** Valida o cookie de unidade contra o que o usuário pode ver. */
+/**
+ * Valida o cookie de unidade contra o que o usuário pode ver. "Todas as
+ * cidades"/"Todas as unidades" valem para qualquer usuário: quem é restrito
+ * também as tem no seletor — só que o resultado mostra apenas as bases dele
+ * (o corte fino é o `permitidas` do contexto()).
+ */
 export async function filtroPermitido(usuario: Usuario, mapa: UnidadesMap): Promise<UnidadeFiltro> {
   const bruto = await unidadeAtual();
   const permitido = mapaPermitido(usuario, mapa);
   const cidades = Object.keys(permitido).sort((a, b) => a.localeCompare(b));
   if (!cidades.length) return bruto;
   let { cidade, unidade } = bruto;
-  // "Todas as cidades" é válido para quem não tem restrição de unidades
-  if (cidade === TODAS_CIDADES) {
-    return ehRestrito(usuario) ? { cidade: cidades[0], unidade: permitido[cidades[0]][0] ?? TODAS } : bruto;
-  }
+  if (cidade === TODAS_CIDADES) return { cidade: TODAS_CIDADES, unidade: TODAS };
   if (!permitido[cidade]) {
     cidade = cidades[0];
     unidade = TODAS;
   }
-  const restrito = ehRestrito(usuario);
-  if (unidade === TODAS && restrito) unidade = permitido[cidade][0] ?? TODAS;
-  if (unidade !== TODAS && !permitido[cidade].includes(unidade))
-    unidade = restrito ? permitido[cidade][0] ?? TODAS : TODAS;
+  if (unidade !== TODAS && !permitido[cidade].includes(unidade)) unidade = TODAS;
   return { cidade, unidade };
 }
 
 export interface Contexto {
   usuario: Usuario;
   filtro: UnidadeFiltro;
+  /** Pares "Cidade|Unidade" que o usuário pode ver — null = todas as bases. */
+  permitidas: Set<string> | null;
 }
 
 /** Sessão obrigatória + guarda de acesso por área da tela. */
@@ -82,23 +78,40 @@ export async function contexto(area?: "rh" | "ti" | "geral"): Promise<Contexto> 
   if (!usuario) redirect("/login");
   if (area === "rh" && !veRH(usuario.papel)) redirect(usuario.papel.includes("T.I") ? "/dash-ti" : "/login");
   if (area === "ti" && !veTI(usuario.papel)) redirect("/dash");
-  const filtro = await filtroPermitido(usuario, await unidadesMap());
-  return { usuario, filtro };
+  const mapa = await unidadesMap();
+  const filtro = await filtroPermitido(usuario, mapa);
+  const permitido = mapaPermitido(usuario, mapa);
+  // mapaPermitido devolve o próprio `mapa` quando não há restrição efetiva
+  const permitidas =
+    permitido === mapa
+      ? null
+      : new Set(Object.entries(permitido).flatMap(([cid, us]) => us.map((un) => `${cid}|${un}`)));
+  return { usuario, filtro, permitidas };
 }
 
-export function daUnidade(c: Pick<Colaborador, "cidade" | "unidade">, f: UnidadeFiltro): boolean {
+export function daUnidade(
+  c: Pick<Colaborador, "cidade" | "unidade">,
+  f: UnidadeFiltro,
+  permitidas?: Set<string> | null
+): boolean {
+  if (permitidas && !permitidas.has(`${c.cidade}|${c.unidade}`)) return false;
   if (f.cidade === TODAS_CIDADES) return true;
   return c.cidade === f.cidade && (f.unidade === TODAS || c.unidade === f.unidade);
 }
 
-export async function colaboradoresDaUnidade(f: UnidadeFiltro): Promise<Colaborador[]> {
+export async function colaboradoresDaUnidade(
+  f: UnidadeFiltro,
+  permitidas?: Set<string> | null
+): Promise<Colaborador[]> {
   let q = db().from("colaboradores").select("*").order("nome");
   if (f.cidade !== TODAS_CIDADES) {
     q = q.eq("cidade", f.cidade);
     if (f.unidade !== TODAS) q = q.eq("unidade", f.unidade);
   }
   const { data } = await q;
-  return (data ?? []) as Colaborador[];
+  const todos = (data ?? []) as Colaborador[];
+  // usuário restrito com "Todas as unidades/cidades": só as bases dele
+  return permitidas ? todos.filter((c) => permitidas.has(`${c.cidade}|${c.unidade}`)) : todos;
 }
 
 /** Quantas contas ainda não foram lotadas em nenhuma unidade (só a contagem). */

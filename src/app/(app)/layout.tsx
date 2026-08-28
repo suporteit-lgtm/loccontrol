@@ -4,7 +4,7 @@ export const maxDuration = 60;
 
 import { redirect } from "next/navigation";
 import { usuarioAtual } from "@/lib/session";
-import { unidadesMap, mapaPermitido, filtroPermitido, ehRestrito } from "@/lib/data";
+import { unidadesMap, mapaPermitido, filtroPermitido } from "@/lib/data";
 import { AppShell } from "@/components/AppShell";
 import { AutoSync } from "@/components/AutoSync";
 
@@ -20,7 +20,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       usuario={{ nome: usuario.nome, email: usuario.email, papel: usuario.papel }}
       unidadesMap={permitido}
       filtro={filtro}
-      temTodas={!ehRestrito(usuario)}
     >
       {children}
       <AutoSync />

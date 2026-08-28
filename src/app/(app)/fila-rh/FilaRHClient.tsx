@@ -1,12 +1,14 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, useNow } from "@/components/ui";
 import { useToast } from "@/components/Toast";
 import { sla } from "@/lib/format";
-import { ativarNaEmpresa } from "@/app/actions/colaboradores";
+import { ativarNaEmpresa, naoAtivarNaEmpresa } from "@/app/actions/colaboradores";
+import { ComoFunciona, FLUXO_ADMISSAO_RH, FLUXO_OFFBOARDING_RH } from "@/components/ComoFunciona";
 
 export interface CardRH {
   key: string;
@@ -21,6 +23,8 @@ export interface CardRH {
   pendencias?: string[];
   /** Preenchido quando a TI já entregou a conta: habilita "Ativar na empresa". */
   ativarColabId?: string;
+  /** E-mail corporativo já criado — mostrado no aviso de "Não ativar". */
+  email?: string | null;
 }
 
 export function Chips({ itens, cor }: { itens: string[]; cor: string }) {
@@ -58,6 +62,17 @@ export function FilaRHClient({
   const router = useRouter();
   const { toast } = useToast();
   const [pending, start] = useTransition();
+  const [naoAtivando, setNaoAtivando] = useState<CardRH | null>(null);
+
+  // trava o scroll da página com o dialog aberto (mesmo padrão da fila da TI)
+  useEffect(() => {
+    if (!naoAtivando) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [naoAtivando]);
 
   const ativar = (colabId: string) =>
     start(async () => {
@@ -73,9 +88,15 @@ export function FilaRHClient({
         titulo="Fila do RH"
         sub={`Tudo o que depende do RH agora · pré-admissões, offboarding, documentos e afastamentos · ${unidadeAtual}`}
         acoes={
-          <Link href="/fila-rh/historico" className="btn btn-secondary">
-            Histórico
-          </Link>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <ComoFunciona
+              titulo="Como funciona a admissão e o desligamento"
+              passos={[...FLUXO_ADMISSAO_RH, ...FLUXO_OFFBOARDING_RH]}
+            />
+            <Link href="/fila-rh/historico" className="btn btn-secondary">
+              Histórico
+            </Link>
+          </div>
         }
       />
       <div
@@ -187,14 +208,24 @@ export function FilaRHClient({
                       {k.acao}
                     </Link>
                     {k.ativarColabId && (
-                      <button
-                        className="btn btn-primary"
-                        style={{ fontSize: 13, padding: "4px 16px" }}
-                        disabled={pending}
-                        onClick={() => ativar(k.ativarColabId!)}
-                      >
-                        {pending ? "Ativando..." : "Ativar"}
-                      </button>
+                      <>
+                        <button
+                          className="btn btn-ghost"
+                          style={{ fontSize: 13, padding: "4px 8px", color: "var(--danger-forte)" }}
+                          disabled={pending}
+                          onClick={() => setNaoAtivando(k)}
+                        >
+                          Não ativar
+                        </button>
+                        <button
+                          className="btn btn-primary"
+                          style={{ fontSize: 13, padding: "4px 16px" }}
+                          disabled={pending}
+                          onClick={() => ativar(k.ativarColabId!)}
+                        >
+                          {pending ? "Ativando..." : "Ativar"}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -203,6 +234,47 @@ export function FilaRHClient({
           </div>
         ))}
       </div>
+
+      {naoAtivando &&
+        createPortal(
+          <div className="dialog-backdrop" onClick={() => !pending && setNaoAtivando(null)}>
+            <div className="dialog" onClick={(e) => e.stopPropagation()}>
+              <span className="dialog-title">Não ativar {naoAtivando.nome}?</span>
+              <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <span>
+                  Para quando a pessoa <strong>desistiu da vaga</strong> ou a admissão caiu: o chamado de admissão é
+                  cancelado{naoAtivando.email ? (
+                    <>
+                      {" "}e a conta <strong>{naoAtivando.email}</strong> é <strong>excluída do Workspace</strong>
+                    </>
+                  ) : null}
+                  . A ficha continua em Colaboradores como registro. <strong>Não tem desfazer.</strong>
+                </span>
+              </div>
+              <div className="dialog-actions">
+                <button className="btn btn-secondary" disabled={pending} onClick={() => setNaoAtivando(null)}>
+                  Cancelar
+                </button>
+                <button
+                  className="btn btn-primary"
+                  style={{ background: "var(--danger-forte)", borderColor: "var(--danger-forte)" }}
+                  disabled={pending}
+                  onClick={() =>
+                    start(async () => {
+                      const res = await naoAtivarNaEmpresa(naoAtivando.ativarColabId!);
+                      toast(res.msg, res.ok ? "ok" : "erro");
+                      setNaoAtivando(null);
+                      router.refresh();
+                    })
+                  }
+                >
+                  {pending ? "Cancelando..." : "Não ativar e excluir conta"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

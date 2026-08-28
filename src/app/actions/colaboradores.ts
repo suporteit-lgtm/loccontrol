@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { exigirRH, exigirAdmin } from "@/lib/perms";
 import { auditar } from "@/lib/audit";
-import { proximoChamadoId, TODAS } from "@/lib/data";
+import { proximoChamadoId, arquivarChamado, TODAS } from "@/lib/data";
 import { unidadeAtual } from "@/lib/session";
 import { CHECKLIST_TEMPLATE } from "@/lib/types";
-import { abrirTicket } from "@/services/tickets";
+import { abrirTicket, atualizarTicket } from "@/services/tickets";
 import * as workspace from "@/services/googleWorkspace";
 import { emitir } from "@/lib/notificar";
 import { templateChamado } from "@/services/emailChamado";
@@ -153,6 +153,94 @@ export async function ativarNaEmpresa(colabId: string) {
   revalidatePath("/colaboradores");
   revalidatePath(`/colaboradores/${c.id}`);
   return { ok: true as const, msg: `${c.nome} ativado(a) na empresa` };
+}
+
+/**
+ * O contrário de "Ativar na empresa" — a pessoa desistiu da vaga (ou a
+ * admissão caiu). Exclui do Workspace a conta que a TI criou, cancela o
+ * chamado de admissão e limpa o e-mail da ficha; a ficha permanece em
+ * Colaboradores como registro do processo.
+ */
+export async function naoAtivarNaEmpresa(colabId: string) {
+  const u = await exigirRH();
+  const { data } = await db().from("colaboradores").select("*").eq("id", colabId).maybeSingle();
+  const c = data as Colaborador | null;
+  if (!c) return { ok: false as const, msg: "Colaborador não encontrado" };
+  if (c.status === "Ativo")
+    return { ok: false as const, msg: `${c.nome} já está ativo — para sair da empresa, use o fluxo de desligamento` };
+
+  const avisos: string[] = [];
+  if (c.email) {
+    const noWorkspace = await workspace.contaExiste(c.email);
+    if (noWorkspace) {
+      const r = await workspace.excluirConta(c.email);
+      if (!r.ok) return { ok: false as const, msg: `Conta Google: ${r.erro} — nada foi alterado` };
+      avisos.push(`conta ${c.email} excluída do Workspace`);
+    } else {
+      // conta registrada mas criada fora do Workspace (webmail externo)
+      avisos.push(`a conta ${c.email} não está no Workspace — se foi criada no webmail externo, exclua lá também`);
+    }
+  }
+
+  // cancela o(s) chamado(s) abertos desta admissão — some das duas filas
+  const { data: abertos } = await db()
+    .from("chamados")
+    .select("id, analista")
+    .eq("colaborador_id", c.id)
+    .is("concluido_em", null);
+  for (const f of abertos ?? []) {
+    await arquivarChamado(f.id, "cancelado", u.nome);
+    await atualizarTicket(f.id, "cancelado", `Admissão cancelada pelo RH (${u.nome}) — colaborador não foi ativado`);
+  }
+
+  // nada de e-mail pós-login para quem não entrou
+  await db().from("envios_agendados").delete().eq("colaborador_id", c.id);
+  await db()
+    .from("colaboradores")
+    .update({ email: null, google_id: null, aguarda_boas_vindas: false })
+    .eq("id", c.id);
+
+  await db().from("eventos").insert({
+    colaborador_id: c.id,
+    fase: "pre",
+    ator: `${u.nome} · RH`,
+    descricao: `Admissão cancelada — colaborador não ativado${avisos.length ? ` · ${avisos.join(" · ")}` : ""}`,
+  });
+
+  // avisa o analista que cuidava do chamado (se houver)
+  const analista = (abertos ?? []).find((f) => f.analista)?.analista as string | undefined;
+  const { data: analistaRow } = analista
+    ? await db().from("usuarios").select("email").eq("nome", analista).maybeSingle()
+    : { data: null };
+  await emitir(
+    "chamado",
+    "ti",
+    `Admissão cancelada: ${c.nome}`,
+    `O RH (${u.nome}) cancelou a admissão de ${c.nome}${c.email ? ` — a conta ${c.email} foi excluída` : ""}.`,
+    `nao-ativar-${c.id}`,
+    analistaRow?.email ?? null,
+    undefined,
+    c.cidade && c.unidade ? `${c.cidade}|${c.unidade}` : null
+  );
+
+  await auditar({
+    pessoa: c.nome,
+    ator: u.nome,
+    tabela: "colaboradores",
+    campo: "ativação",
+    antes: "pronto para ativar",
+    depois: `não ativado (desistência)${c.email ? ` · conta ${c.email} excluída` : ""}`,
+  });
+
+  revalidatePath("/fila-rh");
+  revalidatePath("/fila-ti");
+  revalidatePath("/dash");
+  revalidatePath("/colaboradores");
+  revalidatePath(`/colaboradores/${c.id}`);
+  return {
+    ok: true as const,
+    msg: `Admissão de ${c.nome.split(" ")[0]} cancelada${avisos.length ? ` · ${avisos.join(" · ")}` : ""}`,
+  };
 }
 
 /**
@@ -516,7 +604,8 @@ export async function desligarColaborador(
       chamadoId,
       nota: "O chamado foi aberto automaticamente para dar continuidade ao processo de offboarding.",
       rota: `/offboarding/${id}`,
-    })
+    }),
+    c.cidade && c.unidade ? `${c.cidade}|${c.unidade}` : null
   );
 
   await auditar({

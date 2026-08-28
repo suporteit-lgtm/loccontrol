@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
   const { data: chamado } = await db()
     .from("chamados")
-    .select("id, tipo, colaborador_id, silenciado, concluido_em, solicitante, colaboradores(nome)")
+    .select("id, tipo, colaborador_id, silenciado, concluido_em, solicitante, colaboradores(nome, cidade, unidade)")
     .eq("id", p.referencia_externa)
     .maybeSingle();
 
@@ -59,7 +59,10 @@ export async function POST(req: Request) {
   if (!chamado || chamado.concluido_em)
     return NextResponse.json({ ok: true, detalhe: "chamado não está mais na fila" });
 
-  const nome = (chamado as { colaboradores?: { nome?: string } }).colaboradores?.nome ?? p.referencia_externa;
+  const colab = (chamado as { colaboradores?: { nome?: string; cidade?: string | null; unidade?: string | null } })
+    .colaboradores;
+  const nome = colab?.nome ?? p.referencia_externa;
+  const unidadeRef = colab?.cidade && colab?.unidade ? `${colab.cidade}|${colab.unidade}` : null;
   const ator = p.ator ?? "sistema de chamados";
 
   if (p.status === "concluido" && chamado.tipo === "Desligamento") {
@@ -90,7 +93,9 @@ export async function POST(req: Request) {
       `TI concluiu o desligamento de ${nome}`,
       `Chamado ${chamado.id} finalizado pela TI na ferramenta (${ator}). Falta a parte do RH no offboarding.`,
       `${chamado.id}:webhook-ti-ok`,
-      quemAbriu?.email ?? null
+      quemAbriu?.email ?? null,
+      undefined,
+      unidadeRef
     );
   } else if (p.status === "concluido" || p.status === "cancelado") {
     await db()
@@ -114,7 +119,10 @@ export async function POST(req: Request) {
       "ti",
       `Chamado ${chamado.id} ${p.status === "concluido" ? "concluído" : "cancelado"} na ferramenta`,
       `${chamado.tipo} · ${nome} · por ${ator}.`,
-      `${chamado.id}:webhook-${p.status}`
+      `${chamado.id}:webhook-${p.status}`,
+      undefined,
+      undefined,
+      unidadeRef
     );
   } else if (p.status === "pausado" && !chamado.silenciado) {
     await db().from("chamados").update({ silenciado: true }).eq("id", chamado.id);

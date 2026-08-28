@@ -8,8 +8,8 @@ import type { ChecklistItem, Evento } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function FilaRHPage() {
-  const { filtro } = await contexto("rh");
-  const [colabs, chamados] = await Promise.all([colaboradoresDaUnidade(filtro), chamadosAbertos()]);
+  const { filtro, permitidas } = await contexto("rh");
+  const [colabs, chamados] = await Promise.all([colaboradoresDaUnidade(filtro, permitidas), chamadosAbertos()]);
   const ids = colabs.map((c) => c.id);
 
   const [{ data: itens }, { data: eventosAf }] = await Promise.all([
@@ -48,6 +48,7 @@ export default async function FilaRHPage() {
       acao: "Ver perfil",
       href: `/colaboradores/${c.id}`,
       ativarColabId: c.id,
+      email: c.email,
     }));
 
   // sem chamado aberto = admissão cancelada ou já resolvida: sai da fila,
@@ -70,7 +71,7 @@ export default async function FilaRHPage() {
     .filter((f) => f.tipo === "Desligamento" && f.colaborador_id)
     .map((f) => {
       const c = colabs.find((x) => x.id === f.colaborador_id);
-      if (!c || !daUnidade(c, filtro)) return null;
+      if (!c || !daUnidade(c, filtro, permitidas)) return null;
       const doColab = ((itens ?? []) as ChecklistItem[]).filter((i) => i.colaborador_id === c.id);
       const done = doColab.filter((i) => i.done).length;
       return {
