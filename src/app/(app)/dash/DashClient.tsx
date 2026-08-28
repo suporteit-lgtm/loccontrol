@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, StatCard, AvatarCircle, DistribuicaoStatus, useNow } from "@/components/ui";
+import { ComoFunciona, FLUXO_ADMISSAO_RH } from "@/components/ComoFunciona";
 import { sla, dataBR, capitalizarNome } from "@/lib/format";
 import type { FatiaStatus } from "@/lib/types";
 
@@ -87,9 +88,12 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
         titulo="Dashboard"
         sub={unidadeAtual}
         acoes={
-          <Link href="/pre-admissao" className="btn btn-primary">
-            <span style={{ fontSize: 18, fontWeight: 400, marginRight: 4, lineHeight: 0.8 }}>+</span> Nova pré-admissão
-          </Link>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <ComoFunciona titulo="Como funciona a admissão" passos={FLUXO_ADMISSAO_RH} />
+            <Link href="/pre-admissao" className="btn btn-primary">
+              <span style={{ fontSize: 18, fontWeight: 400, marginRight: 4, lineHeight: 0.8 }}>+</span> Nova pré-admissão
+            </Link>
+          </div>
         }
       />
       <div

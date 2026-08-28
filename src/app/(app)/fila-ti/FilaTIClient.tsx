@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, useNow } from "@/components/ui";
+import { ComoFunciona, FLUXO_ADMISSAO_TI } from "@/components/ComoFunciona";
 import { useToast } from "@/components/Toast";
 import { sla } from "@/lib/format";
 import {
@@ -93,9 +94,12 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
         eyebrow="Visão TI"
         titulo="Fila da TI"
         acoes={
-          <Link href="/fila-ti/historico" className="btn btn-secondary">
-            Histórico
-          </Link>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <ComoFunciona titulo="Como funciona o chamado de admissão" passos={FLUXO_ADMISSAO_TI} />
+            <Link href="/fila-ti/historico" className="btn btn-secondary">
+              Histórico
+            </Link>
+          </div>
         }
       />
       <div

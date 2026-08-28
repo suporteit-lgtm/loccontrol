@@ -34,6 +34,7 @@ const NAV_GERAL: NavItem[] = [
   { label: "Grupos do Workspace", rota: "/grupos", icone: "membros" },
   { label: "Área restrita", rota: "/restrita", icone: "restrita" },
   { label: "Log de auditoria", rota: "/auditoria", icone: "auditoria" },
+  { label: "Central de ajuda", rota: "/ajuda", icone: "ajuda" },
   { label: "Configurações", rota: "/configuracoes", icone: "config" },
 ];
 

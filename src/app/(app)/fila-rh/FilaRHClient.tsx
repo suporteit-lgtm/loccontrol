@@ -8,6 +8,7 @@ import { PageHeader, useNow } from "@/components/ui";
 import { useToast } from "@/components/Toast";
 import { sla } from "@/lib/format";
 import { ativarNaEmpresa, naoAtivarNaEmpresa } from "@/app/actions/colaboradores";
+import { ComoFunciona, FLUXO_ADMISSAO_RH, FLUXO_OFFBOARDING_RH } from "@/components/ComoFunciona";
 
 export interface CardRH {
   key: string;
@@ -87,9 +88,15 @@ export function FilaRHClient({
         titulo="Fila do RH"
         sub={`Tudo o que depende do RH agora · pré-admissões, offboarding, documentos e afastamentos · ${unidadeAtual}`}
         acoes={
-          <Link href="/fila-rh/historico" className="btn btn-secondary">
-            Histórico
-          </Link>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <ComoFunciona
+              titulo="Como funciona a admissão e o desligamento"
+              passos={[...FLUXO_ADMISSAO_RH, ...FLUXO_OFFBOARDING_RH]}
+            />
+            <Link href="/fila-rh/historico" className="btn btn-secondary">
+              Histórico
+            </Link>
+          </div>
         }
       />
       <div

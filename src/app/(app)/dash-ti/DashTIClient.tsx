@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { PageHeader, StatCard, DistribuicaoStatus } from "@/components/ui";
+import { ComoFunciona, FLUXO_ADMISSAO_TI } from "@/components/ComoFunciona";
 import type { FatiaStatus } from "@/lib/types";
 
 interface Eq {
@@ -50,6 +51,7 @@ export function DashTIClient({
         eyebrow="Visão TI"
         titulo="Dashboard da TI"
         sub={`${unidadeAtual} · equipamentos calculados a partir do que o RH marcou em cada pré-admissão e desligamento`}
+        acoes={<ComoFunciona titulo="Como funciona o chamado de admissão" passos={FLUXO_ADMISSAO_TI} />}
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "var(--space-3)" }}>
         <StatCard label="Admissões na fila" n={stats.admissoes} cor="var(--color-accent-700)" icone="wizard" onClick={() => router.push("/fila-ti")} />
