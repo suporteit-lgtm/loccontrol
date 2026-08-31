@@ -45,7 +45,10 @@ export function SelectCustom({ value, options, onChange, className, style, disab
       if (wrapRef.current?.contains(alvo) || painelRef.current?.contains(alvo)) return;
       setOpen(false);
     }
-    function fecharNoScroll() {
+    function fecharNoScroll(event: Event) {
+      // rolar DENTRO do painel de opções não fecha (a lista tem scroll próprio);
+      // só o scroll da página/containers de fora invalida a posição calculada
+      if (painelRef.current?.contains(event.target as Node)) return;
       setOpen(false);
     }
     document.addEventListener("mousedown", fechar);
