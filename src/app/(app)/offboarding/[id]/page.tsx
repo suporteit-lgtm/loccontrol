@@ -8,7 +8,7 @@ import type { ChecklistItem, Documento } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function OffboardingPage({ params }: { params: Promise<{ id: string }> }) {
-  await contexto();
+  const { usuario } = await contexto();
   const { id } = await params;
   const c = await colaborador(id);
   if (!c) notFound();
@@ -25,6 +25,8 @@ export default async function OffboardingPage({ params }: { params: Promise<{ id
       colab={{ id: c.id, nome: c.nome, desligamento: dataBR(c.desligamento) }}
       itens={(itens ?? []) as ChecklistItem[]}
       termo={termo ? { arquivo: termo.arquivo, data: dataBR(termo.assinado_em) } : null}
+      // volta para a fila do time da pessoa: TI (e Superadmin) → fila da TI
+      filaHref={usuario.papel.includes("T.I") || usuario.papel === "Superadmin" ? "/fila-ti" : "/fila-rh"}
     />
   );
 }

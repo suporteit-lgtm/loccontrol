@@ -12,9 +12,11 @@ interface Props {
   colab: { id: string; nome: string; desligamento: string };
   itens: ChecklistItem[];
   termo: { arquivo: string; data: string } | null;
+  /** Fila de origem do usuário: /fila-ti para o time de TI, /fila-rh para o RH. */
+  filaHref: string;
 }
 
-export function ChecklistClient({ colab, itens: itensIniciais, termo }: Props) {
+export function ChecklistClient({ colab, itens: itensIniciais, termo, filaHref }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   // estado local: o clique marca NA HORA; o servidor grava em segundo plano
@@ -192,12 +194,17 @@ export function ChecklistClient({ colab, itens: itensIniciais, termo }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-      <div>
-        <h6 className="text-muted" style={{ margin: 0 }}>Offboarding</h6>
-        <h2 style={{ margin: 0 }}>Checklist · {colab.nome}</h2>
-        <div className="text-muted" style={{ fontSize: 13 }}>
-          Desligamento em {colab.desligamento} · <Link href={`/colaboradores/${colab.id}`}>ver perfil</Link>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <h6 className="text-muted" style={{ margin: 0 }}>Offboarding</h6>
+          <h2 style={{ margin: 0 }}>Checklist · {colab.nome}</h2>
+          <div className="text-muted" style={{ fontSize: 13 }}>
+            Desligamento em {colab.desligamento} · <Link href={`/colaboradores/${colab.id}`}>ver perfil</Link>
+          </div>
         </div>
+        <Link href={filaHref} className="btn btn-secondary" style={{ flex: "none" }}>
+          ← Voltar à fila
+        </Link>
       </div>
       <div
         style={{
