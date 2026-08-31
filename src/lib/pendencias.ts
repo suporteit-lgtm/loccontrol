@@ -15,9 +15,10 @@ function vazio(v: string | null | undefined): boolean {
 
 /**
  * O que o RH precisa revisar/completar antes de aprovar.
- * `temDocumento` vem da tabela de documentos (contrato anexado).
+ * Contrato NÃO entra: os documentos vivem fora do LOCCONTROL (decisão do RH),
+ * então nunca haverá anexo aqui — cobrar viraria ruído permanente.
  */
-export function pendenciasRH(c: Colaborador, temDocumento: boolean): string[] {
+export function pendenciasRH(c: Colaborador): string[] {
   const p: string[] = [];
   if (vazio(c.cpf)) p.push("CPF");
   if (vazio(c.cargo)) p.push("cargo");
@@ -25,7 +26,6 @@ export function pendenciasRH(c: Colaborador, temDocumento: boolean): string[] {
   if (vazio(c.telefone)) p.push("telefone");
   if (vazio(c.unidade)) p.push("unidade");
   if (!c.admissao) p.push("data de admissão");
-  if (!temDocumento) p.push("contrato");
   return p;
 }
 

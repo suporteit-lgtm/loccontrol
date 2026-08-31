@@ -31,12 +31,6 @@ export default async function FilaRHPage() {
       solicitantePorColab[f.colaborador_id] = f.solicitante ?? null;
     }
 
-  // documentos anexados: usado tanto nas pendências quanto na coluna de docs
-  const { data: docs } = ids.length
-    ? await db().from("documentos").select("colaborador_id").in("colaborador_id", ids)
-    : { data: [] };
-  const comDocs = new Set((docs ?? []).map((d) => d.colaborador_id));
-
   // A TI já entregou a conta (e-mail preenchido) → só falta o RH ativar
   const prontos: CardRH[] = colabs
     .filter((c) => c.status === "Pré-admissão" && !!c.email)
@@ -67,7 +61,7 @@ export default async function FilaRHPage() {
       urgCor: "var(--color-accent)",
       acao: "Revisar",
       href: `/colaboradores/${c.id}`,
-      pendencias: pendenciasRH(c, comDocs.has(c.id)),
+      pendencias: pendenciasRH(c),
       solicitante: solicitantePorColab[c.id] ?? null,
     }));
 
@@ -92,20 +86,6 @@ export default async function FilaRHPage() {
     })
     .filter(Boolean) as CardRH[];
 
-  const docsPend: CardRH[] = [];
-  for (const c of colabs.filter((c) => c.status === "Pré-admissão" && !comDocs.has(c.id) && !!chamadoPorColab[c.id])) {
-    docsPend.push({
-      key: c.id,
-      nome: c.nome,
-      id: chamadoPorColab[c.id] ?? "",
-      sub: "contrato de trabalho ainda não anexado",
-      slaAlvo: null,
-      urgCor: "var(--color-neutral-300)",
-      acao: "Ver perfil",
-      href: `/colaboradores/${c.id}`,
-    });
-  }
-
   const af: CardRH[] = colabs
     .filter((c) => c.status === "Afastado")
     .map((c) => {
@@ -129,7 +109,6 @@ export default async function FilaRHPage() {
         { label: "Prontos para ativar", cor: "var(--ok-forte)", cards: prontos },
         { label: "Pré-admissões", cor: "var(--color-accent-700)", cards: pre },
         { label: "Offboarding", cor: "var(--warn-forte)", cards: off },
-        { label: "Documentos pendentes", cor: "var(--danger-forte)", cards: docsPend },
         { label: "Afastamentos", cor: "var(--color-neutral-600)", cards: af },
       ]}
     />
