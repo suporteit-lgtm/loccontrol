@@ -77,13 +77,9 @@ export function FilaTIClient({
   const [novoResp, setNovoResp] = useState("");
   const [filtroResp, setFiltroResp] = useState(TODOS_RESP);
 
-  const opcoesResp = useMemo(() => {
-    const nomes = [...new Set(cards.map((c) => c.analista).filter(Boolean) as string[])].sort((a, b) =>
-      a.localeCompare(b)
-    );
-    const temSem = cards.some((c) => c.kind === "colab" && !c.analista);
-    return [TODOS_RESP, ...nomes, ...(temSem ? [SEM_RESP] : [])];
-  }, [cards]);
+  // TODO o time de TI cadastrado no sistema, não só quem tem card na fila —
+  // filtrar por alguém sem chamado mostra a fila vazia, o que também informa
+  const opcoesResp = useMemo(() => [TODOS_RESP, ...analistas, SEM_RESP], [analistas]);
 
   const visiveis =
     filtroResp === TODOS_RESP
