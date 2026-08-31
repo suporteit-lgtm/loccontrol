@@ -119,6 +119,74 @@ export async function executarSolicitacaoGrupo(chamadoId: string) {
   return { ok: true, msg: gTipo === "criacao" ? `Grupo ${email} criado` : `Grupo ${email} excluído` };
 }
 
+/** Transfere o chamado para outro analista da TI — com o isolamento por
+ *  analista, o card passa a aparecer SÓ para a pessoa escolhida. */
+export async function atribuirAnalista(chamadoId: string, analista: string) {
+  const u = await exigirTI();
+  const { data: f } = await db()
+    .from("chamados")
+    .select("id, tipo, analista, silenciado, concluido_em, colaborador_id, colaboradores(nome, cidade, unidade)")
+    .eq("id", chamadoId)
+    .maybeSingle();
+  if (!f) return { ok: false, msg: "Chamado não encontrado" };
+  if (f.concluido_em) return { ok: false, msg: "Este chamado já foi concluído" };
+  if (f.analista === analista) return { ok: false, msg: `${analista} já é o responsável por este chamado` };
+
+  const { data: novo } = await db()
+    .from("usuarios")
+    .select("nome, email")
+    .eq("nome", analista)
+    .eq("status", "aprovado")
+    .ilike("papel", "%T.I%")
+    .maybeSingle();
+  if (!novo) return { ok: false, msg: "Analista não encontrado no time de TI" };
+
+  await db().from("chamados").update({ analista }).eq("id", chamadoId);
+
+  const colab = (f as { colaboradores?: { nome?: string; cidade?: string | null; unidade?: string | null } })
+    .colaboradores;
+  const nome = colab?.nome ?? chamadoId;
+  const unidadeRef = colab?.cidade && colab?.unidade ? `${colab.cidade}|${colab.unidade}` : null;
+
+  if (f.colaborador_id)
+    await db().from("eventos").insert({
+      colaborador_id: f.colaborador_id,
+      fase: "pre",
+      ator: `${u.nome} · TI`,
+      descricao: `Chamado ${chamadoId} transferido de ${f.analista ?? "fila geral"} para ${analista}`,
+    });
+
+  // mantém o status atual no espelho — só registra a troca como comentário
+  await atualizarTicket(
+    chamadoId,
+    f.silenciado ? "pausado" : "em_andamento",
+    `Responsável alterado para ${analista} por ${u.nome}`
+  );
+
+  await emitir(
+    "chamado",
+    "ti",
+    `Chamado ${chamadoId} transferido para você`,
+    `${f.tipo} · ${nome} · transferido por ${u.nome}.`,
+    `${chamadoId}:atribuido-${analista}`,
+    novo.email,
+    undefined,
+    unidadeRef
+  );
+
+  await auditar({
+    pessoa: nome,
+    ator: u.nome,
+    tabela: "chamados",
+    campo: chamadoId,
+    antes: `responsável: ${f.analista ?? "fila geral"}`,
+    depois: `responsável: ${analista}`,
+  });
+
+  revalidarFilas();
+  return { ok: true, msg: `Chamado ${chamadoId} transferido para ${analista}` };
+}
+
 /** Exclui (cancela) um chamado de admissão/desligamento direto da fila da TI.
  *  Se a TI já tinha criado o e-mail da admissão, a conta sai junto do
  *  Workspace — colaborador nunca ativado não pode ficar com conta órfã. */

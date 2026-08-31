@@ -8,10 +8,11 @@ export const dynamic = "force-dynamic";
 
 export default async function FilaTIPage() {
   const { usuario, permitidas } = await contexto("ti");
-  const [chamados, colabs, { data: matriz }] = await Promise.all([
+  const [chamados, colabs, { data: matriz }, { data: timeTI }] = await Promise.all([
     chamadosAbertos(),
     todosColaboradores(),
     db().from("matriz").select("ligado, cargos(nome), acessos(nome)"),
+    db().from("usuarios").select("nome").eq("status", "aprovado").ilike("papel", "%T.I%").order("nome"),
   ]);
   const porId = new Map(colabs.map((c) => [c.id, c]));
 
@@ -96,5 +97,11 @@ export default async function FilaTIPage() {
     };
   });
 
-  return <FilaTIClient cards={cards} admin={ehAdmin(usuario.papel)} />;
+  return (
+    <FilaTIClient
+      cards={cards}
+      admin={ehAdmin(usuario.papel)}
+      analistas={(timeTI ?? []).map((t) => t.nome as string)}
+    />
+  );
 }

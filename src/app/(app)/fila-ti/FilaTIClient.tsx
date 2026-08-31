@@ -16,6 +16,7 @@ import {
   executarSolicitacaoGrupo,
   negarSolicitacao,
   excluirChamado,
+  atribuirAnalista,
 } from "@/app/actions/chamados";
 
 export interface CardTI {
@@ -57,12 +58,23 @@ function colunaDe(c: CardTI, now: number): (typeof COLS)[number]["key"] {
 const TODOS_RESP = "Todos os responsáveis";
 const SEM_RESP = "Sem responsável (fila geral)";
 
-export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean }) {
+export function FilaTIClient({
+  cards,
+  admin,
+  analistas,
+}: {
+  cards: CardTI[];
+  admin: boolean;
+  /** Time de TI (papéis com "T.I") — opções da troca de responsável. */
+  analistas: string[];
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const now = useNow();
   const [pending, start] = useTransition();
   const [excluindo, setExcluindo] = useState<CardTI | null>(null);
+  const [trocando, setTrocando] = useState<CardTI | null>(null);
+  const [novoResp, setNovoResp] = useState("");
   const [filtroResp, setFiltroResp] = useState(TODOS_RESP);
 
   const opcoesResp = useMemo(() => {
@@ -82,14 +94,15 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
 
   // trava o scroll da página com o dialog aberto — sem isso o fixed centraliza
   // no viewport todo (inclusive o que já rolou pra fora da tela)
+  const dialogAberto = !!excluindo || !!trocando;
   useEffect(() => {
-    if (!excluindo) return;
+    if (!dialogAberto) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [excluindo]);
+  }, [dialogAberto]);
 
   const acao = (fn: () => Promise<{ ok: boolean; msg: string }>, undoId?: string) =>
     start(async () => {
@@ -119,7 +132,9 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <SelectCustom
               className="input"
-              style={{ fontSize: 13, padding: "6px 12px", minHeight: 36, minWidth: 200, borderRadius: 8 }}
+              // largura fixa: a classe .input estica para 100% e jogava os
+              // botões do cabeçalho para uma segunda linha
+              style={{ fontSize: 13, padding: "6px 12px", minHeight: 36, width: 230, borderRadius: 8 }}
               value={filtroResp}
               options={opcoesResp}
               onChange={setFiltroResp}
@@ -271,6 +286,19 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
                     
                     {/* Botões (Footer) */}
                     <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap", paddingTop: 12, borderTop: "1px solid var(--color-divider)", justifyContent: "flex-end" }}>
+                      {k.kind === "colab" && (
+                        <button
+                          className="btn btn-ghost"
+                          disabled={pending}
+                          style={{ fontSize: 13, padding: "4px 8px" }}
+                          onClick={() => {
+                            setNovoResp(analistas.find((a) => a !== k.analista) ?? analistas[0] ?? "");
+                            setTrocando(k);
+                          }}
+                        >
+                          Trocar responsável
+                        </button>
+                      )}
                       {k.kind === "colab" && !k.silenciado && col.key !== "aguardando" && (
                         <button
                           className="btn btn-ghost"
@@ -344,6 +372,53 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
           );
         })}
       </div>
+
+      {trocando &&
+        createPortal(
+          <div className="dialog-backdrop" onClick={() => !pending && setTrocando(null)}>
+            <div className="dialog" onClick={(e) => e.stopPropagation()}>
+              <span className="dialog-title">Trocar o responsável do {trocando.id}</span>
+              <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <span>
+                  <strong>{trocando.nome}</strong> · {trocando.tipo} · hoje com{" "}
+                  <strong>{trocando.analista ?? "a fila geral"}</strong>.
+                </span>
+                <div className="field">
+                  <label>Novo responsável</label>
+                  <SelectCustom
+                    className="input"
+                    value={novoResp}
+                    options={analistas.filter((a) => a !== trocando.analista)}
+                    onChange={setNovoResp}
+                  />
+                </div>
+                <span className="text-muted" style={{ fontSize: 12.5 }}>
+                  O chamado passa a aparecer só para essa pessoa na fila, e ela recebe a notificação.
+                </span>
+              </div>
+              <div className="dialog-actions">
+                <button className="btn btn-secondary" disabled={pending} onClick={() => setTrocando(null)}>
+                  Cancelar
+                </button>
+                <button
+                  className="btn btn-primary"
+                  disabled={pending || !novoResp}
+                  onClick={() =>
+                    start(async () => {
+                      const res = await atribuirAnalista(trocando.id, novoResp);
+                      toast(res.msg, res.ok ? "ok" : "erro");
+                      setTrocando(null);
+                      router.refresh();
+                    })
+                  }
+                >
+                  {pending ? "Transferindo..." : "Transferir chamado"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {excluindo &&
         createPortal(

@@ -109,7 +109,9 @@ export function FilaRHClient({
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <SelectCustom
               className="input"
-              style={{ fontSize: 13, padding: "6px 12px", minHeight: 36, minWidth: 200, borderRadius: 8 }}
+              // largura fixa: a classe .input estica para 100% e jogava os
+              // botões do cabeçalho para uma segunda linha
+              style={{ fontSize: 13, padding: "6px 12px", minHeight: 36, width: 230, borderRadius: 8 }}
               value={filtroSol}
               options={opcoesSol}
               onChange={setFiltroSol}
