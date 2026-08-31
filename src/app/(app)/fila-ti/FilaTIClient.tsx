@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, useNow } from "@/components/ui";
 import { ComoFunciona, FLUXO_ADMISSAO_TI } from "@/components/ComoFunciona";
+import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
 import { sla } from "@/lib/format";
 import {
@@ -27,6 +28,8 @@ export interface CardTI {
   slaAlvo: string | null;
   silenciado: boolean;
   colabId: string | null;
+  /** Analista responsável pelo chamado — null = fila geral. */
+  analista?: string | null;
   gTipo?: "criacao" | "exclusao";
   /** Conta de admissão já criada e ainda não ativada — excluir o chamado
    *  exclui essa conta do Workspace junto (mostrado no aviso). */
@@ -51,12 +54,31 @@ function colunaDe(c: CardTI, now: number): (typeof COLS)[number]["key"] {
   return "aguardando";
 }
 
+const TODOS_RESP = "Todos os responsáveis";
+const SEM_RESP = "Sem responsável (fila geral)";
+
 export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean }) {
   const router = useRouter();
   const { toast } = useToast();
   const now = useNow();
   const [pending, start] = useTransition();
   const [excluindo, setExcluindo] = useState<CardTI | null>(null);
+  const [filtroResp, setFiltroResp] = useState(TODOS_RESP);
+
+  const opcoesResp = useMemo(() => {
+    const nomes = [...new Set(cards.map((c) => c.analista).filter(Boolean) as string[])].sort((a, b) =>
+      a.localeCompare(b)
+    );
+    const temSem = cards.some((c) => c.kind === "colab" && !c.analista);
+    return [TODOS_RESP, ...nomes, ...(temSem ? [SEM_RESP] : [])];
+  }, [cards]);
+
+  const visiveis =
+    filtroResp === TODOS_RESP
+      ? cards
+      : filtroResp === SEM_RESP
+        ? cards.filter((c) => c.kind === "colab" && !c.analista)
+        : cards.filter((c) => c.analista === filtroResp);
 
   // trava o scroll da página com o dialog aberto — sem isso o fixed centraliza
   // no viewport todo (inclusive o que já rolou pra fora da tela)
@@ -94,7 +116,14 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
         eyebrow="Visão TI"
         titulo="Fila da TI"
         acoes={
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <SelectCustom
+              className="input"
+              style={{ fontSize: 13, padding: "6px 12px", minHeight: 36, minWidth: 200, borderRadius: 8 }}
+              value={filtroResp}
+              options={opcoesResp}
+              onChange={setFiltroResp}
+            />
             <ComoFunciona titulo="Como funciona o chamado de admissão" passos={FLUXO_ADMISSAO_TI} />
             <Link href="/fila-ti/historico" className="btn btn-secondary">
               Histórico
@@ -112,7 +141,7 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
         }}
       >
         {COLS.map((col) => {
-          const doGrupo = cards.filter((c) => colunaDe(c, now) === col.key);
+          const doGrupo = visiveis.filter((c) => colunaDe(c, now) === col.key);
           return (
             <div 
               key={col.key} 
@@ -202,6 +231,11 @@ export function FilaTIClient({ cards, admin }: { cards: CardTI[]; admin: boolean
                       style={{ fontSize: 12, lineHeight: 1.5, display: "flex", flexDirection: "column", gap: 4 }}
                     >
                       <div><strong>{k.tipo}</strong> · {k.sub}</div>
+                      {k.kind === "colab" && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ opacity: 0.7 }}>👤</span> Responsável: {k.analista ?? "fila geral"}
+                        </div>
+                      )}
                       {k.kind === "colab" && k.data && (
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <span style={{ opacity: 0.7 }}>📅</span> Previsão: {k.data}

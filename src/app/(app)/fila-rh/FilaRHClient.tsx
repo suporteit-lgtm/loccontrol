@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, useNow } from "@/components/ui";
+import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
 import { sla } from "@/lib/format";
 import { ativarNaEmpresa, naoAtivarNaEmpresa } from "@/app/actions/colaboradores";
@@ -25,6 +26,8 @@ export interface CardRH {
   ativarColabId?: string;
   /** E-mail corporativo já criado — mostrado no aviso de "Não ativar". */
   email?: string | null;
+  /** Quem abriu a solicitação (RH) — mostrado no card e usado no filtro. */
+  solicitante?: string | null;
 }
 
 export function Chips({ itens, cor }: { itens: string[]; cor: string }) {
@@ -63,6 +66,21 @@ export function FilaRHClient({
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [naoAtivando, setNaoAtivando] = useState<CardRH | null>(null);
+  const TODOS_SOL = "Todos os solicitantes";
+  const [filtroSol, setFiltroSol] = useState(TODOS_SOL);
+
+  const opcoesSol = useMemo(() => {
+    const nomes = [
+      ...new Set(cols.flatMap((c) => c.cards.map((k) => k.solicitante).filter(Boolean) as string[])),
+    ].sort((a, b) => a.localeCompare(b));
+    return [TODOS_SOL, ...nomes];
+  }, [cols]);
+
+  // sem solicitante (afastamentos, registros antigos) o card só aparece em "Todos"
+  const colsVisiveis =
+    filtroSol === TODOS_SOL
+      ? cols
+      : cols.map((c) => ({ ...c, cards: c.cards.filter((k) => k.solicitante === filtroSol) }));
 
   // trava o scroll da página com o dialog aberto (mesmo padrão da fila da TI)
   useEffect(() => {
@@ -88,7 +106,14 @@ export function FilaRHClient({
         titulo="Fila do RH"
         sub={`Tudo o que depende do RH agora · pré-admissões, offboarding, documentos e afastamentos · ${unidadeAtual}`}
         acoes={
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <SelectCustom
+              className="input"
+              style={{ fontSize: 13, padding: "6px 12px", minHeight: 36, minWidth: 200, borderRadius: 8 }}
+              value={filtroSol}
+              options={opcoesSol}
+              onChange={setFiltroSol}
+            />
             <ComoFunciona
               titulo="Como funciona a admissão e o desligamento"
               passos={[...FLUXO_ADMISSAO_RH, ...FLUXO_OFFBOARDING_RH]}
@@ -108,7 +133,7 @@ export function FilaRHClient({
           flex: 1
         }}
       >
-        {cols.map((col) => (
+        {colsVisiveis.map((col) => (
           <div 
             key={col.label} 
             style={{ 
@@ -184,6 +209,11 @@ export function FilaRHClient({
                     style={{ fontSize: 12, lineHeight: 1.5, display: "flex", flexDirection: "column", gap: 4 }}
                   >
                     <div>{k.sub}</div>
+                    {k.solicitante && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ opacity: 0.7 }}>👤</span> Solicitado por {k.solicitante}
+                      </div>
+                    )}
                   </div>
 
                   {sl && (

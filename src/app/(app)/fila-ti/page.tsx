@@ -90,6 +90,7 @@ export default async function FilaTIPage() {
       slaAlvo: f.sla_alvo,
       silenciado: f.silenciado,
       colabId: f.colaborador_id,
+      analista: f.analista ?? null,
       email: f.tipo === "Admissão" && c?.status !== "Ativo" ? c?.email ?? null : null,
       pendencias: f.tipo === "Admissão" ? pendenciasTI(c, acessos) : [],
     };

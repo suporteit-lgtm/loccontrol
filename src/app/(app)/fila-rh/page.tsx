@@ -23,10 +23,12 @@ export default async function FilaRHPage() {
 
   const slaPorColab: Record<string, string | null> = {};
   const chamadoPorColab: Record<string, string> = {};
+  const solicitantePorColab: Record<string, string | null> = {};
   for (const f of chamados)
     if (f.colaborador_id) {
       slaPorColab[f.colaborador_id] = f.sla_alvo;
       chamadoPorColab[f.colaborador_id] = f.id;
+      solicitantePorColab[f.colaborador_id] = f.solicitante ?? null;
     }
 
   // documentos anexados: usado tanto nas pendências quanto na coluna de docs
@@ -49,6 +51,7 @@ export default async function FilaRHPage() {
       href: `/colaboradores/${c.id}`,
       ativarColabId: c.id,
       email: c.email,
+      solicitante: solicitantePorColab[c.id] ?? null,
     }));
 
   // sem chamado aberto = admissão cancelada ou já resolvida: sai da fila,
@@ -65,6 +68,7 @@ export default async function FilaRHPage() {
       acao: "Revisar",
       href: `/colaboradores/${c.id}`,
       pendencias: pendenciasRH(c, comDocs.has(c.id)),
+      solicitante: solicitantePorColab[c.id] ?? null,
     }));
 
   const off: CardRH[] = chamados
@@ -83,6 +87,7 @@ export default async function FilaRHPage() {
         urgCor: "var(--warn)",
         acao: "Abrir checklist",
         href: `/offboarding/${c.id}`,
+        solicitante: f.solicitante ?? null,
       };
     })
     .filter(Boolean) as CardRH[];
