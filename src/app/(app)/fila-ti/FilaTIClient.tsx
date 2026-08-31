@@ -55,18 +55,19 @@ function colunaDe(c: CardTI, now: number): (typeof COLS)[number]["key"] {
   return "aguardando";
 }
 
-const TODOS_RESP = "Todos os responsáveis";
 const SEM_RESP = "Sem responsável (fila geral)";
 
 export function FilaTIClient({
   cards,
   admin,
   analistas,
+  usuarioNome,
 }: {
   cards: CardTI[];
   admin: boolean;
-  /** Time de TI (papéis com "T.I") — opções da troca de responsável. */
+  /** Time de TI (papéis com "T.I") — opções da troca de responsável e do filtro. */
   analistas: string[];
+  usuarioNome: string;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -75,18 +76,16 @@ export function FilaTIClient({
   const [excluindo, setExcluindo] = useState<CardTI | null>(null);
   const [trocando, setTrocando] = useState<CardTI | null>(null);
   const [novoResp, setNovoResp] = useState("");
-  const [filtroResp, setFiltroResp] = useState(TODOS_RESP);
+  // a fila abre já filtrada em "meus chamados" — cada um vê o seu por padrão
+  const [filtroResp, setFiltroResp] = useState(analistas.includes(usuarioNome) ? usuarioNome : SEM_RESP);
 
   // TODO o time de TI cadastrado no sistema, não só quem tem card na fila —
   // filtrar por alguém sem chamado mostra a fila vazia, o que também informa
-  const opcoesResp = useMemo(() => [TODOS_RESP, ...analistas, SEM_RESP], [analistas]);
+  const opcoesResp = useMemo(() => [...analistas, SEM_RESP], [analistas]);
 
+  // "Sem responsável" também cobre os pedidos de unidade/grupo (fila geral)
   const visiveis =
-    filtroResp === TODOS_RESP
-      ? cards
-      : filtroResp === SEM_RESP
-        ? cards.filter((c) => c.kind === "colab" && !c.analista)
-        : cards.filter((c) => c.analista === filtroResp);
+    filtroResp === SEM_RESP ? cards.filter((c) => !c.analista) : cards.filter((c) => c.analista === filtroResp);
 
   // trava o scroll da página com o dialog aberto — sem isso o fixed centraliza
   // no viewport todo (inclusive o que já rolou pra fora da tela)

@@ -27,10 +27,9 @@ export default async function FilaTIPage() {
     doCargo.set(m.cargos.nome, [...(doCargo.get(m.cargos.nome) ?? []), m.acessos.nome]);
   }
 
-  // pedidos de unidade/grupo não têm analista (a TI toda vê); chamados de
-  // colaborador (admissão/desligamento) com analista atribuído aparecem SÓ
-  // para ele — nem admin vê o chamado do outro. Sem analista = fila geral.
-  const podeVer = (f: (typeof chamados)[number]) => !!f.payload || !f.analista || f.analista === usuario.nome;
+  // O isolamento por analista vive no FILTRO da tela: a fila abre mostrando
+  // só os chamados do usuário logado, e o seletor permite ver a fila de outro
+  // analista ou a geral (sem responsável) — por isso todos os cards descem.
 
   // usuário restrito a unidades só vê chamados de colaboradores das bases dele
   const daMinhaBase = (f: (typeof chamados)[number]) => {
@@ -42,7 +41,7 @@ export default async function FilaTIPage() {
 
   // ti_concluido: a ferramenta de chamados encerrou a parte da TI — o chamado
   // continua vivo para o RH (offboarding), mas não é mais pendência da TI
-  const cards: CardTI[] = chamados.filter((f) => !f.ti_concluido && podeVer(f) && daMinhaBase(f)).map((f) => {
+  const cards: CardTI[] = chamados.filter((f) => !f.ti_concluido && daMinhaBase(f)).map((f) => {
     if (f.payload && "acao" in f.payload) {
       const { acao, cidade, unidade } = f.payload;
       return {
@@ -102,6 +101,7 @@ export default async function FilaTIPage() {
       cards={cards}
       admin={ehAdmin(usuario.papel)}
       analistas={(timeTI ?? []).map((t) => t.nome as string)}
+      usuarioNome={usuario.nome}
     />
   );
 }
