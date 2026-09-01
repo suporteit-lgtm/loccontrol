@@ -28,6 +28,8 @@ export interface CardRH {
   email?: string | null;
   /** Quem abriu a solicitação (RH) — mostrado no card e usado no filtro. */
   solicitante?: string | null;
+  /** Base do colaborador ("Cidade · Unidade") — visível sem abrir o card. */
+  unidade?: string | null;
 }
 
 export function Chips({ itens, cor }: { itens: string[]; cor: string }) {
@@ -211,6 +213,11 @@ export function FilaRHClient({
                     style={{ fontSize: 12, lineHeight: 1.5, display: "flex", flexDirection: "column", gap: 4 }}
                   >
                     <div>{k.sub}</div>
+                    {k.unidade && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ opacity: 0.7 }}>📍</span> {k.unidade}
+                      </div>
+                    )}
                     {k.solicitante && (
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ opacity: 0.7 }}>👤</span> Solicitado por {k.solicitante}

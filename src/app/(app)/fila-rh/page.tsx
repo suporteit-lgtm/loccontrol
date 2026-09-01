@@ -45,6 +45,7 @@ export default async function FilaRHPage() {
       href: `/colaboradores/${c.id}`,
       ativarColabId: c.id,
       email: c.email,
+      unidade: [c.cidade, c.unidade].filter(Boolean).join(" · ") || null,
       solicitante: solicitantePorColab[c.id] ?? null,
     }));
 
@@ -62,6 +63,7 @@ export default async function FilaRHPage() {
       acao: "Revisar",
       href: `/colaboradores/${c.id}`,
       pendencias: pendenciasRH(c),
+      unidade: [c.cidade, c.unidade].filter(Boolean).join(" · ") || null,
       solicitante: solicitantePorColab[c.id] ?? null,
     }));
 
@@ -81,6 +83,7 @@ export default async function FilaRHPage() {
         urgCor: "var(--warn)",
         acao: "Abrir checklist",
         href: `/offboarding/${c.id}`,
+        unidade: [c.cidade, c.unidade].filter(Boolean).join(" · ") || null,
         solicitante: f.solicitante ?? null,
       };
     })

@@ -91,6 +91,7 @@ export default async function FilaTIPage() {
       silenciado: f.silenciado,
       colabId: f.colaborador_id,
       analista: f.analista ?? null,
+      unidade: [c?.cidade, c?.unidade].filter(Boolean).join(" · ") || null,
       email: f.tipo === "Admissão" && c?.status !== "Ativo" ? c?.email ?? null : null,
       pendencias: f.tipo === "Admissão" ? pendenciasTI(c, acessos) : [],
     };

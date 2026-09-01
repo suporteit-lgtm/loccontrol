@@ -31,6 +31,8 @@ export interface CardTI {
   colabId: string | null;
   /** Analista responsável pelo chamado — null = fila geral. */
   analista?: string | null;
+  /** Base do colaborador ("Cidade · Unidade") — visível sem abrir o card. */
+  unidade?: string | null;
   gTipo?: "criacao" | "exclusao";
   /** Conta de admissão já criada e ainda não ativada — excluir o chamado
    *  exclui essa conta do Workspace junto (mostrado no aviso). */
@@ -241,6 +243,11 @@ export function FilaTIClient({
                       style={{ fontSize: 12, lineHeight: 1.5, display: "flex", flexDirection: "column", gap: 4 }}
                     >
                       <div><strong>{k.tipo}</strong> · {k.sub}</div>
+                      {k.kind === "colab" && k.unidade && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ opacity: 0.7 }}>📍</span> {k.unidade}
+                        </div>
+                      )}
                       {k.kind === "colab" && (
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <span style={{ opacity: 0.7 }}>👤</span> Responsável: {k.analista ?? "fila geral"}
