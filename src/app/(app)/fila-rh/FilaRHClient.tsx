@@ -33,7 +33,7 @@ export interface CardRH {
 }
 
 /** Cards visíveis por coluna antes do "Ver mais" — cards menores cabem mais na tela. */
-const LIMITE_CARDS = 3;
+const LIMITE_CARDS = 5;
 
 export function Chips({ itens, cor }: { itens: string[]; cor: string }) {
   if (!itens.length) return null;
@@ -138,7 +138,6 @@ export function FilaRHClient({
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: "var(--space-4)",
-          alignItems: "start",
           flex: 1
         }}
       >
@@ -172,15 +171,17 @@ export function FilaRHClient({
             </div>
 
             {col.cards.length === 0 && (
-              <div
-                className="text-muted"
-                style={{ 
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  border: "1px dashed var(--color-divider)", padding: "32px 16px", 
-                  fontSize: 13, borderRadius: 12, background: "color-mix(in srgb, var(--color-bg) 50%, transparent)"
-                }}
-              >
-                <span style={{ fontSize: 16 }}>✨</span> Nada aqui — bom sinal
+              <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center" }}>
+                <div
+                  className="text-muted"
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                    border: "1px dashed var(--color-divider)", padding: "24px 20px", maxWidth: 200,
+                    fontSize: 12.5, borderRadius: 12, background: "color-mix(in srgb, var(--color-bg) 50%, transparent)"
+                  }}
+                >
+                  <span style={{ fontSize: 20 }}>☕</span> Nada aqui — bom sinal
+                </div>
               </div>
             )}
             
@@ -232,8 +233,14 @@ export function FilaRHClient({
                     )}
                   </div>
 
-                  {sl && (
-                    <div style={{ marginTop: 1 }}>
+                  {k.pendencias && <Chips itens={k.pendencias} cor={k.urgCor} />}
+
+                  <div style={{
+                    display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap", alignItems: "center",
+                    paddingTop: 10, borderTop: "1px solid var(--color-divider)",
+                    justifyContent: sl ? "space-between" : "flex-end"
+                  }}>
+                    {sl && (
                       <span style={{
                         display: "inline-flex", alignItems: "center", gap: 5,
                         fontFamily: "var(--mono)", fontSize: 10.5,
@@ -244,35 +251,32 @@ export function FilaRHClient({
                       }}>
                         ⏳ SLA: {sl.txt}
                       </span>
-                    </div>
-                  )}
-
-                  {k.pendencias && <Chips itens={k.pendencias} cor={k.urgCor} />}
-
-                  <div style={{ display: "flex", gap: 6, marginTop: "auto", flexWrap: "wrap", paddingTop: 10, borderTop: "1px solid var(--color-divider)", justifyContent: "flex-end" }}>
-                    <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 12, padding: "3px 12px" }}>
-                      {k.acao}
-                    </Link>
-                    {k.ativarColabId && (
-                      <>
-                        <button
-                          className="btn btn-ghost"
-                          style={{ fontSize: 12, padding: "3px 7px", color: "var(--danger-forte)" }}
-                          disabled={pending}
-                          onClick={() => setNaoAtivando(k)}
-                        >
-                          Não ativar
-                        </button>
-                        <button
-                          className="btn btn-primary"
-                          style={{ fontSize: 12, padding: "3px 12px" }}
-                          disabled={pending}
-                          onClick={() => ativar(k.ativarColabId!)}
-                        >
-                          {pending ? "Ativando..." : "Ativar"}
-                        </button>
-                      </>
                     )}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 12, padding: "3px 12px" }}>
+                        {k.acao}
+                      </Link>
+                      {k.ativarColabId && (
+                        <>
+                          <button
+                            className="btn btn-ghost"
+                            style={{ fontSize: 12, padding: "3px 7px", color: "var(--danger-forte)" }}
+                            disabled={pending}
+                            onClick={() => setNaoAtivando(k)}
+                          >
+                            Não ativar
+                          </button>
+                          <button
+                            className="btn btn-primary"
+                            style={{ fontSize: 12, padding: "3px 12px" }}
+                            disabled={pending}
+                            onClick={() => ativar(k.ativarColabId!)}
+                          >
+                            {pending ? "Ativando..." : "Ativar"}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

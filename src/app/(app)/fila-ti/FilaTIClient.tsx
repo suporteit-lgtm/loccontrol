@@ -269,7 +269,6 @@ export function FilaTIClient({
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: "var(--space-4)",
-          alignItems: "start",
           flex: 1
         }}
       >
@@ -312,15 +311,17 @@ export function FilaTIClient({
               </div>
               
               {doGrupo.length === 0 && (
-                <div
-                  className="text-muted"
-                  style={{ 
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    border: "1px dashed var(--color-divider)", padding: "32px 16px", 
-                    fontSize: 13, borderRadius: 12, background: "color-mix(in srgb, var(--color-bg) 50%, transparent)"
-                  }}
-                >
-                  <span style={{ fontSize: 16 }}>✨</span> Nada aqui — bom sinal
+                <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center" }}>
+                  <div
+                    className="text-muted"
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                      border: "1px dashed var(--color-divider)", padding: "24px 20px", maxWidth: 200,
+                      fontSize: 12.5, borderRadius: 12, background: "color-mix(in srgb, var(--color-bg) 50%, transparent)"
+                    }}
+                  >
+                    <span style={{ fontSize: 20 }}>☕</span> Nada aqui — bom sinal
+                  </div>
                 </div>
               )}
               {doGrupoVisivel.map((k) => {
