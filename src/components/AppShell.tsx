@@ -129,7 +129,12 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
           href={n.rota}
           title={n.label}
           className={sel ? "" : "nav-item"}
-          onClick={() => setExpandido((atual) => (atual === n.rota ? null : n.rota))}
+          onClick={(e) => {
+            // já tá nessa página — não renavega (o Next remontaria a página
+            // no meio do clique), só alterna o painel de extras
+            if (sel) e.preventDefault();
+            setExpandido((atual) => (atual === n.rota ? null : n.rota));
+          }}
           style={{
             display: "flex",
             alignItems: "center",
