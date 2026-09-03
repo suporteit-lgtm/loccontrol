@@ -33,7 +33,7 @@ export interface CardRH {
 }
 
 /** Cards visíveis por coluna antes do "Ver mais" — cards menores cabem mais na tela. */
-const LIMITE_CARDS = 5;
+const LIMITE_CARDS = 6;
 
 export function Chips({ itens, cor }: { itens: string[]; cor: string }) {
   if (!itens.length) return null;
