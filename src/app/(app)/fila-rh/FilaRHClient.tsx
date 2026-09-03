@@ -195,7 +195,7 @@ export function FilaRHClient({
                   borderTop: `3px solid ${k.urgCor}`,
                   gap: 6,
                   padding: "10px",
-                  minHeight: 138,
+                  minHeight: 150,
                   background: "var(--color-surface)",
                   boxShadow: "var(--shadow-sm)",
                   position: "relative",
