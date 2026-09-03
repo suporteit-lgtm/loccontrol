@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { exigirSessao, exigirTI, exigirAdmin, ehAdmin } from "@/lib/perms";
+import { exigirSessao, exigirTI, exigirRH, exigirAdmin, ehAdmin } from "@/lib/perms";
 import { auditar } from "@/lib/audit";
 import { arquivarChamado } from "@/lib/data";
 import { primeiroNome } from "@/lib/format";
@@ -469,4 +469,39 @@ export async function concluirChamado(chamadoId: string) {
   });
   revalidarFilas();
   return { ok: true as const, msg: `Chamado ${chamadoId} concluído` };
+}
+
+/** Reabre um chamado do histórico — volta pra fila como se nunca tivesse sido encerrado. */
+export async function reabrirChamado(chamadoId: string, area: "rh" | "ti") {
+  const u = area === "ti" ? await exigirTI() : await exigirRH();
+  const { data: f } = await db()
+    .from("chamados")
+    .select("id, concluido_em, colaborador_id, colaboradores(nome)")
+    .eq("id", chamadoId)
+    .maybeSingle();
+  if (!f) return { ok: false, msg: "Chamado não encontrado" };
+  if (!f.concluido_em) return { ok: false, msg: "Este chamado já está aberto" };
+
+  const nome = (f as { colaboradores?: { nome?: string } }).colaboradores?.nome;
+
+  await db().from("chamados").update({ concluido_em: null, resultado: null, concluido_por: null }).eq("id", chamadoId);
+  await atualizarTicket(chamadoId, "em_andamento", `Chamado reaberto por ${u.nome}`);
+  if (f.colaborador_id)
+    await db().from("eventos").insert({
+      colaborador_id: f.colaborador_id,
+      fase: "pre",
+      ator: `${u.nome} · ${area.toUpperCase()}`,
+      descricao: `Chamado ${chamadoId} reaberto`,
+    });
+  await auditar({
+    pessoa: nome ?? chamadoId,
+    ator: u.nome,
+    tabela: "chamados",
+    campo: chamadoId,
+    antes: "encerrado",
+    depois: "reaberto",
+  });
+  revalidarFilas();
+  revalidatePath(area === "ti" ? "/fila-ti/historico" : "/fila-rh/historico");
+  return { ok: true, msg: `Chamado ${chamadoId}${nome ? ` (${nome})` : ""} reaberto` };
 }

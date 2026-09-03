@@ -1,9 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, StatusPill } from "@/components/ui";
 import { SelectCustom } from "@/components/SelectCustom";
+import { useToast } from "@/components/Toast";
+import { reabrirChamado } from "@/app/actions/chamados";
 import { quandoBR } from "@/lib/format";
 
 export interface LinhaHistorico {
@@ -42,6 +46,10 @@ export function HistoricoChamados({
 }) {
   const [busca, setBusca] = useState("");
   const [fTipo, setFTipo] = useState("");
+  const [reabrindo, setReabrindo] = useState<LinhaHistorico | null>(null);
+  const [pending, start] = useTransition();
+  const router = useRouter();
+  const { toast } = useToast();
 
   const tipos = useMemo(() => [...new Set(linhas.map((l) => l.tipo))].sort(), [linhas]);
 
@@ -126,6 +134,7 @@ export function HistoricoChamados({
                 <th>Encerrado por</th>
                 <th>Aberto em</th>
                 <th>Encerrado em</th>
+                <th></th>
               </tr>
             </thead>
             <tbody style={{ background: "transparent" }}>
@@ -167,11 +176,20 @@ export function HistoricoChamados({
                   <td className="nowrap" style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
                     {quandoBR(l.concluidoEm)}
                   </td>
+                  <td className="nowrap">
+                    <button
+                      className="btn btn-secondary"
+                      style={{ padding: "4px 10px", fontSize: 12 }}
+                      onClick={() => setReabrindo(l)}
+                    >
+                      Reabrir
+                    </button>
+                  </td>
                 </tr>
               ))}
               {filtradas.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-muted" style={{ textAlign: "center", padding: "48px 24px", fontSize: 13 }}>
+                  <td colSpan={9} className="text-muted" style={{ textAlign: "center", padding: "48px 24px", fontSize: 13 }}>
                     <div style={{ fontSize: 24, marginBottom: 12 }}>🔍</div>
                     Nenhum registro encontrado com esse filtro
                   </td>
@@ -181,6 +199,41 @@ export function HistoricoChamados({
           </table>
         </div>
       )}
+
+      {reabrindo &&
+        createPortal(
+          <div className="dialog-backdrop" onClick={() => !pending && setReabrindo(null)}>
+            <div className="dialog" onClick={(e) => e.stopPropagation()}>
+              <span className="dialog-title">Reabrir chamado {reabrindo.id}?</span>
+              <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <span>
+                  <strong>{reabrindo.nome}</strong> · {reabrindo.tipo} volta pra fila{" "}
+                  {visao === "ti" ? "da TI" : "do RH"} como em andamento.
+                </span>
+              </div>
+              <div className="dialog-actions">
+                <button className="btn btn-secondary" disabled={pending} onClick={() => setReabrindo(null)}>
+                  Cancelar
+                </button>
+                <button
+                  className="btn btn-primary"
+                  disabled={pending}
+                  onClick={() =>
+                    start(async () => {
+                      const res = await reabrirChamado(reabrindo.id, visao);
+                      toast(res.msg, res.ok ? "ok" : "erro");
+                      setReabrindo(null);
+                      router.refresh();
+                    })
+                  }
+                >
+                  {pending ? "Reabrindo..." : "Reabrir chamado"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

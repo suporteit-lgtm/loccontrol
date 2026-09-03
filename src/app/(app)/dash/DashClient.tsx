@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader, StatCard, AvatarCircle, DistribuicaoStatus, useNow } from "@/components/ui";
 import { ComoFunciona, FLUXO_ADMISSAO_RH } from "@/components/ComoFunciona";
+import { Icone } from "@/components/Icone";
 import { sla, dataBR, capitalizarNome } from "@/lib/format";
 import type { FatiaStatus } from "@/lib/types";
 
@@ -43,9 +45,17 @@ function curvaSuave(pontos: Ponto[]): string {
   return d;
 }
 
+const PROXIMAS_POR_PAGINA = 8;
+
 export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao }: Props) {
   const router = useRouter();
   const now = useNow();
+  const [paginaProx, setPaginaProx] = useState(0);
+  const totalPaginasProx = Math.max(1, Math.ceil(proximas.length / PROXIMAS_POR_PAGINA));
+  const proximasPagina = proximas.slice(
+    paginaProx * PROXIMAS_POR_PAGINA,
+    paginaProx * PROXIMAS_POR_PAGINA + PROXIMAS_POR_PAGINA
+  );
 
   // Gráfico em área/linha (SVG puro, sem lib): mais fácil de ler tendência
   // ao longo de 6 meses do que barras — e não fica esquisito quando quase
@@ -78,7 +88,7 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
     { label: "Ativos", n: stats.ativos, cor: "var(--ok)", icone: "colabs", on: () => router.push("/colaboradores?status=Ativo") },
     { label: "Afastados", n: stats.afastados, cor: "var(--warn-forte)", icone: "afastado", on: () => router.push("/colaboradores?status=Afastado") },
     { label: "Pré-admissões", n: stats.pre, cor: "var(--color-accent-700)", icone: "wizard", on: () => router.push("/colaboradores?status=Pré-admissão") },
-    { label: "Chamados pendentes", n: stats.chamados, cor: "var(--color-text)", icone: "fila", on: () => router.push("/fila-ti") },
+    { label: "Chamados pendentes", n: stats.chamados, cor: "var(--color-text)", icone: "fila", on: () => router.push("/fila-rh") },
   ];
 
   return (
@@ -219,10 +229,42 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
           </div>
         </div>
         <div className="card">
-          <span className="card-kicker">Ordenado por data</span>
-          <span className="card-title">Próximas admissões</span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <div>
+              <span className="card-kicker">Ordenado por data</span>
+              <span className="card-title">Próximas admissões</span>
+            </div>
+            {proximas.length > PROXIMAS_POR_PAGINA && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="text-muted" style={{ fontSize: 11.5, fontFamily: "var(--mono)" }}>
+                  {paginaProx * PROXIMAS_POR_PAGINA + 1}–
+                  {Math.min(proximas.length, paginaProx * PROXIMAS_POR_PAGINA + PROXIMAS_POR_PAGINA)} de {proximas.length}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={paginaProx === 0}
+                  onClick={() => setPaginaProx((p) => Math.max(0, p - 1))}
+                  style={{ padding: 6, lineHeight: 0 }}
+                  aria-label="Página anterior"
+                >
+                  <Icone nome="sidebar-collapse" tamanho={14} />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={paginaProx >= totalPaginasProx - 1}
+                  onClick={() => setPaginaProx((p) => Math.min(totalPaginasProx - 1, p + 1))}
+                  style={{ padding: 6, lineHeight: 0 }}
+                  aria-label="Próxima página"
+                >
+                  <Icone nome="sidebar-expand" tamanho={14} />
+                </button>
+              </div>
+            )}
+          </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {proximas.map((p) => {
+            {proximasPagina.map((p) => {
               const sl = sla(p.slaAlvo, now);
               return (
                 <div
@@ -231,16 +273,16 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 12,
-                    padding: "10px 0",
+                    gap: 10,
+                    padding: "7px 0",
                     borderBottom: "1px solid var(--color-divider)",
                     cursor: "pointer",
                   }}
                 >
-                  <AvatarCircle nome={p.nome} tamanho={32} />
+                  <AvatarCircle nome={p.nome} tamanho={26} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14 }}>{capitalizarNome(p.nome)}</div>
-                    <div className="text-muted" style={{ fontSize: 12 }}>
+                    <div style={{ fontSize: 13 }}>{capitalizarNome(p.nome)}</div>
+                    <div className="text-muted" style={{ fontSize: 11.5 }}>
                       {p.cargo} · {dataBR(p.admissao)}
                     </div>
                   </div>
@@ -248,7 +290,7 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
                     <span
                       style={{
                         fontFamily: "var(--mono)",
-                        fontSize: 13,
+                        fontSize: 12,
                         color: p.silenciado ? "var(--color-neutral-500)" : sl?.cor,
                         fontWeight: p.silenciado ? 400 : sl?.peso,
                       }}
