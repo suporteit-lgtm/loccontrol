@@ -39,6 +39,43 @@ export async function reativarChamado(id: string) {
   return { ok: true, msg: "Alertas reativados" };
 }
 
+/**
+ * Move o chamado pra outra coluna da fila da TI (drag and drop no kanban)
+ * reescrevendo o prazo do SLA — é o que decide a coluna (ver `colunaDoChamado`).
+ * NÃO mexe na admissão real do colaborador (fica em `colaboradores.admissao`,
+ * intacta); só no relógio interno do chamado, que também dispara os e-mails de
+ * alerta de SLA — arrastar pra "hoje"/"48h" pode gerar um alerta de verdade.
+ */
+export async function reagendarChamado(chamadoId: string, novoSlaAlvo: string | null, silenciado = false) {
+  const u = await exigirTI();
+  const { data: f } = await db()
+    .from("chamados")
+    .select("id, concluido_em, colaborador_id, colaboradores(nome)")
+    .eq("id", chamadoId)
+    .maybeSingle();
+  if (!f) return { ok: false, msg: "Chamado não encontrado" };
+  if (f.concluido_em) return { ok: false, msg: "Este chamado já foi concluído" };
+
+  const nome = (f as { colaboradores?: { nome?: string } }).colaboradores?.nome;
+
+  await db().from("chamados").update({ sla_alvo: novoSlaAlvo, silenciado }).eq("id", chamadoId);
+  await atualizarTicket(
+    chamadoId,
+    silenciado ? "pausado" : "em_andamento",
+    `Prazo do chamado ajustado por ${u.nome} no LOCCONTROL`
+  );
+  await auditar({
+    pessoa: nome ?? chamadoId,
+    ator: u.nome,
+    tabela: "chamados",
+    campo: chamadoId,
+    antes: "prazo anterior",
+    depois: novoSlaAlvo ? `prazo: ${novoSlaAlvo}` : "sem prazo (aguardando)",
+  });
+  revalidarFilas();
+  return { ok: true, msg: `Chamado ${chamadoId}${nome ? ` (${nome})` : ""} movido` };
+}
+
 /** Executa uma solicitação de cidade/unidade (somente admins). */
 export async function executarSolicitacaoUnidade(chamadoId: string) {
   const u = await exigirAdmin();

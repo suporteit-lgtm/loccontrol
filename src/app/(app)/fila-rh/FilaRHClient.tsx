@@ -32,6 +32,9 @@ export interface CardRH {
   unidade?: string | null;
 }
 
+/** Cards visíveis por coluna antes do "Ver mais" — cards menores cabem mais na tela. */
+const LIMITE_CARDS = 3;
+
 export function Chips({ itens, cor }: { itens: string[]; cor: string }) {
   if (!itens.length) return null;
   return (
@@ -68,6 +71,8 @@ export function FilaRHClient({
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [naoAtivando, setNaoAtivando] = useState<CardRH | null>(null);
+  // colunas com mais de LIMITE_CARDS ficam recolhidas até clicar em "Ver mais"
+  const [expandidas, setExpandidas] = useState<Record<string, boolean>>({});
   const TODOS_SOL = "Todos os solicitantes";
   const [filtroSol, setFiltroSol] = useState(TODOS_SOL);
 
@@ -137,16 +142,19 @@ export function FilaRHClient({
           flex: 1
         }}
       >
-        {colsVisiveis.map((col) => (
-          <div 
-            key={col.label} 
-            style={{ 
-              display: "flex", flexDirection: "column", gap: 12,
+        {colsVisiveis.map((col) => {
+          const expandido = expandidas[col.label] ?? false;
+          const cardsVisiveis = expandido ? col.cards : col.cards.slice(0, LIMITE_CARDS);
+          const restantes = col.cards.length - cardsVisiveis.length;
+          return (
+          <div
+            key={col.label}
+            style={{
+              display: "flex", flexDirection: "column", gap: 8,
               background: "color-mix(in srgb, var(--color-surface) 60%, transparent)",
               padding: "16px",
               borderRadius: "16px",
               border: "1px solid color-mix(in srgb, var(--color-divider) 50%, transparent)",
-              minHeight: "500px"
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
@@ -176,30 +184,29 @@ export function FilaRHClient({
               </div>
             )}
             
-            {col.cards.map((k) => {
+            {cardsVisiveis.map((k) => {
               const sl = sla(k.slaAlvo, now);
               return (
-                <div key={k.key} className="card hover-lift" style={{ 
-                  borderTop: `3px solid ${k.urgCor}`, 
-                  gap: 12, 
-                  minHeight: 148,
-                  padding: "16px",
+                <div key={k.key} className="card hover-lift" style={{
+                  borderTop: `3px solid ${k.urgCor}`,
+                  gap: 8,
+                  padding: "12px",
                   background: "var(--color-surface)",
                   boxShadow: "var(--shadow-sm)",
                   position: "relative",
                   overflow: "hidden"
                 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-                    <span style={{ 
-                      fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 15, lineHeight: 1.3, 
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+                    <span style={{
+                      fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13.5, lineHeight: 1.3,
                       flex: 1, wordBreak: "break-word"
                     }}>
                       {k.nome}
                     </span>
                     {k.id && (
-                      <span style={{ 
-                        fontFamily: "var(--mono)", fontSize: 11, background: "var(--color-bg)", 
-                        padding: "4px 8px", borderRadius: 6, border: "1px solid var(--color-divider)",
+                      <span style={{
+                        fontFamily: "var(--mono)", fontSize: 10.5, background: "var(--color-bg)",
+                        padding: "3px 7px", borderRadius: 6, border: "1px solid var(--color-divider)",
                         flex: "none", whiteSpace: "nowrap"
                       }} className="text-muted">
                         {k.id}
@@ -210,7 +217,7 @@ export function FilaRHClient({
                   <div
                     className="text-muted"
                     title={k.sub}
-                    style={{ fontSize: 12, lineHeight: 1.5, display: "flex", flexDirection: "column", gap: 4 }}
+                    style={{ fontSize: 11.5, lineHeight: 1.4, display: "flex", flexDirection: "column", gap: 3 }}
                   >
                     <div>{k.sub}</div>
                     {k.unidade && (
@@ -226,13 +233,13 @@ export function FilaRHClient({
                   </div>
 
                   {sl && (
-                    <div style={{ marginTop: 2 }}>
-                      <span style={{ 
-                        display: "inline-flex", alignItems: "center", gap: 6,
-                        fontFamily: "var(--mono)", fontSize: 11, 
+                    <div style={{ marginTop: 1 }}>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        fontFamily: "var(--mono)", fontSize: 10.5,
                         color: sl.cor, fontWeight: sl.peso,
                         background: `color-mix(in srgb, ${sl.cor} 10%, transparent)`,
-                        padding: "4px 10px", borderRadius: 999,
+                        padding: "3px 9px", borderRadius: 999,
                         border: `1px solid color-mix(in srgb, ${sl.cor} 30%, transparent)`
                       }}>
                         ⏳ SLA: {sl.txt}
@@ -242,15 +249,15 @@ export function FilaRHClient({
 
                   {k.pendencias && <Chips itens={k.pendencias} cor={k.urgCor} />}
 
-                  <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap", paddingTop: 12, borderTop: "1px solid var(--color-divider)", justifyContent: "flex-end" }}>
-                    <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 13, padding: "4px 16px" }}>
+                  <div style={{ display: "flex", gap: 6, marginTop: "auto", flexWrap: "wrap", paddingTop: 10, borderTop: "1px solid var(--color-divider)", justifyContent: "flex-end" }}>
+                    <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 12, padding: "3px 12px" }}>
                       {k.acao}
                     </Link>
                     {k.ativarColabId && (
                       <>
                         <button
                           className="btn btn-ghost"
-                          style={{ fontSize: 13, padding: "4px 8px", color: "var(--danger-forte)" }}
+                          style={{ fontSize: 12, padding: "3px 7px", color: "var(--danger-forte)" }}
                           disabled={pending}
                           onClick={() => setNaoAtivando(k)}
                         >
@@ -258,7 +265,7 @@ export function FilaRHClient({
                         </button>
                         <button
                           className="btn btn-primary"
-                          style={{ fontSize: 13, padding: "4px 16px" }}
+                          style={{ fontSize: 12, padding: "3px 12px" }}
                           disabled={pending}
                           onClick={() => ativar(k.ativarColabId!)}
                         >
@@ -270,8 +277,29 @@ export function FilaRHClient({
                 </div>
               );
             })}
+            {restantes > 0 && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ fontSize: 12.5, alignSelf: "center" }}
+                onClick={() => setExpandidas((e) => ({ ...e, [col.label]: true }))}
+              >
+                Ver mais {restantes}
+              </button>
+            )}
+            {expandido && col.cards.length > LIMITE_CARDS && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{ fontSize: 12.5, alignSelf: "center" }}
+                onClick={() => setExpandidas((e) => ({ ...e, [col.label]: false }))}
+              >
+                Ver menos
+              </button>
+            )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {naoAtivando &&
