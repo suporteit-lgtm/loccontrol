@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icone } from "./Icone";
 import { useTema } from "./ThemeToggle";
+import { SidebarExtrasProvider, useSidebarExtras } from "./SidebarExtras";
 import { mudarUnidade, sair } from "@/app/actions/sessao";
 import type { Papel, UnidadesMap } from "@/lib/types";
 
@@ -48,10 +49,22 @@ export interface ShellProps {
   children: React.ReactNode;
 }
 
-export function AppShell({ usuario, unidadesMap, filtro, children }: ShellProps) {
+export function AppShell(props: ShellProps) {
+  return (
+    <SidebarExtrasProvider>
+      <AppShellBody {...props} />
+    </SidebarExtrasProvider>
+  );
+}
+
+function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { escuro } = useTema();
+  const { extras } = useSidebarExtras();
+  // item do menu com os extras abertos (clicar de novo fecha) — começa
+  // escondido, só aparece depois de clicar em cima do item
+  const [expandido, setExpandido] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [navMin, setNavMin] = useState(false);
@@ -107,38 +120,76 @@ export function AppShell({ usuario, unidadesMap, filtro, children }: ShellProps)
 
   const linkNav = (n: NavItem) => {
     const sel = ativo(n.rota);
+    // controles que a própria página registrou (usePaginaExtrasNoMenu) —
+    // ficam escondidos até clicar em cima do item (clicar de novo esconde)
+    const comExtras = sel && !navMin && extras?.rota === n.rota && expandido === n.rota;
     return (
-      <Link
-        key={n.rota}
-        href={n.rota}
-        title={n.label}
-        className={sel ? "" : "nav-item"}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "10px 12px",
-          fontSize: 13.5,
-          fontWeight: sel ? 700 : 600,
-          textDecoration: "none",
-          borderRadius: 8,
-          color: sel ? "var(--color-accent)" : "inherit",
-          // sem background inline no item não-selecionado: inline vence o CSS
-          // e mataria o :hover definido em .nav-item
-          ...(sel
-            ? {
-                background: "color-mix(in srgb, var(--color-accent) 12%, transparent)",
-                // barra de acento à esquerda — inset não mexe no layout, só marca o item ativo
-                boxShadow: "inset 3px 0 0 var(--color-accent)",
-              }
-            : {}),
-        }}
-      >
-        <Icone nome={n.icone} />
-        {!navMin && (
-          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.label}</span>
+      <div key={n.rota}>
+        <Link
+          href={n.rota}
+          title={n.label}
+          className={sel ? "" : "nav-item"}
+          onClick={() => setExpandido((atual) => (atual === n.rota ? null : n.rota))}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "10px 12px",
+            fontSize: 13.5,
+            fontWeight: sel ? 700 : 600,
+            textDecoration: "none",
+            borderRadius: 8,
+            color: sel ? "var(--color-accent)" : "inherit",
+            // sem background inline no item não-selecionado: inline vence o CSS
+            // e mataria o :hover definido em .nav-item
+            ...(sel
+              ? {
+                  background: "color-mix(in srgb, var(--color-accent) 12%, transparent)",
+                  // barra de acento à esquerda — inset não mexe no layout, só marca o item ativo
+                  boxShadow: "inset 3px 0 0 var(--color-accent)",
+                }
+              : {}),
+          }}
+        >
+          <Icone nome={n.icone} />
+          {!navMin && (
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.label}</span>
+          )}
+          {sel && !navMin && extras?.rota === n.rota && (
+            <span
+              style={{
+                marginLeft: "auto",
+                flex: "none",
+                display: "grid",
+                placeItems: "center",
+                transform: `rotate(${expandido === n.rota ? 0 : -90}deg)`,
+                transition: "transform 0.15s ease",
+                opacity: 0.7,
+              }}
+            >
+              <Icone nome="chevron" tamanho={14} />
+            </span>
+          )}
+        </Link>
+        {comExtras && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              margin: "6px 0 4px 0",
+              padding: "10px",
+              borderRadius: 10,
+              background: "color-mix(in srgb, var(--color-accent) 6%, var(--color-bg))",
+              border: "1px solid color-mix(in srgb, var(--color-accent) 16%, transparent)",
+              boxShadow: "inset 2px 0 0 color-mix(in srgb, var(--color-accent) 35%, transparent)",
+              animation: "entrada 0.16s ease both",
+            }}
+          >
+            {extras!.node}
+          </div>
         )}
-      </Link>
+      </div>
     );
   };
 

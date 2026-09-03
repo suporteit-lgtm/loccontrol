@@ -51,6 +51,7 @@ export function DashTIClient({
         eyebrow="Visão TI"
         titulo="Dashboard da TI"
         sub={`${unidadeAtual} · equipamentos calculados a partir do que o RH marcou em cada pré-admissão e desligamento`}
+        themeToggle
         acoes={<ComoFunciona titulo="Como funciona o chamado de admissão" passos={FLUXO_ADMISSAO_TI} />}
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "var(--space-3)" }}>

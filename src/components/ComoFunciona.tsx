@@ -20,12 +20,26 @@ const COR_QUEM: Record<PassoFluxo["quem"], string> = {
  * qualquer pessoa nova (RH, TI, gestão) entenda o processo sem treinamento —
  * cada tela-chave explica o próprio pedaço do fluxo.
  */
-export function ComoFunciona({ titulo, passos }: { titulo: string; passos: PassoFluxo[] }) {
+export function ComoFunciona({
+  titulo,
+  passos,
+  /** Botão menor, pra caber em espaços apertados (ex.: dropdown do menu lateral). */
+  pequeno,
+}: {
+  titulo: string;
+  passos: PassoFluxo[];
+  pequeno?: boolean;
+}) {
   const [aberto, setAberto] = useState(false);
 
   return (
     <>
-      <button className="btn btn-ghost" onClick={() => setAberto(true)} title="Entenda o fluxo desta tela">
+      <button
+        className={pequeno ? "btn btn-secondary" : "btn btn-ghost"}
+        onClick={() => setAberto(true)}
+        title="Entenda o fluxo desta tela"
+        style={pequeno ? { fontSize: 12.5, padding: "6px 10px" } : undefined}
+      >
         ？ Como funciona
       </button>
       {aberto && (

@@ -97,6 +97,7 @@ export function DashClient({ unidadeAtual, stats, chart, proximas, distribuicao 
         eyebrow="Visão RH"
         titulo="Dashboard"
         sub={unidadeAtual}
+        themeToggle
         acoes={
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <ComoFunciona titulo="Como funciona a admissão" passos={FLUXO_ADMISSAO_RH} />

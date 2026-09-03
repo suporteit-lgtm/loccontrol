@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { PageHeader, useNow } from "@/components/ui";
-import { SelectCustom } from "@/components/SelectCustom";
+import { useNow } from "@/components/ui";
 import { useToast } from "@/components/Toast";
+import { usePaginaExtrasNoMenu } from "@/components/SidebarExtras";
 import { sla } from "@/lib/format";
 import { ativarNaEmpresa, naoAtivarNaEmpresa } from "@/app/actions/colaboradores";
 import { ComoFunciona, FLUXO_ADMISSAO_RH, FLUXO_OFFBOARDING_RH } from "@/components/ComoFunciona";
@@ -108,33 +108,39 @@ export function FilaRHClient({
       router.refresh();
     });
 
+  // filtro, "Como funciona" e "Histórico" saíram do topo da página e agora
+  // aparecem no menu lateral, embaixo do próprio item "Fila do RH"
+  usePaginaExtrasNoMenu(
+    "/fila-rh",
+    <>
+      {/* select nativo (não o SelectCustom) — o dropdown dele é renderizado
+          pelo próprio navegador, então nunca cobre os itens de navegação
+          logo abaixo, no menu lateral estreito */}
+      <select
+        className="input"
+        style={{ fontSize: 12.5, padding: "6px 10px", minHeight: 34, borderRadius: 8 }}
+        value={filtroSol}
+        onChange={(e) => setFiltroSol(e.target.value)}
+      >
+        {opcoesSol.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+      <ComoFunciona
+        titulo="Como funciona a admissão e o desligamento"
+        passos={[...FLUXO_ADMISSAO_RH, ...FLUXO_OFFBOARDING_RH]}
+        pequeno
+      />
+      <Link href="/fila-rh/historico" className="btn btn-secondary" style={{ fontSize: 12.5, padding: "6px 10px" }}>
+        Histórico
+      </Link>
+    </>
+  );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-      <PageHeader
-        titulo="Fila do RH"
-        sub={`Tudo o que depende do RH agora · pré-admissões, offboarding, documentos e afastamentos · ${unidadeAtual}`}
-        subInline
-        acoes={
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <SelectCustom
-              className="input"
-              // largura fixa: a classe .input estica para 100% e jogava os
-              // botões do cabeçalho para uma segunda linha
-              style={{ fontSize: 13, padding: "6px 12px", minHeight: 36, width: 230, borderRadius: 8 }}
-              value={filtroSol}
-              options={opcoesSol}
-              onChange={setFiltroSol}
-            />
-            <ComoFunciona
-              titulo="Como funciona a admissão e o desligamento"
-              passos={[...FLUXO_ADMISSAO_RH, ...FLUXO_OFFBOARDING_RH]}
-            />
-            <Link href="/fila-rh/historico" className="btn btn-secondary">
-              Histórico
-            </Link>
-          </div>
-        }
-      />
       <div
         style={{
           display: "grid",
