@@ -33,7 +33,9 @@ export interface CardRH {
 }
 
 /** Cards visíveis por coluna antes do "Ver mais" — cards menores cabem mais na tela. */
-const LIMITE_CARDS = 6;
+const LIMITE_CARDS = 4;
+/** Colunas com limite próprio, diferente do padrão acima. */
+const LIMITE_POR_COLUNA: Record<string, number> = { "Prontos para ativar": 5 };
 
 export function Chips({ itens, cor }: { itens: string[]; cor: string }) {
   if (!itens.length) return null;
@@ -142,8 +144,9 @@ export function FilaRHClient({
         }}
       >
         {colsVisiveis.map((col) => {
+          const limite = LIMITE_POR_COLUNA[col.label] ?? LIMITE_CARDS;
           const expandido = expandidas[col.label] ?? false;
-          const cardsVisiveis = expandido ? col.cards : col.cards.slice(0, LIMITE_CARDS);
+          const cardsVisiveis = expandido ? col.cards : col.cards.slice(0, limite);
           const restantes = col.cards.length - cardsVisiveis.length;
           return (
           <div
@@ -190,8 +193,9 @@ export function FilaRHClient({
               return (
                 <div key={k.key} className="card hover-lift" style={{
                   borderTop: `3px solid ${k.urgCor}`,
-                  gap: 8,
-                  padding: "12px",
+                  gap: 6,
+                  padding: "10px",
+                  minHeight: 138,
                   background: "var(--color-surface)",
                   boxShadow: "var(--shadow-sm)",
                   position: "relative",
@@ -237,7 +241,7 @@ export function FilaRHClient({
 
                   <div style={{
                     display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap", alignItems: "center",
-                    paddingTop: 10, borderTop: "1px solid var(--color-divider)",
+                    paddingTop: 8, borderTop: "1px solid var(--color-divider)",
                     justifyContent: sl ? "space-between" : "flex-end"
                   }}>
                     {sl && (
@@ -291,7 +295,7 @@ export function FilaRHClient({
                 Ver mais {restantes}
               </button>
             )}
-            {expandido && col.cards.length > LIMITE_CARDS && (
+            {expandido && col.cards.length > limite && (
               <button
                 type="button"
                 className="btn btn-ghost"
