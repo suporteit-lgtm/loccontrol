@@ -341,9 +341,10 @@ export async function ativarColaborador(
   // "apenasRegistrar": a conta foi criada fora do Workspace — nada é criado
   // nem grupo aplicado aqui, o endereço só fica registrado na ficha.
   const conta = apenasRegistrar
-    ? { ok: true as const, jaExistia: true, senha: undefined }
+    ? { ok: true as const, jaExistia: true, senha: undefined, avisos: [] as string[] }
     : await workspace.criarConta(alvo, c.nome, grupoFinal);
   if (!conta.ok) return { ok: false as const, msg: `Workspace: ${conta.erro}` };
+  const avisosGrupos = conta.avisos ?? [];
 
   // Se a conta já tinha sido importada como um segundo registro, funde os dois
   // antes de gravar — é o que impedia salvar o e-mail na ficha do colaborador.
@@ -389,9 +390,9 @@ export async function ativarColaborador(
       ? `E-mail ${alvo} registrado (conta criada fora do Workspace) · grupos NÃO aplicados automaticamente${
           fundido ? " · registro duplicado do Workspace fundido nesta ficha" : ""
         } · ${entrega}`
-      : `Conta ${alvo} ${conta.jaExistia ? "vinculada (já existia no Workspace)" : "criada"} · grupos e acessos aplicados${
-          fundido ? " · registro duplicado do Workspace fundido nesta ficha" : ""
-        } · ${entrega}`,
+      : `Conta ${alvo} ${conta.jaExistia ? "vinculada (já existia no Workspace)" : "criada"} · ${
+          avisosGrupos.length ? `ATENÇÃO: ${avisosGrupos.join(" · ")}` : "grupos e acessos aplicados"
+        }${fundido ? " · registro duplicado do Workspace fundido nesta ficha" : ""} · ${entrega}`,
   });
 
   // Devolve ao RH: a conta saiu, o endereço é este, falta ativar.
@@ -434,7 +435,9 @@ export async function ativarColaborador(
     ok: true as const,
     msg: apenasRegistrar
       ? `E-mail de ${primeiroNome(c.nome)} registrado · RH avisado · o chamado segue aberto`
-      : `Conta de ${primeiroNome(c.nome)} criada · RH avisado · o chamado segue aberto`,
+      : `Conta de ${primeiroNome(c.nome)} criada${
+          avisosGrupos.length ? ` · ATENÇÃO: ${avisosGrupos.join(" · ")}` : ""
+        } · RH avisado · o chamado segue aberto`,
     colabId: c.id,
   };
 }

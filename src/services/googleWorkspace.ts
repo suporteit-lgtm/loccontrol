@@ -73,7 +73,7 @@ export async function criarConta(
   email: string,
   nome: string,
   grupos: string[]
-): Promise<{ ok: boolean; erro?: string; senha?: string; jaExistia?: boolean }> {
+): Promise<{ ok: boolean; erro?: string; senha?: string; jaExistia?: boolean; avisos?: string[] }> {
   const senha = senhaProvisoria();
   if (!configurado()) {
     await delay(400); // MOCK
@@ -100,13 +100,22 @@ export async function criarConta(
     if (!/already exists|duplicate|entity already/i.test(m)) return { ok: false, erro: m };
     jaExistia = true;
   }
+  // Falha em grupo NÃO derruba a criação: a conta já existe neste ponto, e
+  // abortar deixava conta órfã no domínio (aconteceu com o grupo amazonas@,
+  // mapeado em Unidades mas nunca criado no Workspace). Vira aviso para a TI.
+  const avisos: string[] = [];
   for (const g of grupos) {
     const r = await adicionarMembro(g, email);
-    if (!r.ok && r.erro && !/already exists|duplicate|member already/i.test(r.erro))
-      return { ok: false, erro: `grupo ${g}: ${r.erro}` };
+    if (!r.ok && r.erro && !/already exists|duplicate|member already/i.test(r.erro)) {
+      avisos.push(
+        /not found/i.test(r.erro)
+          ? `o grupo ${g} NÃO existe no Workspace — crie-o (tela Grupos) e adicione ${email} manualmente`
+          : `grupo ${g}: ${r.erro}`
+      );
+    }
   }
   // conta preexistente mantém a senha que já tinha — não inventar uma nova
-  return { ok: true, jaExistia, senha: jaExistia ? undefined : senha };
+  return { ok: true, jaExistia, senha: jaExistia ? undefined : senha, avisos };
 }
 
 // ── Grupos e membros (Groups API) ────────────────────────────────────────────

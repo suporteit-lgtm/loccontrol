@@ -1,12 +1,14 @@
 import { db } from "@/lib/db";
 import { contexto, ehAdmin } from "@/lib/data";
+import { googleConfigurado } from "@/lib/googleKey";
 import { ConfigClient, type ModeloEmail } from "./ConfigClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConfigPage() {
   const { usuario } = await contexto();
-  const workspaceOk = !!process.env.GOOGLE_SA_KEY_JSON && !!process.env.GOOGLE_ADMIN_IMPERSONATE;
+  // GOOGLE_SA_KEY (Vercel, JSON inteiro) OU GOOGLE_SA_KEY_JSON (arquivo local)
+  const workspaceOk = googleConfigurado();
   const quarkOk = !!process.env.QUARKRH_TOKEN;
   const [{ data: tpl }, { data: eqs }, { data: modelo }] = await Promise.all([
     db().from("checklist_templates").select("lista, titulo").order("lista").order("ordem"),
