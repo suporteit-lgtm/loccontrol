@@ -66,11 +66,14 @@ export function PageHeader({
   eyebrow,
   titulo,
   sub,
+  /** Coloca o `sub` do lado do título, na mesma linha, em vez de embaixo. */
+  subInline,
   acoes,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   titulo: string;
   sub?: React.ReactNode;
+  subInline?: boolean;
   acoes?: React.ReactNode;
 }) {
   return (
@@ -84,14 +87,29 @@ export function PageHeader({
       }}
     >
       <div>
-        <h6 className="text-muted" style={{ margin: 0 }}>
-          {eyebrow}
-        </h6>
-        <h2 style={{ margin: 0 }}>{titulo}</h2>
-        {sub && (
-          <div className="text-muted" style={{ fontSize: 13 }}>
-            {sub}
+        {eyebrow && (
+          <h6 className="text-muted" style={{ margin: 0 }}>
+            {eyebrow}
+          </h6>
+        )}
+        {subInline ? (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+            <h2 style={{ margin: 0 }}>{titulo}</h2>
+            {sub && (
+              <div className="text-muted" style={{ fontSize: 13 }}>
+                {sub}
+              </div>
+            )}
           </div>
+        ) : (
+          <>
+            <h2 style={{ margin: 0 }}>{titulo}</h2>
+            {sub && (
+              <div className="text-muted" style={{ fontSize: 13 }}>
+                {sub}
+              </div>
+            )}
+          </>
         )}
       </div>
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>

@@ -109,9 +109,9 @@ export function FilaRHClient({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
       <PageHeader
-        eyebrow="Visão RH"
         titulo="Fila do RH"
         sub={`Tudo o que depende do RH agora · pré-admissões, offboarding, documentos e afastamentos · ${unidadeAtual}`}
+        subInline
         acoes={
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <SelectCustom
