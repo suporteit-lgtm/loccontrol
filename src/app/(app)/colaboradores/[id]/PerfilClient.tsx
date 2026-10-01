@@ -210,6 +210,12 @@ export function PerfilClient({
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => (window.history.length > 1 ? router.back() : router.push("/colaboradores"))}
+          >
+            ← Voltar
+          </button>
           {colab.status === "Ativo" && veRH && (
             <button
               className="btn btn-secondary"
