@@ -8,7 +8,8 @@
     "start": "next start",
     "producao": "next build && next start",
     "db:migrate": "node scripts/migrate.mjs",
-    "db:seed": "node scripts/migrate.mjs --seed"
+    "db:seed": "node scripts/migrate.mjs --seed",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -24,6 +25,7 @@
     "@types/react-dom": "^19.0.0",
     "dotenv": "^16.4.5",
     "pg": "^8.12.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^3.2.7"
   }
 }
