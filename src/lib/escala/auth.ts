@@ -95,7 +95,9 @@ export const contaPortal = cache(async (): Promise<ContaPortal | null> => {
   } = await sb.auth.getUser();
   if (!user?.email || !emailDoDominio(user.email)) return null;
   const perfil = (user.app_metadata?.perfil as PerfilPortal | undefined) ?? "COLABORADOR_ESCALA";
-  const { p, instalada } = await participanteDe(user.id);
+  let { p, instalada } = await participanteDe(user.id);
+  // incluído na escala depois do login: vincula agora pelo e-mail corporativo
+  if (!p && instalada && (await vincularParticipante(user.id, user.email))) ({ p, instalada } = await participanteDe(user.id));
   return {
     authId: user.id,
     email: user.email.toLowerCase(),
@@ -124,14 +126,19 @@ export async function vincularConta(authId: string, email: string): Promise<{ us
     app_metadata: { perfil: usuarioInternoId ? "INTERNO" : "COLABORADOR_ESCALA" },
   });
 
-  // vínculo com o participante (ignora em silêncio se as tabelas ainda não existem)
-  const { data: colab } = await db().from("colaboradores").select("id").eq("email", em).maybeSingle();
-  if (colab) {
-    await db()
-      .from("escala_participante")
-      .update({ auth_user_id: authId })
-      .eq("colaborador_id", colab.id)
-      .or(`auth_user_id.is.null,auth_user_id.neq.${authId}`);
-  }
+  await vincularParticipante(authId, em);
   return { usuarioInternoId };
+}
+
+/** Liga a conta Google ao participante cujo colaborador tem este e-mail corporativo. */
+async function vincularParticipante(authId: string, email: string): Promise<boolean> {
+  const { data: colab } = await db().from("colaboradores").select("id").eq("email", email.trim().toLowerCase()).maybeSingle();
+  if (!colab) return false;
+  const { data } = await db()
+    .from("escala_participante")
+    .update({ auth_user_id: authId })
+    .eq("colaborador_id", colab.id)
+    .or(`auth_user_id.is.null,auth_user_id.neq.${authId}`)
+    .select("id");
+  return !!data?.length;
 }
