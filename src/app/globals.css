@@ -714,6 +714,8 @@ select.input option {
   border-radius: var(--radius-sm); font-size: 10.5px; color: #5d6577;
 }
 .modulo-dia strong { font-size: 13px; }
+.modulo-dia { background: #f1f2f5; } /* sem grupo: feriado ou fora da escala */
+.modulo-dia[data-hoje="1"] { box-shadow: inset 0 0 0 2px var(--accent-base); color: #10162b; font-weight: 700; }
 .modulo-dia[data-g="A"] { background: color-mix(in srgb, var(--accent-base) 10%, #fff); }
 .modulo-dia[data-g="A"] strong { color: var(--accent-base); }
 .modulo-dia[data-g="B"] { background: color-mix(in srgb, var(--warn-base) 14%, #fff); }

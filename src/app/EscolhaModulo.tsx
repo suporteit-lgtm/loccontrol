@@ -1,12 +1,11 @@
 /** Tela de entrada: Escala de Presença em destaque; LocControl como acesso secundário. */
-const SEMANA = [
-  { dia: "Seg", g: "A" },
-  { dia: "Ter", g: "B" },
-  { dia: "Qua", g: "A" },
-  { dia: "Qui", g: "B" },
-  { dia: "Sex", g: "A" },
-] as const;
-
+export interface DiaSemana {
+  nome: string; // "Seg"
+  data: string; // AAAA-MM-DD
+  grupo: "A" | "B" | null;
+  feriado: string | null;
+  hoje: boolean;
+}
 function LogoGoogle() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -18,7 +17,7 @@ function LogoGoogle() {
   );
 }
 
-export function EscolhaModulo() {
+export function EscolhaModulo({ semana }: { semana: DiaSemana[] | null }) {
   return (
     <div className="login-split">
       <div className="login-form-panel">
@@ -60,14 +59,28 @@ export function EscolhaModulo() {
             <span style={{ fontSize: 13.5, lineHeight: 1.5, color: "#4a5468" }}>
               Veja os dias do seu grupo, reserve uma vaga livre ou entre na lista de espera.
             </span>
-            <div style={{ display: "flex", gap: 6, margin: "4px 0 2px" }} aria-hidden="true">
-              {SEMANA.map((s) => (
-                <span key={s.dia} className="modulo-dia" data-g={s.g}>
-                  <span>{s.dia}</span>
-                  <strong>{s.g}</strong>
+            {semana && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, margin: "4px 0 2px" }}>
+                <span style={{ fontSize: 11, color: "#7a8296" }}>
+                  {semana.some((d) => d.hoje) ? "Esta semana" : "Próxima semana"} · BH Centro
                 </span>
-              ))}
-            </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {semana.map((d) => (
+                    <span
+                      key={d.data}
+                      className="modulo-dia"
+                      data-g={d.grupo ?? undefined}
+                      data-hoje={d.hoje ? "1" : undefined}
+                      title={d.feriado ?? (d.grupo ? `Grupo ${d.grupo}` : "Sem escala")}
+                      aria-label={`${d.nome} ${d.data.slice(8)}: ${d.feriado ? `feriado, ${d.feriado}` : d.grupo ? `Grupo ${d.grupo}` : "sem escala"}${d.hoje ? " (hoje)" : ""}`}
+                    >
+                      <span>{d.nome} {d.data.slice(8)}</span>
+                      <strong>{d.grupo ?? "—"}</strong>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <span className="modulo-cta">
               <LogoGoogle />
               Entrar com Google
