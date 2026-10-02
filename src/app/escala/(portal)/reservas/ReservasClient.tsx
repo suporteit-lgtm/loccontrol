@@ -8,7 +8,8 @@ const MOTIVO: Record<string, string> = {
   pessoa: "cancelada por você",
   admin: "cancelada pelo RH",
   feriado: "dia deixou de ser útil",
-  grupo: "a escala mudou",
+  grupo: "o dia passou a ser do seu grupo",
+  remanejamento: "remanejamento por feriado",
   afastado: "afastamento",
   desligado: "saída da escala",
 };

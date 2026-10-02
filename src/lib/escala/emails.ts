@@ -127,6 +127,7 @@ const MOTIVOS: Record<string, string> = {
   admin: "O RH cancelou a reserva.",
   feriado: "O dia deixou de ser dia útil (feriado ou dia sem expediente).",
   grupo: "A escala mudou e este dia passou a ser do seu próprio grupo — seu lugar está garantido.",
+  remanejamento: "Um grupo foi remanejado para este dia por causa de um feriado e não sobrou lugar para todos os agendamentos.",
   afastado: "Você está afastado neste período.",
   desligado: "Você não participa mais da escala.",
 };

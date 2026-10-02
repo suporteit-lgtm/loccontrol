@@ -5,6 +5,7 @@ import {
   diferencaAB,
   ehDiaUtil,
   grupoFixo,
+  grupoRemanejado,
   hojeSP,
   instanteSP,
   materializar,
@@ -43,11 +44,11 @@ describe("regra fixa — 24 meses simulados com feriados", () => {
     for (const f of FERIADOS) expect(dias.find((d) => d.data === f)).toBeUndefined();
   });
 
-  it("terça, quarta e quinta são livres (sem grupo fixo)", () => {
+  it("terça a quinta são livres, exceto quando recebem o grupo de uma seg/sex feriado", () => {
     for (const d of dias) {
       const dow = diaDaSemana(d.data);
-      if (dow >= 2 && dow <= 4) expect(d.grupo).toBeNull();
-      else expect(d.grupo).not.toBeNull();
+      if (dow === 1 || dow === 5) expect(d.grupo).not.toBeNull();
+      else expect(d.grupo).toBe(grupoRemanejado(d.data, P, FERIADOS));
     }
   });
 
@@ -70,11 +71,41 @@ describe("regra fixa — 24 meses simulados com feriados", () => {
     }
   });
 
-  it("feriado não desloca a escala: o dia some e o resto continua igual", () => {
+  it("feriado numa sexta: o dia some, o grupo vem na quarta e o resto da escala não muda", () => {
     const comFeriado = new Set(FERIADOS).add("2027-06-11"); // sexta
     const depois = materializar({ de: INICIO, ate: FIM_24M, params: P, feriados: comFeriado });
     expect(depois.find((d) => d.data === "2027-06-11")).toBeUndefined();
-    expect(depois).toEqual(dias.filter((d) => d.data !== "2027-06-11"));
+    expect(depois.find((d) => d.data === "2027-06-09")?.grupo).toBe(grupoFixo("2027-06-11", P));
+    const resto = (l: typeof dias) => l.filter((d) => d.data !== "2027-06-11" && d.data !== "2027-06-09");
+    expect(resto(depois)).toEqual(resto(dias));
+  });
+
+  it("casos reais de 2026: a equipe do feriado vem na quarta", () => {
+    const g = (d: string) => dias.find((x) => x.data === d)?.grupo;
+    expect(g("2026-10-14")).toBe(grupoFixo("2026-10-12", P)); // seg 12/10 (Aparecida, semana 2: B) → qua 14
+    expect(g("2026-10-14")).toBe("B");
+    expect(g("2026-11-04")).toBe(grupoFixo("2026-11-02", P)); // seg 02/11 (Finados) → qua 04
+    expect(g("2026-11-18")).toBe(grupoFixo("2026-11-20", P)); // sex 20/11 (Consciência Negra) → qua 18
+    expect(g("2026-10-13")).toBeNull(); // terça continua livre
+    expect(g("2026-10-15")).toBeNull(); // quinta continua livre
+  });
+
+  it("quarta também feriado: grupo da segunda vai para terça; da sexta, para quinta", () => {
+    const f = new Set(["2026-10-19", "2026-10-21"]); // seg + qua
+    expect(grupoRemanejado("2026-10-20", P, f)).toBe(grupoFixo("2026-10-19", P));
+    const f2 = new Set(["2026-10-23", "2026-10-21"]); // sex + qua
+    expect(grupoRemanejado("2026-10-22", P, f2)).toBe(grupoFixo("2026-10-23", P));
+  });
+
+  it("segunda e sexta feriado na mesma semana: segunda vai para quarta, sexta para quinta", () => {
+    const f = new Set(["2026-10-19", "2026-10-23"]);
+    expect(grupoRemanejado("2026-10-21", P, f)).toBe(grupoFixo("2026-10-19", P));
+    expect(grupoRemanejado("2026-10-22", P, f)).toBe(grupoFixo("2026-10-23", P));
+    expect(grupoRemanejado("2026-10-20", P, f)).toBeNull();
+  });
+
+  it("com o remanejamento, nenhum grupo perde dia por feriado em seg/sex (diferença A×B segue pequena)", () => {
+    expect(diferencaAB(dias)).toBeLessThanOrEqual(2);
   });
 
   it("a virada de mês não reinicia nada (grupo depende só da semana)", () => {

@@ -97,9 +97,39 @@ export function grupoFixo(data: string, p: ParametrosEscala): Grupo | null {
 }
 
 /**
+ * Remanejamento por feriado: se a segunda ou a sexta da semana não é dia útil
+ * (feriado ou sem expediente), o grupo daquele dia vem na QUARTA da mesma semana.
+ *   • quarta indisponível → próximo dia livre da semana
+ *     (grupo da segunda: qua, ter, qui · grupo da sexta: qua, qui, ter);
+ *   • segunda e sexta feriado na mesma semana → segunda fica com a quarta e a
+ *     sexta vai para a quinta (os dois grupos juntos não cabem no escritório).
+ * Devolve o grupo remanejado para `data` (ter–qui) ou null.
+ */
+export function grupoRemanejado(data: string, p: ParametrosEscala, feriados: ReadonlySet<string>): Grupo | null {
+  const dow = diaDaSemana(data);
+  if (dow < 2 || dow > 4 || !ehDiaUtil(data, feriados)) return null;
+  const seg = segundaDaSemana(data);
+  const [ter, qua, qui, sex] = [1, 2, 3, 4].map((n) => somarDias(seg, n));
+  const ocupados = new Map<string, Grupo>();
+  const remaneja = (diaFixo: string, ordem: string[]) => {
+    if (diaFixo < p.ancora || ehDiaUtil(diaFixo, feriados)) return; // dia fixo normal: nada a fazer
+    const destino = ordem.find((d) => d >= p.ancora && ehDiaUtil(d, feriados) && !ocupados.has(d));
+    if (destino) ocupados.set(destino, grupoFixo(diaFixo, p)!);
+  };
+  remaneja(seg, [qua, ter, qui]);
+  remaneja(sex, [qua, qui, ter]);
+  return ocupados.get(data) ?? null;
+}
+
+/** Grupo de um dia útil: fixo (seg/sex), remanejado por feriado (ter–qui) ou null = livre. */
+export function grupoDoDia(data: string, p: ParametrosEscala, feriados: ReadonlySet<string>): Grupo | null {
+  return grupoFixo(data, p) ?? grupoRemanejado(data, p, feriados);
+}
+
+/**
  * Materializa a escala no intervalo [de, ate]: todo dia útil a partir da âncora,
- * com o grupo fixo (seg/sex) ou livre (ter–qui). Função pura da data — dias já
- * vividos não mudam porque o banco os congela e nunca regrava (0025).
+ * com o grupo fixo (seg/sex), remanejado por feriado ou livre (ter–qui). Função
+ * pura da data — dias já vividos não mudam porque o banco os congela (0025).
  */
 export function materializar(opts: {
   de: string;
@@ -110,7 +140,7 @@ export function materializar(opts: {
   const { de, ate, params, feriados } = opts;
   const out: DiaEscala[] = [];
   for (let d = de < params.ancora ? params.ancora : de; d <= ate; d = somarDias(d, 1))
-    if (ehDiaUtil(d, feriados)) out.push({ data: d, grupo: grupoFixo(d, params) });
+    if (ehDiaUtil(d, feriados)) out.push({ data: d, grupo: grupoDoDia(d, params, feriados) });
   return out;
 }
 

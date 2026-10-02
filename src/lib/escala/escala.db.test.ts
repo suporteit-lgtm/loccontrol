@@ -16,7 +16,7 @@ import pg from "pg";
 import { hojeSP, instanteSP, materializar, prazoDoDia } from "./calendario";
 
 const ATIVO = process.env.ESCALA_DB_TEST === "1" && !!process.env.DATABASE_URL;
-const MIGRATIONS = ["0024_escala_schema.sql", "0025_escala_funcoes.sql", "0026_escala_rls.sql", "0027_blindar_tabelas_loccontrol.sql", "0028_escala_dias_livres.sql"];
+const MIGRATIONS = ["0024_escala_schema.sql", "0025_escala_funcoes.sql", "0026_escala_rls.sql", "0027_blindar_tabelas_loccontrol.sql", "0028_escala_dias_livres.sql", "0029_escala_remanejamento_feriado.sql"];
 const TABELAS_LOCCONTROL = [
   "acessos", "ajuda_videos", "auditoria", "cargos", "chamados", "checklist_itens", "checklist_templates", "cidades",
   "colaboradores", "documentos", "envios_agendados", "equipamentos_catalogo", "eventos", "grupo_membros_externos",
@@ -266,6 +266,27 @@ describe.skipIf(!ATIVO)("Escala — banco (transação com ROLLBACK)", () => {
 
     const r2 = await materializarNoBanco(AGORA0);
     expect(r2).toMatchObject({ removidos: [], alterados: [], canceladas: [] });
+  });
+
+  it("seg/sex feriado: o grupo vem na quarta; agendamentos que não cabem são cancelados (mais recentes primeiro)", async () => {
+    const qua = "2026-10-28"; // quarta livre; sexta 30/10 é do Grupo A
+    expect((await q(`select grupo from escala_dia where unidade_id=$1 and data=$2`, [unidade, qua]))[0].grupo).toBeNull();
+    const resB: string[] = [];
+    // 10 do B (ativos), um segundo depois do outro: a ordem de chegada define quem sai
+    for (const [i, p] of pb.slice(2, 12).entries())
+      resB.push((await fn("escala_reservar", p, qua, new Date(Date.parse(AGORA0) + i * 1000).toISOString())).reserva_id);
+    for (const p of pa.slice(10, 15)) await fn("escala_reservar", p, qua, AGORA0); // 5 do A
+    await q(`insert into escala_feriado (data, nome, unidade_id, origem) values ('2026-10-30','Teste sexta','${unidade}','MANUAL')`);
+    const r = await materializarNoBanco(AGORA0);
+    expect((await q(`select grupo from escala_dia where unidade_id=$1 and data=$2`, [unidade, qua]))[0].grupo).toBe("A");
+    const canc = (r.canceladas as R[]).filter((c) => c.data === qua);
+    expect(canc.filter((c) => c.motivo === "grupo")).toHaveLength(5); // os do A já têm o lugar fixo
+    const o = await ocup(qua);
+    const lugaresParaB = o.capacidade - (o.escalados - o.afastados - o.ausencias); // 22 − A presentes
+    const rem = canc.filter((c) => c.motivo === "remanejamento").map((c) => c.id);
+    expect(rem).toHaveLength(10 - lugaresParaB);
+    expect(rem.sort()).toEqual(resB.slice(lugaresParaB).sort()); // os mais recentes saem primeiro
+    expect((await ocup(qua)).vagas_livres).toBe(0);
   });
 
   it("nenhum dia passa da capacidade", async () => {
