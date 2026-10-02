@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { usuarioAtual } from "@/lib/session";
 import { LoginCard } from "./LoginCard";
+import { escalaHabilitada } from "@/lib/escala/auth";
 
 export default async function LoginPage() {
   const u = await usuarioAtual();
   if (u) redirect(u.papel.includes("T.I") ? "/dash-ti" : "/dash");
-  return <LoginCard />;
+  return <LoginCard trocarModulo={escalaHabilitada()} />;
 }

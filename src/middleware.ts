@@ -29,8 +29,13 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  const sessaoPortal = req.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"));
-  if (habilitada && sessaoPortal && !req.cookies.has("lc_sessao")) {
+  // sessão do portal = cookie sb-<projeto>-auth-token (ou seus pedaços .0/.1); o
+  // "-code-verifier" é só o temporário do fluxo OAuth e não conta
+  const sessaoPortal = req.cookies
+    .getAll()
+    .some((c) => /^sb-[^-]+-auth-token(\.\d+)?$/.test(c.name));
+  // "/" é a escolha do módulo: fica acessível para todos
+  if (habilitada && path !== "/" && sessaoPortal && !req.cookies.has("lc_sessao")) {
     return NextResponse.redirect(new URL("/escala", req.url));
   }
   return NextResponse.next();

@@ -77,7 +77,7 @@ export default async function EscalaLoginPage({ searchParams }: { searchParams: 
         </div>
 
         <div className="text-muted" style={{ fontSize: 11, marginTop: "var(--space-8)" }}>
-          acesso restrito · @locgrupo.com.br
+          acesso restrito · @locgrupo.com.br · <a href="/" style={{ color: "inherit" }}>trocar módulo</a>
         </div>
       </div>
 
