@@ -688,11 +688,46 @@ select.input option {
   color: var(--accent-base);
 }
 /* tela de escolha do módulo (LocControl × Escala) — mesmo painel do login */
-.modulo-opcao {
+/* destaque (Escala): mesmo branco do botão primário do login */
+.modulo-destaque {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 16px 18px;
+  gap: 8px;
+  padding: 20px 20px 16px;
+  border-radius: calc(var(--radius-lg) * 1.2);
+  background: #fff;
+  color: #10162b;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.15), 0 14px 34px rgb(0 0 0 / 0.28);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.modulo-destaque:hover { transform: translateY(-2px); box-shadow: 0 2px 6px rgb(0 0 0 / 0.2), 0 20px 44px rgb(0 0 0 / 0.34); }
+.modulo-destaque:active { transform: translateY(0); }
+.modulo-destaque:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.modulo-selo {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 999px;
+  background: color-mix(in srgb, var(--ok-base) 16%, #fff); color: color-mix(in srgb, var(--ok-base) 70%, #000);
+}
+.modulo-dia {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0;
+  border-radius: var(--radius-sm); font-size: 10.5px; color: #5d6577;
+}
+.modulo-dia strong { font-size: 13px; }
+.modulo-dia[data-g="A"] { background: color-mix(in srgb, var(--accent-base) 10%, #fff); }
+.modulo-dia[data-g="A"] strong { color: var(--accent-base); }
+.modulo-dia[data-g="B"] { background: color-mix(in srgb, var(--warn-base) 14%, #fff); }
+.modulo-dia[data-g="B"] strong { color: color-mix(in srgb, var(--warn-base) 70%, #000); }
+.modulo-cta {
+  display: flex; align-items: center; gap: 10px; margin-top: 6px; padding-top: 12px;
+  border-top: 1px solid #e7e9ef; font-weight: 700; font-size: 14.5px; color: var(--accent-base);
+}
+.modulo-opcao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
   border-radius: var(--radius-lg);
   border: 1px solid rgb(255 255 255 / 0.18);
   background: rgb(255 255 255 / 0.06);
