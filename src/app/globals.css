@@ -842,10 +842,16 @@ select.input option {
 
 /* calendário maior no computador (fica por último para vencer as regras base) */
 @media (min-width: 900px) {
-  .esc-main { padding: 24px 32px 40px; }
+  .esc-main { padding: 20px 32px 24px; }
   .esc-cal { gap: 8px; }
   .esc-cal-sem { font-size: 12px; padding: 6px 0 2px; }
-  .esc-dia { min-height: 118px; padding: 12px; gap: 8px; border-radius: var(--radius-lg); }
+  /* altura do dia acompanha a janela: o mês inteiro cabe sem rolar a página (5 ou 6 semanas) */
+  .esc-dia {
+    min-height: 0;
+    /* 328px = cabeçalho + abas + topo do card + rodapé; 8px = espaço entre semanas */
+    height: clamp(50px, calc((100dvh - 328px - (var(--linhas, 5) - 1) * 8px) / var(--linhas, 5)), 130px);
+    padding: 10px 12px; gap: 6px; border-radius: var(--radius-lg); overflow: hidden;
+  }
   .esc-dia-num { font-size: 19px; }
   .esc-dia .tag { font-size: 12px; padding: 3px 10px; }
   .esc-dia-info { font-size: 13px; line-height: 1.35; }

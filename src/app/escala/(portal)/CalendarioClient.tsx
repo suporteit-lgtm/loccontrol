@@ -75,7 +75,12 @@ export function CalendarioClient({
         <span>cinza = fim de semana, feriado ou sem expediente</span>
       </div>
 
-      <div className="esc-cal" role="grid" aria-label={`Escala de ${nomeMes(mes)}`}>
+      <div
+        className="esc-cal"
+        role="grid"
+        aria-label={`Escala de ${nomeMes(mes)}`}
+        style={{ "--linhas": Math.ceil((primeiroSem + dias.length) / 7) } as React.CSSProperties}
+      >
         {SEMANA.map((s) => (
           <div key={s} className="esc-cal-sem">{s}</div>
         ))}
