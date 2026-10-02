@@ -718,8 +718,8 @@ select.input option {
 .modulo-dia[data-hoje="1"] { box-shadow: inset 0 0 0 2px var(--accent-base); color: #10162b; font-weight: 700; }
 .modulo-dia[data-g="A"] { background: color-mix(in srgb, var(--accent-base) 10%, #fff); }
 .modulo-dia[data-g="A"] strong { color: var(--accent-base); }
-.modulo-dia[data-g="B"] { background: color-mix(in srgb, var(--warn-base) 14%, #fff); }
-.modulo-dia[data-g="B"] strong { color: color-mix(in srgb, var(--warn-base) 70%, #000); }
+.modulo-dia[data-g="B"] { background: color-mix(in srgb, var(--ok-base) 14%, #fff); }
+.modulo-dia[data-g="B"] strong { color: color-mix(in srgb, var(--ok-base) 72%, #000); }
 .modulo-cta {
   display: flex; align-items: center; gap: 10px; margin-top: 6px; padding-top: 12px;
   border-top: 1px solid #e7e9ef; font-weight: 700; font-size: 14.5px; color: var(--accent-base);
@@ -804,7 +804,7 @@ select.input option {
 @keyframes splashSuccess { 0% { transform: scale(0.85); opacity: 0; filter: blur(8px); } 60% { transform: scale(1.02); opacity: 1; filter: blur(0); box-shadow: 0 0 40px color-mix(in srgb, var(--ok) 50%, transparent); } 100% { transform: scale(1); box-shadow: 0 4px 14px color-mix(in srgb, var(--ok) 20%, transparent); } }
 
 /* ══ Escala de Presença ═══════════════════════════════════════════════════════
-   Mesmos tokens do sistema. Grupo A = accent, Grupo B = warn (sempre com a letra). */
+   Mesmos tokens do sistema. Grupo A = accent (azul), Grupo B = verde Locagora (sempre com a letra). */
 .esc-main { max-width: 1280px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: var(--space-4); }
 .esc-estreito { width: 100%; max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-4); }
 .esc-tabs { display: flex; gap: 4px; overflow-x: auto; padding: 8px 16px 0; background: var(--color-surface); border-bottom: 1px solid var(--color-divider); }
@@ -823,7 +823,7 @@ select.input option {
 .esc-dia:hover { border-color: var(--color-accent-300); box-shadow: var(--shadow-sm); }
 .esc-dia:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 .esc-dia[data-grupo="A"] { background: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface)); }
-.esc-dia[data-grupo="B"] { background: color-mix(in srgb, var(--warn) 11%, var(--color-surface)); }
+.esc-dia[data-grupo="B"] { background: color-mix(in srgb, var(--ok) 11%, var(--color-surface)); }
 .esc-dia[data-cinza="1"] { background: var(--color-neutral-100); color: color-mix(in srgb, var(--color-text) 55%, transparent); cursor: default; }
 .esc-dia[data-passado="1"] { opacity: 0.55; }
 .esc-dia[data-hoje="1"] { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
