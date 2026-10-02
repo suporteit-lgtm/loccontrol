@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { contaPortal } from "@/lib/escala/auth";
 import { AvatarCircle } from "@/components/ui";
 import { ThemeToggleButton } from "@/components/ThemeToggle";
+import { PortalNav } from "@/components/escala/PortalNav";
 
 export const dynamic = "force-dynamic";
 
@@ -55,14 +56,19 @@ export default async function PortalLayout({ children }: { children: React.React
   if (!conta) redirect("/escala/login");
 
   let conteudo = children;
-  if (!conta.escalaInstalada)
+  let comAbas = true;
+  if (!conta.escalaInstalada) {
+    comAbas = false;
     conteudo = <Aviso titulo="Escala em preparação" texto="O módulo ainda está sendo configurado. Volte em breve." />;
-  else if (!conta.participante || !conta.participante.ativo)
+  } else if (!conta.participante || !conta.participante.ativo) {
+    comAbas = false;
     conteudo = <Aviso titulo="Você ainda não está em nenhuma escala" texto="Procure o RH para ser incluído em um grupo." />;
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-bg)" }}>
       <Cabecalho nome={conta.nome} />
+      {comAbas && <PortalNav />}
       <main style={{ maxWidth: 960, margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
         {conteudo}
       </main>
