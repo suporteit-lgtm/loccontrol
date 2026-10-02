@@ -31,6 +31,14 @@ const NAV_TI: NavItem[] = [
   { label: "Usuários", rota: "/usuarios", icone: "usuarios" },
   { label: "Unidades", rota: "/unidades", icone: "unidades" },
 ];
+// Escala de Presença (RH e Admin; só com o módulo liberado)
+const NAV_ESCALA: NavItem[] = [
+  { label: "Dashboard da Escala", rota: "/escala-rh", icone: "dash" },
+  { label: "Calendário da Escala", rota: "/escala-rh/calendario", icone: "calendario" },
+  { label: "Participantes", rota: "/escala-rh/participantes", icone: "membros" },
+  { label: "Feriados", rota: "/escala-rh/feriados", icone: "feriado" },
+  { label: "Configurações da Escala", rota: "/escala-rh/configuracoes", icone: "config" },
+];
 const NAV_GERAL: NavItem[] = [
   { label: "Grupos do Workspace", rota: "/grupos", icone: "membros" },
   { label: "Área restrita", rota: "/restrita", icone: "restrita" },
@@ -46,6 +54,8 @@ export interface ShellProps {
   /** já filtrado pelas unidades de acesso do usuário (mapaPermitido) */
   unidadesMap: UnidadesMap;
   filtro: { cidade: string; unidade: string };
+  /** módulo Escala de Presença liberado (feature flag) */
+  escala?: boolean;
   children: React.ReactNode;
 }
 
@@ -57,7 +67,7 @@ export function AppShell(props: ShellProps) {
   );
 }
 
-function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
+function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }: ShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { escuro } = useTema();
@@ -86,6 +96,7 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
   const ehAdmin = usuario.papel === "Superadmin" || usuario.papel.startsWith("Admin");
   const veRH = ehAdmin || usuario.papel === "Usuário RH";
   const veTI = ehAdmin || usuario.papel === "Usuário T.I";
+  const veEscala = escala && veRH;
 
   const cidades = Object.keys(unidadesMap).sort((a, b) => a.localeCompare(b));
   // "Todas as ..." aparece para todos: quem é restrito enxerga o conjunto
@@ -265,7 +276,7 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
     </div>
   );
 
-  const navTodos = [...(veRH ? NAV_RH : []), ...(veTI ? NAV_TI : []), ...NAV_GERAL];
+  const navTodos = [...(veRH ? NAV_RH : []), ...(veTI ? NAV_TI : []), ...(veEscala ? NAV_ESCALA : []), ...NAV_GERAL];
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", alignItems: "stretch" }}>
@@ -379,6 +390,7 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
           >
             {veRH && bloco("RH", NAV_RH)}
             {veTI && bloco("TI", NAV_TI)}
+            {veEscala && bloco("Escala", NAV_ESCALA)}
             {bloco("Geral", NAV_GERAL)}
           </div>
 
@@ -526,6 +538,7 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
                   {([
                     ["RH", veRH ? NAV_RH : []],
                     ["TI", veTI ? NAV_TI : []],
+                    ["Escala", veEscala ? NAV_ESCALA : []],
                     ["Geral", NAV_GERAL],
                   ] as const).map(([titulo, itens]) =>
                     itens.length === 0 ? null : (
