@@ -13,5 +13,9 @@ export default async function EscalaMeusDias() {
   const agora = new Date();
   const hoje = hojeSP(agora);
   const [dias, ctx] = await Promise.all([carregarDias(p, hoje, somarDias(hoje, 28), agora), contextoPortal(p, agora)]);
-  return <MeusDiasClient nome={p.nome.split(" ")[0]} grupo={p.grupo} dias={dias} ctx={ctx} />;
+  return (
+    <div className="esc-estreito">
+      <MeusDiasClient nome={p.nome.split(" ")[0]} grupo={p.grupo} dias={dias} ctx={ctx} />
+    </div>
+  );
 }

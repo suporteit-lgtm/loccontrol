@@ -69,7 +69,7 @@ export default async function PortalLayout({ children }: { children: React.React
     <div style={{ minHeight: "100vh", background: "var(--color-bg)" }}>
       <Cabecalho nome={conta.nome} />
       {comAbas && <PortalNav />}
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: "16px", display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      <main className="esc-main">
         {conteudo}
       </main>
     </div>

@@ -15,11 +15,13 @@ export default async function EscalaPreferencias() {
     lerModos(),
   ]);
   return (
+    <div className="esc-estreito">
     <PreferenciasClient
       email={conta!.email}
       lembretes={pref?.lembretes ?? true}
       icsCriadoEm={pref?.ics_criado_em ?? null}
       agendaAtiva={modos.modo_google !== "DESLIGADO"}
     />
+    </div>
   );
 }

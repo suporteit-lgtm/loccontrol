@@ -17,5 +17,9 @@ export default async function EscalaReservas() {
     contextoPortal(p, agora),
   ]);
   const comRegistro = dias.filter((d) => d.reserva || d.fila);
-  return <ReservasClient dias={comRegistro} ctx={ctx} />;
+  return (
+    <div className="esc-estreito">
+      <ReservasClient dias={comRegistro} ctx={ctx} />
+    </div>
+  );
 }

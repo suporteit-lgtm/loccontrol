@@ -51,7 +51,7 @@ export function CalendarioClient({
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <div>
           <div className="card-kicker">Calendário</div>
-          <div className="card-title">
+          <div className="card-title" style={{ fontSize: 24 }}>
             {maiuscula(nomeMes(mes))} de {ano}
           </div>
         </div>
