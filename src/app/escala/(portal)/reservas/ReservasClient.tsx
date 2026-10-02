@@ -41,9 +41,11 @@ export function ReservasClient({ dias, ctx }: { dias: DiaPortal[]; ctx: Contexto
       <section className="card elev-sm">
         <div className="card-kicker">Minhas reservas</div>
         <div className="card-title" style={{ fontSize: 17 }}>Próximas</div>
-        <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
-          Reservas usadas neste mês: {ctx.reservasNoMes[mes] ?? 0} de {ctx.limiteMensal}. Canceladas não contam.
-        </p>
+        {ctx.limiteMensal !== null && (
+          <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
+            Reservas usadas neste mês: {ctx.reservasNoMes[mes] ?? 0} de {ctx.limiteMensal}. Canceladas não contam.
+          </p>
+        )}
         {proximas.length === 0 ? (
           <p className="text-muted" style={{ fontSize: 13.5, margin: 0 }}>Nenhuma reserva ou posição na fila.</p>
         ) : (

@@ -10,16 +10,19 @@ export type Grupo = "A" | "B";
 export const FUSO = "America/Sao_Paulo";
 
 export interface ParametrosEscala {
-  /** Data âncora: o primeiro dia útil a partir dela recebe o grupo inicial. */
+  /** Data âncora: a semana que a contém é a "semana 1" (segunda = grupo inicial). */
   ancora: string;
   grupoInicial: Grupo;
 }
 
+/**
+ * Um dia útil da escala. `grupo` é o grupo FIXO do dia (segunda e sexta);
+ * null = dia LIVRE (terça a quinta): sem equipe fixa, qualquer pessoa agenda.
+ */
 export interface DiaEscala {
   data: string;
-  grupo: Grupo;
+  grupo: Grupo | null;
 }
-
 // ── Datas de calendário ──────────────────────────────────────────────────────
 const DIA_MS = 86_400_000;
 
@@ -67,79 +70,58 @@ export function diaUtilAnterior(iso: string, feriados: ReadonlySet<string>): str
   return d;
 }
 
+/** Segunda-feira da semana da data. */
+export function segundaDaSemana(iso: string): string {
+  const d = diaDaSemana(iso); // 0 dom … 6 sáb
+  return somarDias(iso, d === 0 ? -6 : 1 - d);
+}
+
+/** Semanas desde a semana da âncora (0 = semana da âncora; negativo antes dela). */
+export function indiceSemana(ancora: string, data: string): number {
+  return Math.round((paraUTC(segundaDaSemana(data)) - paraUTC(segundaDaSemana(ancora))) / (7 * DIA_MS));
+}
+
 /**
- * Quantidade de dias úteis d com ancora ≤ d < data (negativa se data < âncora).
- * Assim o primeiro dia útil a partir da âncora tem índice 0.
+ * Regra fixa por dia da semana:
+ *   semana par (1, 3, 5…): segunda = grupo inicial, sexta = o outro;
+ *   semana ímpar (2, 4, 6…): inverte;
+ *   terça a quinta: sem grupo (dia livre para agendamento).
+ * Feriado não desloca nada — o dia apenas deixa de existir na escala.
  */
-export function indiceDiaUtil(ancora: string, data: string, feriados: ReadonlySet<string>): number {
-  if (data === ancora) return 0;
-  const [ini, fim, sinal] = data > ancora ? [ancora, data, 1] : [data, ancora, -1];
-  let n = 0;
-  for (let d = ini; d < fim; d = somarDias(d, 1)) if (ehDiaUtil(d, feriados)) n++;
-  return n * sinal;
-}
-
-/** Grupo de um dia útil pela fórmula da âncora (par = grupo inicial). Null se não for dia útil. */
-export function grupoPelaAncora(
-  data: string,
-  p: ParametrosEscala,
-  feriados: ReadonlySet<string>,
-): Grupo | null {
-  if (!ehDiaUtil(data, feriados)) return null;
-  const i = indiceDiaUtil(p.ancora, data, feriados);
-  return ((i % 2) + 2) % 2 === 0 ? p.grupoInicial : outroGrupo(p.grupoInicial);
+export function grupoFixo(data: string, p: ParametrosEscala): Grupo | null {
+  const dow = diaDaSemana(data);
+  if (dow !== 1 && dow !== 5) return null;
+  const semanaPar = ((indiceSemana(p.ancora, data) % 2) + 2) % 2 === 0;
+  const segunda = semanaPar ? p.grupoInicial : outroGrupo(p.grupoInicial);
+  return dow === 1 ? segunda : outroGrupo(segunda);
 }
 
 /**
- * Materializa a escala no intervalo [de, ate].
- *
- * `base` é o último dia JÁ CONGELADO (passado). Quando existe, a sequência
- * continua alternando a partir dele — então um feriado cadastrado ou removido
- * no passado nunca altera dias já vividos nem desloca a sequência futura.
- * Sem base (primeira materialização), usa a fórmula da âncora.
+ * Materializa a escala no intervalo [de, ate]: todo dia útil a partir da âncora,
+ * com o grupo fixo (seg/sex) ou livre (ter–qui). Função pura da data — dias já
+ * vividos não mudam porque o banco os congela e nunca regrava (0025).
  */
 export function materializar(opts: {
   de: string;
   ate: string;
   params: ParametrosEscala;
   feriados: ReadonlySet<string>;
-  base?: DiaEscala | null;
 }): DiaEscala[] {
-  const { de, ate, params, feriados, base } = opts;
+  const { de, ate, params, feriados } = opts;
   const out: DiaEscala[] = [];
-  if (de > ate) return out;
-
-  let atual: Grupo | null = null;
-  let cursor = de;
-  if (base && base.data < de) {
-    // alterna a partir da base, contando só os dias úteis entre base e `de`
-    atual = base.grupo;
-    for (let d = somarDias(base.data, 1); d < de; d = somarDias(d, 1))
-      if (ehDiaUtil(d, feriados)) atual = outroGrupo(atual);
-  }
-
-  for (; cursor <= ate; cursor = somarDias(cursor, 1)) {
-    if (!ehDiaUtil(cursor, feriados)) continue;
-    if (atual === null) {
-      // sem base: dias antes da âncora não são escalados
-      if (cursor < params.ancora) continue;
-      atual = grupoPelaAncora(cursor, params, feriados)!;
-    } else {
-      atual = outroGrupo(atual);
-    }
-    out.push({ data: cursor, grupo: atual });
-  }
+  for (let d = de < params.ancora ? params.ancora : de; d <= ate; d = somarDias(d, 1))
+    if (ehDiaUtil(d, feriados)) out.push({ data: d, grupo: grupoFixo(d, params) });
   return out;
 }
 
-/** Diferença acumulada de dias entre A e B (deve ficar sempre em 0 ou 1). */
+/** Diferença acumulada de dias fixos entre A e B (dias livres não contam). */
 export function diferencaAB(dias: readonly DiaEscala[]): number {
   let a = 0;
   let b = 0;
-  for (const d of dias) d.grupo === "A" ? a++ : b++;
+  for (const d of dias) if (d.grupo === "A") a++;
+  else if (d.grupo === "B") b++;
   return Math.abs(a - b);
 }
-
 // ── Vagas ────────────────────────────────────────────────────────────────────
 /**
  * vagas_livres = capacidade − (escalados − ausências avisadas − afastados) − reservas confirmadas
@@ -223,6 +205,9 @@ export const MENSAGEM_BLOQUEIO: Record<MotivoBloqueio, string> = {
 export function motivoBloqueioReserva(c: {
   data: string;
   hoje: string;
+  /** false = fim de semana, feriado ou fora da escala */
+  util: boolean;
+  /** grupo fixo do dia; null = dia livre (ter–qui) */
   grupoDoDia: Grupo | null;
   grupoDaPessoa: Grupo;
   afastado: boolean;
@@ -231,16 +216,17 @@ export function motivoBloqueioReserva(c: {
   jaNaFila: boolean;
   /** reservas CONFIRMADAS + UTILIZADAS no mês da data */
   reservasNoMes: number;
-  limiteMensal: number;
+  /** null = sem limite */
+  limiteMensal: number | null;
 }): MotivoBloqueio | null {
   if (!c.ativo) return "INATIVO";
-  if (c.grupoDoDia === null) return "NAO_E_DIA_UTIL";
+  if (!c.util) return "NAO_E_DIA_UTIL";
   if (c.data <= c.hoje) return "DIA_PASSADO";
   if (c.afastado) return "AFASTADO";
   if (c.grupoDoDia === c.grupoDaPessoa) return "DIA_DO_PROPRIO_GRUPO";
   if (c.jaReservado) return "JA_RESERVADO";
   if (c.jaNaFila) return "JA_NA_FILA";
-  if (c.reservasNoMes >= c.limiteMensal) return "LIMITE_MENSAL";
+  if (c.limiteMensal !== null && c.reservasNoMes >= c.limiteMensal) return "LIMITE_MENSAL";
   return null;
 }
 

@@ -33,6 +33,9 @@ export interface MinhaFila {
 
 export interface DiaPortal {
   data: string;
+  /** dia útil da escala (false = fim de semana, feriado ou antes da âncora) */
+  util: boolean;
+  /** grupo fixo (seg/sex); null em dia útil = dia livre (ter–qui) */
   grupo: Grupo | null;
   feriado: string | null;
   fimDeSemana: boolean;
@@ -52,7 +55,7 @@ export interface ContextoPortal {
   agora: string;
   hoje: string;
   afastado: boolean;
-  limiteMensal: number;
+  limiteMensal: number | null; // null = sem limite
   reservasNoMes: Record<string, number>; // "AAAA-MM" → confirmadas + utilizadas
   ofertaValidadeMin: number;
 }
@@ -124,6 +127,7 @@ export async function carregarDias(
     const grupo = (dia?.grupo as Grupo | undefined) ?? null;
     out.push({
       data: d,
+      util: !!dia,
       grupo,
       feriado: ferMap.get(d) ?? null,
       fimDeSemana: ehFimDeSemana(d),
@@ -131,7 +135,7 @@ export async function carregarDias(
       hoje: d === hoje,
       prazo: dia?.prazo ?? null,
       prazoPassou: dia ? new Date(dia.prazo) <= agora : true,
-      meuDia: grupo === p.grupo,
+      meuDia: !!grupo && grupo === p.grupo,
       ausente: ausMap.has(d),
       ausenteEmCima: ausMap.get(d) ?? false,
       reserva: resMap.get(d) ?? null,
@@ -141,7 +145,7 @@ export async function carregarDias(
   }
   if (comOcupacao)
     await Promise.all(
-      out.filter((d) => d.grupo && d.data >= hoje).map(async (d) => (d.ocupacao = await ocupacao(p.unidadeId, d.data, agoraIso))),
+      out.filter((d) => d.util && d.data >= hoje).map(async (d) => (d.ocupacao = await ocupacao(p.unidadeId, d.data, agoraIso))),
     );
   return out;
 }

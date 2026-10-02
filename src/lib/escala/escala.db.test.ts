@@ -16,7 +16,7 @@ import pg from "pg";
 import { hojeSP, instanteSP, materializar, prazoDoDia } from "./calendario";
 
 const ATIVO = process.env.ESCALA_DB_TEST === "1" && !!process.env.DATABASE_URL;
-const MIGRATIONS = ["0024_escala_schema.sql", "0025_escala_funcoes.sql", "0026_escala_rls.sql", "0027_blindar_tabelas_loccontrol.sql"];
+const MIGRATIONS = ["0024_escala_schema.sql", "0025_escala_funcoes.sql", "0026_escala_rls.sql", "0027_blindar_tabelas_loccontrol.sql", "0028_escala_dias_livres.sql"];
 const TABELAS_LOCCONTROL = [
   "acessos", "ajuda_videos", "auditoria", "cargos", "chamados", "checklist_itens", "checklist_templates", "cidades",
   "colaboradores", "documentos", "envios_agendados", "equipamentos_catalogo", "eventos", "grupo_membros_externos",
@@ -50,6 +50,7 @@ const pa: string[] = []; // participantes do Grupo A
 const pb: string[] = []; // participantes do Grupo B
 const colabDe = new Map<string, string>();
 let diasA: string[] = [];
+let livresOut: string[] = [];
 
 async function materializarNoBanco(agoraIso: string, motivo = "feriado") {
   feriados = new Set(
@@ -57,9 +58,8 @@ async function materializarNoBanco(agoraIso: string, motivo = "feriado") {
   );
   const cfg = (await q(`select data_ancora::text a, grupo_inicial g, prazo_hora::text h from escala_config where unidade_id=$1`, [unidade]))[0];
   const hoje = hojeSP(new Date(agoraIso));
-  const base = (await q(`select data::text data, grupo from escala_dia where unidade_id=$1 and data < $2 order by data desc limit 1`, [unidade, hoje]))[0];
   const ate = new Date(Date.parse(hoje) + 90 * 86_400_000).toISOString().slice(0, 10);
-  const dias = materializar({ de: hoje, ate, params: { ancora: cfg.a, grupoInicial: cfg.g }, feriados, base: (base as any) ?? null })
+  const dias = materializar({ de: hoje, ate, params: { ancora: cfg.a, grupoInicial: cfg.g }, feriados })
     .map((d) => ({ ...d, prazo: prazoDoDia(d.data, cfg.h.slice(0, 5), feriados).toISOString() }));
   return fn("escala_aplicar_materializacao", unidade, JSON.stringify(dias), hoje, ate, motivo, agoraIso);
 }
@@ -82,6 +82,8 @@ describe.skipIf(!ATIVO)("Escala — banco (transação com ROLLBACK)", () => {
       ('2026-10-12','Nossa Senhora Aparecida','NACIONAL_API'), ('2026-11-02','Finados','NACIONAL_API'),
       ('2026-11-20','Consciência Negra','NACIONAL_API') on conflict do nothing`);
 
+    // isola os dados reais de teste (participantes já cadastrados não entram na conta)
+    await q(`update escala_participante set ativo = false`);
     const grupos = Object.fromEntries((await q(`select letra, id from escala_grupo where unidade_id=$1`, [unidade])).map((r) => [r.letra, r.id]));
     for (let i = 0; i < 35; i++) {
       const colab = (await q(
@@ -96,6 +98,7 @@ describe.skipIf(!ATIVO)("Escala — banco (transação com ROLLBACK)", () => {
     }
     await materializarNoBanco(AGORA0);
     diasA = (await q(`select data::text d from escala_dia where unidade_id=$1 and grupo='A' and data > '2026-10-05' order by data`, [unidade])).map((r) => r.d);
+    livresOut = (await q(`select data::text d from escala_dia where unidade_id=$1 and grupo is null and data between '2026-10-06' and '2026-10-31' order by data`, [unidade])).map((r) => r.d);
   }, 60_000);
 
   afterAll(async () => {
@@ -105,16 +108,26 @@ describe.skipIf(!ATIVO)("Escala — banco (transação com ROLLBACK)", () => {
     }
   });
 
-  it("materializa 90 dias, só dias úteis, alternando A/B a partir da âncora", async () => {
-    const dias = await q(`select data::text d, grupo from escala_dia where unidade_id=$1 order by data`, [unidade]);
-    expect(dias[0]).toMatchObject({ d: "2026-10-05", grupo: "A" });
-    expect(dias.find((d) => d.d === "2026-10-12")).toBeUndefined();
-    for (let i = 1; i < dias.length; i++) expect(dias[i].grupo).not.toBe(dias[i - 1].grupo);
+  it("materializa 90 dias: seg/sex fixas alternando por semana, ter–qui livres, sem feriados", async () => {
+    const dias = Object.fromEntries((await q(`select data::text d, grupo from escala_dia where unidade_id=$1`, [unidade])).map((r) => [r.d, r.grupo]));
+    expect(dias["2026-10-05"]).toBe("A"); // semana 1: seg A
+    expect(dias["2026-10-09"]).toBe("B"); //           sex B
+    expect(dias["2026-10-16"]).toBe("A"); // semana 2: sex A (a seg 12 é feriado)
+    expect(dias["2026-10-19"]).toBe("A"); // semana 3: seg A
+    for (const livre of ["2026-10-06", "2026-10-07", "2026-10-08"]) expect(dias[livre]).toBeNull();
+    expect("2026-10-12" in dias).toBe(false);
   });
 
-  it("vagas: dia do A (18) sobra 4; dia do B (17) sobra 5", async () => {
+  it("vagas: dia do A (18) sobra 4; dia do B (17) sobra 5; dia livre tem os 22", async () => {
     expect((await ocup(diasA[0])).vagas_livres).toBe(4);
-    expect((await ocup("2026-10-06")).vagas_livres).toBe(5);
+    expect((await ocup("2026-10-09")).vagas_livres).toBe(5);
+    expect((await ocup("2026-10-06")).vagas_livres).toBe(22);
+  });
+
+  it("dia livre: qualquer grupo agenda; 'não vou' não se aplica", async () => {
+    expect(await fn("escala_reservar", pa[0], "2026-10-07", AGORA0)).toMatchObject({ ok: true });
+    expect(await fn("escala_reservar", pb[16], "2026-10-07", AGORA0)).toMatchObject({ ok: true });
+    expect(await fn("escala_marcar_ausencia", pa[2], "2026-10-07", AGORA0)).toMatchObject({ codigo: "NAO_ESCALADO" });
   });
 
   it("elegibilidade de reserva", async () => {
@@ -125,10 +138,15 @@ describe.skipIf(!ATIVO)("Escala — banco (transação com ROLLBACK)", () => {
     expect(await fn("escala_reservar", pb[0], "2026-10-10", AGORA0)).toMatchObject({ codigo: "NAO_E_DIA_UTIL" });
   });
 
-  it("limite mensal (4 reservas confirmadas/utilizadas no mês)", async () => {
-    const outubro = diasA.filter((d) => d.startsWith("2026-10")).slice(2, 7);
-    for (const d of outubro.slice(0, 4)) expect(await fn("escala_reservar", pb[1], d, AGORA0)).toMatchObject({ ok: true });
-    expect(await fn("escala_reservar", pb[1], outubro[4], AGORA0)).toMatchObject({ codigo: "LIMITE_MENSAL" });
+  it("sem limite por padrão; se o RH configurar um limite, ele vale", async () => {
+    const dias = livresOut.filter((d) => d > "2026-10-07").slice(0, 5);
+    expect((await q(`select limite_mensal from escala_config where unidade_id=$1`, [unidade]))[0].limite_mensal).toBeNull();
+    await q(`update escala_config set limite_mensal = 4 where unidade_id=$1`, [unidade]);
+    for (const d of dias.slice(0, 4)) expect(await fn("escala_reservar", pb[1], d, AGORA0)).toMatchObject({ ok: true });
+    expect(await fn("escala_reservar", pb[1], dias[4], AGORA0)).toMatchObject({ codigo: "LIMITE_MENSAL" });
+    await q(`update escala_config set limite_mensal = null where unidade_id=$1`, [unidade]);
+    expect(await fn("escala_reservar", pb[1], dias[4], AGORA0)).toMatchObject({ ok: true });
+    await fn("escala_cancelar_reserva", (await q(`select id from escala_reserva where participante_id=$1 and data=$2`, [pb[1], dias[4]]))[0].id, null, AGORA0, "admin");
   });
 
   it("dia lotado → fila FIFO com posição; ninguém fura a fila", async () => {
@@ -232,13 +250,13 @@ describe.skipIf(!ATIVO)("Escala — banco (transação com ROLLBACK)", () => {
     expect((await q(`select ativo from escala_participante where id=$1`, [pb[1]]))[0].ativo).toBe(false);
   });
 
-  it("feriado novo: remove o dia, recalcula só o futuro e invalida reservas; reaplicar é idempotente", async () => {
+  it("feriado novo: remove o dia, não desloca os outros e invalida reservas; reaplicar é idempotente", async () => {
     const reservaNoDia = await fn("escala_reservar", pb[15], "2026-10-21", AGORA0);
     await q(`insert into escala_feriado (data, nome, unidade_id, origem) values ('2026-10-21','Teste','${unidade}','MANUAL')`);
     const r = await materializarNoBanco(AGORA0);
     expect(r.removidos.map((x: R) => x.data)).toContain("2026-10-21");
-    expect(r.alterados.length).toBeGreaterThan(0);
-    if (reservaNoDia.ok) expect(r.canceladas).toEqual(expect.arrayContaining([expect.objectContaining({ id: reservaNoDia.reserva_id })]));
+    expect(r.alterados).toEqual([]); // regra fixa: feriado não desloca nenhum outro dia
+    expect(reservaNoDia.ok).toBe(true); // quarta = dia livre
 
     // ninguém ficou com reserva num dia do próprio grupo
     const conflito = await q(`select count(*)::int n from escala_reserva x join escala_participante p on p.id=x.participante_id
@@ -260,7 +278,7 @@ describe.skipIf(!ATIVO)("Escala — banco (transação com ROLLBACK)", () => {
     const t = SP("2026-10-09", "23:00");
     expect(await fn("escala_marcar_utilizadas", t)).toBeGreaterThan(0);
     expect(await fn("escala_marcar_utilizadas", t)).toBe(0);
-    const v = await q(`select * from escala_v_dia where unidade_id=$1 and data='2026-10-07'`, [unidade]);
+    const v = await q(`select * from escala_v_dia where unidade_id=$1 and data='2026-10-05'`, [unidade]);
     expect(v[0]).toMatchObject({ escalados: "18" });
   });
 

@@ -2,6 +2,8 @@
 export interface DiaSemana {
   nome: string; // "Seg"
   data: string; // AAAA-MM-DD
+  /** dia útil da escala; com grupo nulo = dia livre (ter–qui) */
+  util: boolean;
   grupo: "A" | "B" | null;
   feriado: string | null;
   hoje: boolean;
@@ -69,13 +71,13 @@ export function EscolhaModulo({ semana }: { semana: DiaSemana[] | null }) {
                     <span
                       key={d.data}
                       className="modulo-dia"
-                      data-g={d.grupo ?? undefined}
+                      data-g={d.grupo ?? (d.util ? "livre" : undefined)}
                       data-hoje={d.hoje ? "1" : undefined}
-                      title={d.feriado ?? (d.grupo ? `Grupo ${d.grupo}` : "Sem escala")}
-                      aria-label={`${d.nome} ${d.data.slice(8)}: ${d.feriado ? `feriado, ${d.feriado}` : d.grupo ? `Grupo ${d.grupo}` : "sem escala"}${d.hoje ? " (hoje)" : ""}`}
+                      title={d.feriado ?? (d.grupo ? `Grupo ${d.grupo}` : d.util ? "Dia livre para agendar" : "Sem escala")}
+                      aria-label={`${d.nome} ${d.data.slice(8)}: ${d.feriado ? `feriado, ${d.feriado}` : d.grupo ? `Grupo ${d.grupo}` : d.util ? "dia livre" : "sem escala"}${d.hoje ? " (hoje)" : ""}`}
                     >
                       <span>{d.nome} {d.data.slice(8)}</span>
-                      <strong>{d.grupo ?? "—"}</strong>
+                      <strong>{d.grupo ?? (d.util ? "Livre" : "—")}</strong>
                     </span>
                   ))}
                 </div>

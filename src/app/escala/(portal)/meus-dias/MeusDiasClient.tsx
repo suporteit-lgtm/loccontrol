@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { GrupoBadge } from "@/components/escala/GrupoBadge";
-import { AcoesDia, StatusTag, TituloDia, textoVagas } from "@/components/escala/AcoesDia";
+import { AcoesDia, LivreBadge, StatusTag, TituloDia, textoVagas } from "@/components/escala/AcoesDia";
 import { dataCurta, dataLonga, maiuscula } from "@/lib/escala/formato";
 import type { ContextoPortal, DiaPortal } from "@/lib/escala/portal";
 
@@ -18,9 +18,9 @@ function Bloco({ kicker, titulo, children, vazio }: { kicker: string; titulo: st
 
 export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo: "A" | "B"; dias: DiaPortal[]; ctx: ContextoPortal }) {
   const hoje = dias.find((d) => d.hoje)!;
-  const futuros = dias.filter((d) => d.data > ctx.hoje && d.grupo);
+  const futuros = dias.filter((d) => d.data > ctx.hoje && d.util);
   const ofertas = dias.filter((d) => d.fila?.status === "OFERECIDA" && d.fila.expiraEm && new Date(d.fila.expiraEm) > new Date());
-  const proximos = dias.filter((d) => d.grupo && d.data >= ctx.hoje && d.meuDia).slice(0, 5);
+  const proximos = dias.filter((d) => d.data >= ctx.hoje && d.meuDia).slice(0, 5);
   const meus = futuros.filter((d) => !d.meuDia && (d.reserva?.status === "CONFIRMADA" || d.fila?.status === "AGUARDANDO"));
   const vagas = futuros
     .filter((d) => !d.meuDia && !d.reserva?.status?.match(/CONFIRMADA|UTILIZADA/) && !d.fila?.status?.match(/AGUARDANDO|OFERECIDA/))
@@ -29,7 +29,12 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
   // card de hoje
   let hojeTexto: string;
   let hojeTom: "ok" | "neutro" | "warn" = "neutro";
-  if (!hoje.grupo) hojeTexto = hoje.feriado ? `Hoje é feriado: ${hoje.feriado}.` : "Hoje não é dia útil.";
+  if (!hoje.util) hojeTexto = hoje.feriado ? `Hoje é feriado: ${hoje.feriado}.` : "Hoje não é dia útil.";
+  else if (!hoje.grupo) {
+    const reservou = hoje.reserva?.status === "CONFIRMADA" || hoje.reserva?.status === "UTILIZADA";
+    hojeTexto = reservou ? "Hoje é dia livre — você agendou presença." : "Hoje é dia livre (sem equipe fixa).";
+    if (reservou) hojeTom = "ok";
+  }
   else if (hoje.meuDia && ctx.afastado) hojeTexto = `Hoje é dia do Grupo ${hoje.grupo}, mas você está afastado.`;
   else if (hoje.meuDia && hoje.ausente) hojeTexto = `Hoje é dia do Grupo ${hoje.grupo} — você avisou que não vai.`;
   else if (hoje.meuDia) {
@@ -48,7 +53,7 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
         </div>
         <div className="card-title">{maiuscula(dataLonga(ctx.hoje))}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          {hoje.grupo && <GrupoBadge grupo={hoje.grupo} rotulo />}
+          {hoje.grupo ? <GrupoBadge grupo={hoje.grupo} rotulo /> : hoje.util && <LivreBadge rotulo />}
           <StatusTag tipo={hojeTom}>{hojeTexto}</StatusTag>
         </div>
         {hoje.grupo && hoje.meuDia && !ctx.afastado && <AcoesDia dia={hoje} ctx={ctx} compacto />}
@@ -67,7 +72,7 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
         </Bloco>
       )}
 
-      <Bloco kicker="Seus próximos dias" titulo="Dias do seu grupo" vazio={ctx.afastado ? "Você está afastado." : "Nenhum dia nas próximas semanas."}>
+      <Bloco kicker="Seus próximos dias" titulo="Dias fixos do seu grupo" vazio={ctx.afastado ? "Você está afastado." : "Nenhum dia nas próximas semanas."}>
         {proximos.length > 0 && !ctx.afastado ? (
           <div className="esc-lista">
             {proximos.map((d) => (
@@ -101,7 +106,7 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
 
       <Bloco
         kicker="Vagas livres"
-        titulo="Quer ir em outro dia?"
+        titulo="Agendar outro dia"
         vazio={ctx.afastado ? "Durante o afastamento não é possível reservar." : "Sem dias disponíveis nas próximas semanas."}
       >
         {vagas.length > 0 && !ctx.afastado ? (

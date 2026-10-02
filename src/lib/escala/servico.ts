@@ -14,7 +14,7 @@ export interface ConfigEscala {
   capacidade: number;
   data_ancora: string | null;
   grupo_inicial: Grupo;
-  limite_mensal: number;
+  limite_mensal: number | null; // null = sem limite
   prazo_hora: string; // "18:00:00"
   oferta_validade_min: number;
   lembrete_hora: string;
@@ -59,8 +59,8 @@ export async function feriadosDa(unidadeId: string, de: string, ate: string): Pr
 }
 
 /**
- * Recalcula a escala da unidade de hoje até +90 dias.
- * Passado congelado; a sequência continua do último dia congelado.
+ * Recalcula a escala da unidade de hoje até +90 dias (seg/sex fixas, ter–qui livres).
+ * O passado fica congelado no banco.
  * Devolve o que a função SQL informou (dias removidos/alterados e reservas canceladas).
  */
 export async function materializarUnidade(unidadeId: string, motivo = "feriado", agora = new Date()) {
@@ -72,22 +72,12 @@ export async function materializarUnidade(unidadeId: string, motivo = "feriado",
   // feriados com folga para calcular o prazo do 1º dia (dia útil anterior)
   const feriados = new Set((await feriadosDa(unidadeId, somarDias(hoje, -30), somarDias(ate, 10))).map((f) => f.data));
 
-  const { data: base } = await db()
-    .from("escala_dia")
-    .select("data, grupo")
-    .eq("unidade_id", unidadeId)
-    .lt("data", hoje)
-    .order("data", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
   const prazoHora = cfg.prazo_hora.slice(0, 5);
   const dias = materializar({
     de: hoje,
     ate,
     params: { ancora: cfg.data_ancora, grupoInicial: cfg.grupo_inicial },
     feriados,
-    base: base ? { data: base.data, grupo: base.grupo as Grupo } : null,
   }).map((d) => ({ ...d, prazo: prazoDoDia(d.data, prazoHora, feriados).toISOString() }));
 
   const { data, error } = await db().rpc("escala_aplicar_materializacao", {

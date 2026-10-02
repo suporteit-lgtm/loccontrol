@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  diaDaSemana,
   diaUtilAnterior,
   diferencaAB,
   ehDiaUtil,
-  grupoPelaAncora,
+  grupoFixo,
   hojeSP,
   instanteSP,
   materializar,
@@ -13,7 +14,6 @@ import {
   somarDias,
   vagasLivres,
   validadeOferta,
-  type DiaEscala,
   type ParametrosEscala,
 } from "./calendario";
 
@@ -30,21 +30,11 @@ const FERIADOS = new Set([
   "2028-08-15", "2028-09-07", "2028-10-12", "2028-11-02", "2028-11-15", "2028-11-20", "2028-12-08", "2028-12-25",
 ]);
 
-const P: ParametrosEscala = { ancora: "2026-10-01", grupoInicial: "A" };
-const INICIO = "2026-10-01";
+const P: ParametrosEscala = { ancora: "2026-10-05", grupoInicial: "A" };
+const INICIO = "2026-10-05";
 const FIM_24M = "2028-09-30";
 
-function verificaAlternancia(dias: DiaEscala[]) {
-  let a = 0;
-  let b = 0;
-  dias.forEach((d, i) => {
-    d.grupo === "A" ? a++ : b++;
-    expect(Math.abs(a - b)).toBeLessThanOrEqual(1);
-    if (i > 0) expect(d.grupo).not.toBe(dias[i - 1].grupo);
-  });
-}
-
-describe("alternância contínua — 24 meses simulados com feriados", () => {
+describe("regra fixa — 24 meses simulados com feriados", () => {
   const dias = materializar({ de: INICIO, ate: FIM_24M, params: P, feriados: FERIADOS });
 
   it("só contém dias úteis (nenhum fim de semana nem feriado)", () => {
@@ -53,93 +43,63 @@ describe("alternância contínua — 24 meses simulados com feriados", () => {
     for (const f of FERIADOS) expect(dias.find((d) => d.data === f)).toBeUndefined();
   });
 
-  it("|A − B| ≤ 1 em todo prefixo e os grupos sempre alternam", () => {
-    verificaAlternancia(dias);
-    expect(diferencaAB(dias)).toBeLessThanOrEqual(1);
-  });
-
-  it("o primeiro dia útil a partir da âncora é do grupo inicial", () => {
-    expect(dias[0]).toEqual({ data: "2026-10-01", grupo: "A" });
-  });
-
-  it("a sequência continua na virada de mês (nunca reinicia)", () => {
-    for (let i = 1; i < dias.length; i++) {
-      if (dias[i].data.slice(0, 7) !== dias[i - 1].data.slice(0, 7))
-        expect(dias[i].grupo).not.toBe(dias[i - 1].grupo);
+  it("terça, quarta e quinta são livres (sem grupo fixo)", () => {
+    for (const d of dias) {
+      const dow = diaDaSemana(d.data);
+      if (dow >= 2 && dow <= 4) expect(d.grupo).toBeNull();
+      else expect(d.grupo).not.toBeNull();
     }
-    // outubro/2026 termina numa sexta (30) — novembro começa no grupo oposto
-    const ultOut = dias.filter((d) => d.data.startsWith("2026-10")).at(-1)!;
-    const priNov = dias.find((d) => d.data.startsWith("2026-11"))!;
-    expect(priNov.grupo).not.toBe(ultOut.grupo);
   });
 
-  it("bate com a fórmula da âncora (paridade de dias úteis)", () => {
-    for (const d of dias) expect(grupoPelaAncora(d.data, P, FERIADOS)).toBe(d.grupo);
+  it("semana 1: segunda A e sexta B; semana 2 inverte; e assim por diante", () => {
+    // âncora 05/10/2026 (segunda)
+    expect(grupoFixo("2026-10-05", P)).toBe("A");
+    expect(grupoFixo("2026-10-09", P)).toBe("B");
+    expect(grupoFixo("2026-10-12", P)).toBe("B"); // semana 2 (feriado, mas a regra do dia vale)
+    expect(grupoFixo("2026-10-16", P)).toBe("A");
+    expect(grupoFixo("2026-10-19", P)).toBe("A"); // semana 3
+    expect(grupoFixo("2026-10-23", P)).toBe("B");
+    expect(grupoFixo("2026-10-06", P)).toBeNull();
+  });
+
+  it("em toda semana, segunda e sexta são de grupos diferentes e a segunda alterna semana a semana", () => {
+    for (let seg = P.ancora; seg <= FIM_24M; seg = somarDias(seg, 7)) {
+      const a = grupoFixo(seg, P);
+      expect(grupoFixo(somarDias(seg, 4), P)).not.toBe(a);
+      expect(grupoFixo(somarDias(seg, 7), P)).not.toBe(a);
+    }
+  });
+
+  it("feriado não desloca a escala: o dia some e o resto continua igual", () => {
+    const comFeriado = new Set(FERIADOS).add("2027-06-11"); // sexta
+    const depois = materializar({ de: INICIO, ate: FIM_24M, params: P, feriados: comFeriado });
+    expect(depois.find((d) => d.data === "2027-06-11")).toBeUndefined();
+    expect(depois).toEqual(dias.filter((d) => d.data !== "2027-06-11"));
+  });
+
+  it("a virada de mês não reinicia nada (grupo depende só da semana)", () => {
+    // semana 4 (26–30/10): segunda B, sexta A; semana 5 começa em 02/11: segunda A
+    expect(grupoFixo("2026-10-26", P)).toBe("B");
+    expect(grupoFixo("2026-10-30", P)).toBe("A");
+    expect(grupoFixo("2026-11-02", P)).toBe("A");
+  });
+
+  it("dias fixos de A e B ficam equilibrados (sem feriados, diferença 0 a cada 2 semanas)", () => {
+    const semFeriado = materializar({ de: INICIO, ate: somarDias(INICIO, 7 * 52 - 1), params: P, feriados: new Set() });
+    expect(diferencaAB(semFeriado)).toBe(0);
+  });
+
+  it("dias antes da âncora não são escalados", () => {
+    const d = materializar({ de: "2026-09-28", ate: "2026-10-06", params: P, feriados: FERIADOS });
+    expect(d.map((x) => x.data)).toEqual(["2026-10-05", "2026-10-06"]);
+  });
+
+  it("âncora no meio da semana: a semana dela é a semana 1", () => {
+    const p = { ancora: "2026-10-07", grupoInicial: "B" as const };
+    expect(grupoFixo("2026-10-09", p)).toBe("A"); // sexta da semana 1
+    expect(grupoFixo("2026-10-12", p)).toBe("A"); // segunda da semana 2 (inverte: A)
   });
 });
-
-describe("materialização incremental e dias congelados", () => {
-  const total = materializar({ de: INICIO, ate: FIM_24M, params: P, feriados: FERIADOS });
-
-  it("materializar em janelas (base = último dia congelado) dá o mesmo resultado", () => {
-    const acumulado: DiaEscala[] = [];
-    let de = INICIO;
-    while (de <= FIM_24M) {
-      const ate = somarDias(de, 29) > FIM_24M ? FIM_24M : somarDias(de, 29);
-      acumulado.push(...materializar({ de, ate, params: P, feriados: FERIADOS, base: acumulado.at(-1) ?? null }));
-      de = somarDias(ate, 1);
-    }
-    expect(acumulado).toEqual(total);
-  });
-
-  it("feriado cadastrado no PASSADO não altera dias congelados nem a sequência futura", () => {
-    const hoje = "2027-03-01";
-    const congelados = total.filter((d) => d.data < hoje);
-    const futuroAntes = total.filter((d) => d.data >= hoje);
-
-    const comFeriadoPassado = new Set(FERIADOS).add("2026-11-10"); // terça já vivida
-    const futuroDepois = materializar({
-      de: hoje, ate: FIM_24M, params: P, feriados: comFeriadoPassado, base: congelados.at(-1)!,
-    });
-    expect(futuroDepois).toEqual(futuroAntes);
-  });
-
-  it("feriado FUTURO só recalcula daquele dia em diante e mantém |A−B| ≤ 1", () => {
-    const hoje = "2027-03-01";
-    const congelados = total.filter((d) => d.data < hoje);
-    const novo = "2027-06-10"; // quinta
-    const feriados2 = new Set(FERIADOS).add(novo);
-    const futuro = materializar({ de: hoje, ate: FIM_24M, params: P, feriados: feriados2, base: congelados.at(-1)! });
-
-    const antesDoNovo = total.filter((d) => d.data >= hoje && d.data < novo);
-    expect(futuro.filter((d) => d.data < novo)).toEqual(antesDoNovo);
-    expect(futuro.find((d) => d.data === novo)).toBeUndefined();
-    verificaAlternancia([...congelados, ...futuro]);
-  });
-
-  it("remover um feriado futuro também mantém a alternância", () => {
-    const hoje = "2027-03-01";
-    const congelados = total.filter((d) => d.data < hoje);
-    const feriados2 = new Set(FERIADOS);
-    feriados2.delete("2027-09-07");
-    const futuro = materializar({ de: hoje, ate: FIM_24M, params: P, feriados: feriados2, base: congelados.at(-1)! });
-    expect(futuro.find((d) => d.data === "2027-09-07")).toBeDefined();
-    verificaAlternancia([...congelados, ...futuro]);
-  });
-
-  it("âncora num fim de semana: o primeiro dia útil seguinte recebe o grupo inicial", () => {
-    const dias = materializar({
-      de: "2026-10-03", ate: "2026-10-09", params: { ancora: "2026-10-03", grupoInicial: "B" }, feriados: FERIADOS,
-    });
-    expect(dias[0]).toEqual({ data: "2026-10-05", grupo: "B" });
-  });
-
-  it("dias antes da âncora não são escalados na primeira materialização", () => {
-    const dias = materializar({ de: "2026-09-01", ate: "2026-10-02", params: P, feriados: FERIADOS });
-    expect(dias.map((d) => d.data)).toEqual(["2026-10-01", "2026-10-02"]);
-  });
-});
-
 describe("vagas por dia", () => {
   it("dia do A (18 escalados) sobra 4; dia do B (17) sobra 5", () => {
     expect(vagasLivres({ capacidade: 22, escalados: 18, ausencias: 0, afastados: 0, reservasConfirmadas: 0 })).toBe(4);
@@ -181,8 +141,8 @@ describe("prazos no fuso de São Paulo", () => {
 
 describe("elegibilidade de reserva", () => {
   const base = {
-    data: "2026-10-06", hoje: "2026-10-01", grupoDoDia: "B" as const, grupoDaPessoa: "A" as const,
-    afastado: false, ativo: true, jaReservado: false, jaNaFila: false, reservasNoMes: 0, limiteMensal: 4,
+    data: "2026-10-09", hoje: "2026-10-01", util: true, grupoDoDia: "B" as "A" | "B" | null, grupoDaPessoa: "A" as const,
+    afastado: false, ativo: true, jaReservado: false, jaNaFila: false, reservasNoMes: 0, limiteMensal: 4 as number | null,
   };
   it("pessoa do outro grupo pode reservar", () => expect(motivoBloqueioReserva(base)).toBeNull());
   it("dia do próprio grupo é bloqueado", () =>
@@ -191,7 +151,13 @@ describe("elegibilidade de reserva", () => {
   it("limite mensal atingido", () =>
     expect(motivoBloqueioReserva({ ...base, reservasNoMes: 4 })).toBe("LIMITE_MENSAL"));
   it("reserva duplicada", () => expect(motivoBloqueioReserva({ ...base, jaReservado: true })).toBe("JA_RESERVADO"));
-  it("dia não útil", () => expect(motivoBloqueioReserva({ ...base, grupoDoDia: null })).toBe("NAO_E_DIA_UTIL"));
+  it("dia não útil", () => expect(motivoBloqueioReserva({ ...base, util: false, grupoDoDia: null })).toBe("NAO_E_DIA_UTIL"));
+  it("dia livre (ter–qui): qualquer grupo agenda", () => {
+    expect(motivoBloqueioReserva({ ...base, data: "2026-10-07", grupoDoDia: null, grupoDaPessoa: "A" })).toBeNull();
+    expect(motivoBloqueioReserva({ ...base, data: "2026-10-07", grupoDoDia: null, grupoDaPessoa: "B" })).toBeNull();
+  });
+  it("sem limite configurado: nunca bloqueia por quantidade", () =>
+    expect(motivoBloqueioReserva({ ...base, limiteMensal: null, reservasNoMes: 40 })).toBeNull());
   it("hoje ou passado", () => expect(motivoBloqueioReserva({ ...base, data: "2026-10-01" })).toBe("DIA_PASSADO"));
   it("inativo na escala", () => expect(motivoBloqueioReserva({ ...base, ativo: false })).toBe("INATIVO"));
 });

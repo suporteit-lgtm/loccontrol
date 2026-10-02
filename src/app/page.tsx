@@ -32,11 +32,11 @@ async function semana(unidade: string, segunda: string, hoje: string): Promise<D
       .gte("data", segunda).lte("data", sexta),
   ]);
   if (!dias?.length) return null;
-  const grupo = new Map(dias.map((d) => [d.data as string, d.grupo as "A" | "B"]));
+  const grupo = new Map(dias.map((d) => [d.data as string, (d.grupo as "A" | "B" | null) ?? null]));
   const feriado = new Map((feriados ?? []).map((f) => [f.data as string, f.nome as string]));
   return NOMES.map((nome, i) => {
     const data = somarDias(segunda, i);
-    return { nome, data, grupo: grupo.get(data) ?? null, feriado: feriado.get(data) ?? null, hoje: data === hoje };
+    return { nome, data, util: grupo.has(data), grupo: grupo.get(data) ?? null, feriado: feriado.get(data) ?? null, hoje: data === hoje };
   });
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AcoesDia, Folha, StatusTag } from "@/components/escala/AcoesDia";
+import { AcoesDia, Folha, LivreBadge, StatusTag } from "@/components/escala/AcoesDia";
 import { GrupoBadge } from "@/components/escala/GrupoBadge";
 import { dataLonga, maiuscula, nomeMes } from "@/lib/escala/formato";
 import type { ContextoPortal, DiaPortal } from "@/lib/escala/portal";
@@ -17,7 +17,7 @@ function mesVizinho(ref: string, delta: number): string {
 
 /** Uma linha curta de status para a célula. */
 function resumoCelula(d: DiaPortal, ctx: ContextoPortal): string | null {
-  if (!d.grupo) return d.feriado ?? null;
+  if (!d.util) return d.feriado ?? null;
   if (d.meuDia) return ctx.afastado ? "afastado" : d.ausente ? "você não vai" : "seu dia";
   if (d.reserva?.status === "CONFIRMADA" || d.reserva?.status === "UTILIZADA") return "reservado";
   if (d.fila?.status === "OFERECIDA") return "vaga oferecida!";
@@ -69,10 +69,14 @@ export function CalendarioClient({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12 }} className="text-muted">
+      <div style={{ display: "flex", gap: "6px 16px", flexWrap: "wrap", alignItems: "center", fontSize: 12 }} className="text-muted">
         <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="A" /> Grupo A</span>
         <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="B" /> Grupo B</span>
-        <span>cinza = fim de semana, feriado ou sem expediente</span>
+        <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><LivreBadge /> Ter a qui: livre para agendar</span>
+        <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+          <span aria-hidden style={{ width: 14, height: 14, borderRadius: 4, background: "var(--color-neutral-100)", border: "1px solid var(--color-divider)" }} />
+          Fim de semana, feriado ou sem expediente
+        </span>
       </div>
 
       <div
@@ -88,24 +92,24 @@ export function CalendarioClient({
           <div key={`v${i}`} className="esc-dia" data-fora="1" />
         ))}
         {dias.map((d) => {
-          const cinza = !d.grupo;
+          const cinza = !d.util;
           const resumo = resumoCelula(d, ctx);
           return (
             <button
               key={d.data}
               className="esc-dia"
-              data-grupo={d.grupo ?? undefined}
+              data-grupo={d.grupo ?? (d.util ? "livre" : undefined)}
               data-cinza={cinza ? "1" : undefined}
               data-passado={d.passado ? "1" : undefined}
               data-hoje={d.hoje ? "1" : undefined}
               onClick={() => !cinza && setAberto(d.data)}
               disabled={cinza && !d.feriado}
-              aria-label={`${dataLonga(d.data)}${d.grupo ? `, Grupo ${d.grupo}` : ""}${resumo ? `, ${resumo}` : ""}`}
+              aria-label={`${dataLonga(d.data)}${d.grupo ? `, Grupo ${d.grupo}` : d.util ? ", dia livre" : ""}${resumo ? `, ${resumo}` : ""}`}
               title={d.feriado ?? undefined}
             >
               <span className="esc-dia-num">
                 {Number(d.data.slice(8))}
-                {d.grupo && <GrupoBadge grupo={d.grupo} />}
+                {d.grupo ? <GrupoBadge grupo={d.grupo} /> : d.util && <LivreBadge />}
               </span>
               {resumo && (
                 <span className="esc-dia-info" style={{ fontWeight: d.meuDia || d.reserva?.status === "CONFIRMADA" ? 700 : 400 }}>
@@ -120,12 +124,19 @@ export function CalendarioClient({
       {dia && (
         <Folha titulo={maiuscula(dataLonga(dia.data))} onFechar={() => setAberto(null)}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            {dia.grupo && <GrupoBadge grupo={dia.grupo} rotulo />}
-            {dia.meuDia ? <StatusTag tipo="ok">Dia do seu grupo</StatusTag> : <StatusTag tipo="neutro">Dia do outro grupo</StatusTag>}
+            {dia.grupo ? <GrupoBadge grupo={dia.grupo} rotulo /> : <LivreBadge rotulo />}
+            {!dia.grupo ? (
+              <StatusTag tipo="neutro">Sem equipe fixa — qualquer pessoa agenda</StatusTag>
+            ) : dia.meuDia ? (
+              <StatusTag tipo="ok">Dia do seu grupo</StatusTag>
+            ) : (
+              <StatusTag tipo="neutro">Dia do outro grupo</StatusTag>
+            )}
           </div>
           {dia.ocupacao && !dia.passado && (
             <div className="text-muted" style={{ fontSize: 13 }}>
-              {dia.ocupacao.capacidade} lugares no escritório · {dia.ocupacao.escalados} escalados do Grupo {dia.grupo}
+              {dia.ocupacao.capacidade} lugares no escritório
+              {dia.grupo ? ` · ${dia.ocupacao.escalados} escalados do Grupo ${dia.grupo}` : ` · ${dia.ocupacao.capacidade - dia.ocupacao.vagasLivres} agendados`}
             </div>
           )}
           <AcoesDia dia={dia} ctx={ctx} />

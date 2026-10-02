@@ -98,7 +98,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>{children}</div>
   );
 
-  if (!dia.grupo) return aviso(dia.feriado ? `Feriado: ${dia.feriado}.` : "Não é dia útil.");
+  if (!dia.util) return aviso(dia.feriado ? `Feriado: ${dia.feriado}.` : "Não é dia útil.");
 
   const encerrado = dia.passado || dia.hoje;
   const prazoTxt = dia.prazo ? horaSP(dia.prazo) : "";
@@ -152,7 +152,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
     );
   }
 
-  // ── Dia do outro grupo: reserva / fila ──
+  // ── Dia livre (ter–qui) ou do outro grupo: reserva / fila ──
   const r = dia.reserva;
   const f = dia.fila;
   if (r && (r.status === "CONFIRMADA" || r.status === "UTILIZADA")) {
@@ -220,7 +220,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
   if (encerrado) return aviso(dia.hoje ? "As reservas para hoje já foram encerradas." : "Dia já passou.");
   if (ctx.afastado) return aviso("Durante o afastamento não é possível reservar nem entrar na fila.");
   const usadas = ctx.reservasNoMes[dia.data.slice(0, 7)] ?? 0;
-  if (usadas >= ctx.limiteMensal)
+  if (ctx.limiteMensal !== null && usadas >= ctx.limiteMensal)
     return aviso(`Você atingiu o limite de ${ctx.limiteMensal} reservas neste mês.`);
 
   const o = dia.ocupacao;
@@ -239,7 +239,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
           </button>
         ),
       )}
-      {!compacto && aviso(`Reservas usadas neste mês: ${usadas} de ${ctx.limiteMensal}.`)}
+      {!compacto && ctx.limiteMensal !== null && aviso(`Reservas usadas neste mês: ${usadas} de ${ctx.limiteMensal}.`)}
     </div>
   );
 }
@@ -249,7 +249,16 @@ export function TituloDia({ dia }: { dia: DiaPortal }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <strong style={{ fontSize: 14.5 }}>{maiuscula(dataLonga(dia.data))}</strong>
-      {dia.grupo && <GrupoBadge grupo={dia.grupo} />}
+      {dia.grupo ? <GrupoBadge grupo={dia.grupo} /> : dia.util && <LivreBadge />}
     </div>
+  );
+}
+
+/** Dia livre (ter–qui): sem equipe fixa, aberto a agendamento. */
+export function LivreBadge({ rotulo = false }: { rotulo?: boolean }) {
+  return (
+    <span className="tag tag-neutral" style={{ fontWeight: 700 }}>
+      {rotulo ? "Dia livre" : "Livre"}
+    </span>
   );
 }
