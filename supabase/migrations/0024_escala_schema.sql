@@ -9,7 +9,7 @@ create table escala_global (
   id boolean primary key default true check (id),            -- garante linha única
   modo_envio text not null default 'DESLIGADO' check (modo_envio in ('DESLIGADO','TESTE','PRODUCAO')),
   modo_google text not null default 'DESLIGADO' check (modo_google in ('DESLIGADO','TESTE','PRODUCAO')),
-  allowlist text[] not null default '{ksnkaique@gmail.com}',
+  allowlist text[] not null default '{ksnkaique@gmail.com,kaique.santos@locgrupo.com.br}',
   calendario_teste_id text,                                   -- agenda usada no modo TESTE
   atualizado_em timestamptz not null default now(),
   atualizado_por text
