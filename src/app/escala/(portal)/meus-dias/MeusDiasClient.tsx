@@ -16,7 +16,7 @@ function Bloco({ kicker, titulo, children, vazio }: { kicker: string; titulo: st
   );
 }
 
-export function InicioClient({ nome, grupo, dias, ctx }: { nome: string; grupo: "A" | "B"; dias: DiaPortal[]; ctx: ContextoPortal }) {
+export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo: "A" | "B"; dias: DiaPortal[]; ctx: ContextoPortal }) {
   const hoje = dias.find((d) => d.hoje)!;
   const futuros = dias.filter((d) => d.data > ctx.hoje && d.grupo);
   const ofertas = dias.filter((d) => d.fila?.status === "OFERECIDA" && d.fila.expiraEm && new Date(d.fila.expiraEm) > new Date());
@@ -115,7 +115,7 @@ export function InicioClient({ nome, grupo, dias, ctx }: { nome: string; grupo: 
                 <AcoesDia dia={d} ctx={ctx} compacto />
               </div>
             ))}
-            <Link href="/escala/calendario" className="btn btn-ghost" style={{ alignSelf: "flex-start", marginTop: 6 }}>
+            <Link href="/escala" className="btn btn-ghost" style={{ alignSelf: "flex-start", marginTop: 6 }}>
               Ver calendário →
             </Link>
           </div>

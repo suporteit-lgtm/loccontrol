@@ -146,7 +146,7 @@ export const emailMudancaEscala = (nome: string, resumo: string[]) =>
     tom: "warn",
     titulo: "Sua escala mudou",
     paragrafos: [`Olá, ${nome}. Houve uma alteração que afeta os seus dias:`, ...resumo],
-    cta: { texto: "Ver calendário", rota: "/escala/calendario" },
+    cta: { texto: "Ver calendário", rota: "/escala" },
   });
 
 export const emailResumoRH = (periodo: string, numeros: { rotulo: string; valor: string }[], destaques: string[]) =>

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ABAS = [
-  { href: "/escala", label: "Início" },
-  { href: "/escala/calendario", label: "Calendário" },
+  { href: "/escala", label: "Calendário" },
+  { href: "/escala/meus-dias", label: "Meus dias" },
   { href: "/escala/reservas", label: "Minhas reservas" },
   { href: "/escala/preferencias", label: "Preferências" },
 ];

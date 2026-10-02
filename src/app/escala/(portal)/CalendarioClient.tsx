@@ -57,12 +57,12 @@ export function CalendarioClient({
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           {podeVoltar ? (
-            <Link className="btn btn-secondary btn-icon" href={`/escala/calendario?mes=${mesVizinho(refMes, -1)}`} aria-label="Mês anterior">‹</Link>
+            <Link className="btn btn-secondary btn-icon" href={`/escala?mes=${mesVizinho(refMes, -1)}`} aria-label="Mês anterior">‹</Link>
           ) : (
             <span className="btn btn-secondary btn-icon" aria-disabled style={{ opacity: 0.4 }}>‹</span>
           )}
           {podeAvancar ? (
-            <Link className="btn btn-secondary btn-icon" href={`/escala/calendario?mes=${mesVizinho(refMes, 1)}`} aria-label="Próximo mês">›</Link>
+            <Link className="btn btn-secondary btn-icon" href={`/escala?mes=${mesVizinho(refMes, 1)}`} aria-label="Próximo mês">›</Link>
           ) : (
             <span className="btn btn-secondary btn-icon" aria-disabled style={{ opacity: 0.4 }}>›</span>
           )}
