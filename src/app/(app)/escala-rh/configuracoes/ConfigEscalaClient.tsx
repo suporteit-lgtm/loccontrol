@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
-import { reiniciarEscala, rodarAgora, salvarModos, salvarParametros, type ParametrosForm } from "@/app/actions/escala";
+import { criarAgendaProducaoRH, prepararAmbienteTesteRH, reiniciarEscala, rodarAgora, salvarModos, salvarParametros, type ParametrosForm } from "@/app/actions/escala";
 import { horaSP } from "@/lib/escala/formato";
 import type { ConfigEscala } from "@/lib/escala/servico";
 import type { Modo, Modos } from "@/lib/escala/envio";
@@ -93,6 +93,17 @@ export function ConfigEscalaClient({
     });
   const set = <K extends keyof ParametrosForm>(k: K, v: ParametrosForm[K]) => setP((x) => ({ ...x, [k]: v }));
   const num = (v: string) => (v.trim() === "" ? NaN : Number(v));
+
+  const ultimoGoogle = logs.find((l) => l.tarefa === "google");
+  const statusGoogle = modos.modo_google === "DESLIGADO" ? null : ultimoGoogle ? ultimoGoogle.status === "OK" : null;
+  const textoGoogle =
+    modos.modo_google === "DESLIGADO"
+      ? "Desligado"
+      : !ultimoGoogle
+        ? "Ainda não sincronizado"
+        : ultimoGoogle.status === "OK"
+          ? `Sincronizado ${horaSP(ultimoGoogle.inicio)}`
+          : `Erro: ${ultimoGoogle.erro ?? "falha"}`;
 
   const grade = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 } as const;
 
@@ -189,31 +200,56 @@ export function ConfigEscalaClient({
             <span>Feriados nacionais (BrasilAPI)</span>
             <Status ok={logs.find((l) => l.tarefa === "feriados")?.status === "OK" ? true : logs.some((l) => l.tarefa === "feriados") ? false : null} sim="Última importação OK" nao="Sem importação recente" />
           </div>
-          <div className="esc-linha">
+          <div className="esc-linha" style={{ flexWrap: "wrap" }}>
             <span>
               Grupos do Workspace{" "}
-              <span className="text-muted" style={{ fontSize: 12 }}>({grupos.map((g) => g.email_workspace).filter(Boolean).join(", ")})</span>
+              <span className="text-muted" style={{ fontSize: 12 }}>
+                ({grupos.map((g) => (modos.modo_google === "TESTE" ? g.email_teste : g.email_workspace)).filter(Boolean).join(", ")}
+                {modos.modo_google === "TESTE" ? " — grupos de teste" : ""})
+              </span>
             </span>
-            <Status ok={null} sim="" nao="Em construção (etapa 9)" />
+            <Status ok={statusGoogle} sim={textoGoogle} nao={textoGoogle} />
+          </div>
+          <div className="esc-linha" style={{ flexWrap: "wrap" }}>
+            <span>
+              Google Agenda “Escala de Presença — BH”{" "}
+              <span className="text-muted" style={{ fontSize: 12 }}>
+                {modos.modo_google === "TESTE"
+                  ? modos.calendario_teste_id ? "(agenda de teste criada)" : "(agenda de teste ainda não criada)"
+                  : config.calendario_id ? "(agenda de produção criada)" : "(agenda de produção ainda não criada)"}
+              </span>
+            </span>
+            <Status ok={statusGoogle} sim={textoGoogle} nao={textoGoogle} />
           </div>
           <div className="esc-linha">
-            <span>Google Agenda “Escala de Presença — BH”</span>
-            <Status ok={null} sim="" nao="Em construção (etapa 9)" />
-          </div>
-          <div className="esc-linha">
-            <span>Agendador das automações (CRON_SECRET)</span>
-            <Status ok={integracoes.cron} sim="Configurado" nao="Falta configurar" />
+            <span>Agendador das automações (pg_cron → CRON_SECRET)</span>
+            <Status ok={integracoes.cron ? (logs.some((l) => l.disparado_por === "cron") ? true : null) : false} sim="Configurado" nao={integracoes.cron ? "Aguardando o 1º disparo do pg_cron" : "Falta configurar"} />
           </div>
         </div>
-        <div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button className="btn btn-secondary" disabled={pending} onClick={() => exec(async () => {
-            const a = await rodarAgora("eventos");
-            const b = await rodarAgora("materializar");
-            return { ok: a.ok && b.ok, msg: a.ok && b.ok ? "Sincronizado (eventos e escala)." : `${a.msg} ${b.msg}` };
+            const rs = [await rodarAgora("eventos"), await rodarAgora("materializar")];
+            if (modos.modo_google !== "DESLIGADO") rs.push(await rodarAgora("google"));
+            const ok = rs.every((r) => r.ok);
+            return { ok, msg: ok ? `Sincronizado (eventos, escala${modos.modo_google !== "DESLIGADO" ? " e Google" : ""}).` : rs.filter((r) => !r.ok).map((r) => r.msg).join(" ") };
           })}>
             Sincronizar agora
           </button>
+          {admin && (
+            <button className="btn btn-ghost" disabled={pending} onClick={() => exec(prepararAmbienteTesteRH)}>
+              Preparar ambiente de teste do Google
+            </button>
+          )}
+          {superadmin && !config.calendario_id && (
+            <button className="btn btn-ghost" disabled={pending} onClick={() => exec(criarAgendaProducaoRH)}>
+              Criar agenda de produção
+            </button>
+          )}
         </div>
+        <span className="text-muted" style={{ fontSize: 12 }}>
+          “Preparar ambiente de teste” cria só a agenda de teste e os grupos escala-teste-a@/b@ — nada real é alterado. No modo Teste, só
+          e-mails da allowlist entram como convidados e membros.
+        </span>
       </section>
 
       {/* ── Automações ── */}

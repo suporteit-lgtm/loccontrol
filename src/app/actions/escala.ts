@@ -5,9 +5,10 @@ import { db } from "@/lib/db";
 import { exigirRH } from "@/lib/perms";
 import { auditar } from "@/lib/audit";
 import { escalaHabilitada } from "@/lib/escala/auth";
-import { materializarUnidade } from "@/lib/escala/servico";
 import { processarAcoes, type Acao } from "@/lib/escala/acoes";
-import { ehTarefa, rodarTarefa } from "@/lib/escala/jobs";
+import { ehTarefa, rematerializarComAvisos, rodarTarefa } from "@/lib/escala/jobs";
+import { avisarTrocaDeGrupo } from "@/lib/escala/avisos";
+import { aposMudancaNaAgenda } from "@/lib/escala/gatilhos";
 import { unidadeDaEscala } from "@/lib/escala/rh";
 import type { Modo } from "@/lib/escala/envio";
 
@@ -22,6 +23,7 @@ async function rh() {
 function atualizar() {
   revalidatePath("/escala-rh", "layout");
   revalidatePath("/escala", "layout");
+  aposMudancaNaAgenda();
 }
 
 async function rpc(nome: string, args: Record<string, unknown>) {
@@ -33,11 +35,12 @@ async function rpc(nome: string, args: Record<string, unknown>) {
 /** Recalcula a escala e trata o que ficou inválido (e-mails respeitam o modo de envio). */
 async function rematerializar(motivo: string) {
   const { config } = await unidadeDaEscala();
-  const r = await materializarUnidade(config.unidade_id, motivo);
-  if (!r.ok) return r.erro;
-  const x = r as unknown as { canceladas?: Acao[]; acoes?: Acao[] };
-  await processarAcoes([...(x.canceladas ?? []), ...(x.acoes ?? [])]);
-  return null;
+  try {
+    await rematerializarComAvisos(config.unidade_id, motivo);
+    return null;
+  } catch (e) {
+    return (e as Error).message;
+  }
 }
 
 // ── Participantes ────────────────────────────────────────────────────────────
@@ -77,6 +80,7 @@ export async function moverParticipante(participanteId: string, letra: "A" | "B"
   const r = await rpc("escala_mudar_grupo", { p_participante: participanteId, p_letra: letra });
   if (!r.ok) return { ok: false, msg: r.codigo };
   await processarAcoes([...(r.canceladas ?? []), ...(r.acoes ?? [])]);
+  await avisarTrocaDeGrupo(participanteId, letra);
   const nome = (p?.colaboradores as unknown as { nome: string })?.nome ?? "—";
   await auditar({ pessoa: nome, ator: u.nome, tabela: "escala_participante", campo: "grupo", antes: `Grupo ${antes}`, depois: `Grupo ${letra}` });
   atualizar();
@@ -344,4 +348,39 @@ export async function cancelarReservaRH(reservaId: string): Promise<Res> {
   await auditar({ pessoa: nome, ator: u.nome, tabela: "escala_reserva", campo: "status", antes: `CONFIRMADA (${rv?.data})`, depois: "CANCELADA pelo RH" });
   atualizar();
   return { ok: true, msg: "Reserva cancelada." };
+}
+
+// ── Google (ambiente de teste e agenda de produção) ─────────────────────────
+/** Cria a agenda de teste e os grupos de teste (escala-teste-a@/b@). Não toca em nada real. */
+export async function prepararAmbienteTesteRH(): Promise<Res> {
+  const u = await rh();
+  if (u.papel !== "Superadmin" && !u.papel.startsWith("Admin")) return { ok: false, msg: "Apenas administradores." };
+  try {
+    const { prepararAmbienteTeste } = await import("@/lib/escala/google");
+    const feito = await prepararAmbienteTeste();
+    await auditar({ pessoa: ESCALA, ator: u.nome, tabela: "escala_global", campo: "ambiente de teste Google", antes: "—", depois: feito.join("; ") || "já existia" });
+    atualizar();
+    return { ok: true, msg: `Ambiente de teste pronto: ${feito.join(", ") || "já existia"}.` };
+  } catch (e) {
+    const { msgErroGoogle } = await import("@/services/googleAgenda");
+    return { ok: false, msg: msgErroGoogle(e) };
+  }
+}
+
+/** Cria a agenda "Escala de Presença — BH" usada no modo PRODUÇÃO. Só o Superadmin. */
+export async function criarAgendaProducaoRH(): Promise<Res> {
+  const u = await rh();
+  if (u.papel !== "Superadmin") return { ok: false, msg: "Só o Superadmin cria a agenda de produção." };
+  const { config } = await unidadeDaEscala();
+  if (config.calendario_id) return { ok: true, msg: "A agenda de produção já existe." };
+  try {
+    const { criarAgendaProducao } = await import("@/lib/escala/google");
+    const id = await criarAgendaProducao(config.unidade_id);
+    await auditar({ pessoa: ESCALA, ator: u.nome, tabela: "escala_config", campo: "calendario_id", antes: "—", depois: id });
+    atualizar();
+    return { ok: true, msg: "Agenda de produção criada (sem eventos até o modo Produção ser ligado)." };
+  } catch (e) {
+    const { msgErroGoogle } = await import("@/services/googleAgenda");
+    return { ok: false, msg: msgErroGoogle(e) };
+  }
 }

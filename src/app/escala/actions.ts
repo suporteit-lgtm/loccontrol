@@ -8,6 +8,7 @@ import { MENSAGEM_BLOQUEIO, type MotivoBloqueio } from "@/lib/escala/calendario"
 import { avisarReservaDireta, processarAcoes, type Acao } from "@/lib/escala/acoes";
 import { baseUrl } from "@/lib/escala/emails";
 import { horaSP } from "@/lib/escala/formato";
+import { aposMudancaNaAgenda } from "@/lib/escala/gatilhos";
 
 export interface Resultado {
   ok: boolean;
@@ -46,6 +47,7 @@ async function rpc(nome: string, args: Record<string, unknown>) {
 
 function atualizar() {
   revalidatePath("/escala", "layout");
+  aposMudancaNaAgenda();
 }
 
 export async function reservar(data: string): Promise<Resultado> {
