@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { entrarComEmail } from "@/app/actions/sessao";
 import { CampoSenha } from "@/components/CampoSenha";
 
-export function LoginCard() {
+export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
@@ -121,6 +121,12 @@ export function LoginCard() {
 
         <div className="text-muted" style={{ fontSize: 11, marginTop: "var(--space-8)" }}>
           acesso restrito · @locgrupo.com.br
+          {trocarModulo && (
+            <>
+              {" · "}
+              <a href="/" style={{ color: "inherit" }}>trocar módulo</a>
+            </>
+          )}
         </div>
       </div>
 

@@ -168,9 +168,12 @@ export function StatCard({
   cor,
   onClick,
   icone,
+  rodape,
 }: {
   label: string;
-  n: number;
+  n: number | string;
+  /** texto curto abaixo do filete (opcional) */
+  rodape?: string;
   cor: string;
   onClick?: () => void;
   icone?: string;
@@ -254,7 +257,9 @@ export function StatCard({
       >
         {n}
       </span>
-      <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--color-divider)" }} />
+      <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--color-divider)" }}>
+        {rodape && <span className="text-muted" style={{ fontSize: 12 }}>{rodape}</span>}
+      </div>
     </div>
   );
 }

@@ -58,6 +58,8 @@ const PATHS: Record<string, string[]> = {
   ],
   lua: ["M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"],
   chevron: ["m6 9 6 6 6-6"],
+  calendario: ["M3 5h18v16H3z", "M3 10h18", "M8 3v4", "M16 3v4"],
+  feriado: ["M3 5h18v16H3z", "M3 10h18", "M8 3v4", "M16 3v4", "m9.5 14 5 5", "m14.5 14-5 5"],
   limpar: ["M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", "M3 3v5h5"],
   afastado: ["M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0", "M12 6v6l4 2"],
   equipamento: [
