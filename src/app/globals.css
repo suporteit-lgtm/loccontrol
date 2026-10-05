@@ -861,3 +861,12 @@ select.input option {
   .esc-dia .tag { font-size: 12px; padding: 3px 10px; }
   .esc-dia-info { font-size: 13px; line-height: 1.35; }
 }
+
+/* ── Exportação em PDF (imprimir) do Dashboard da Escala ── */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; inset: 0 auto auto 0; width: 100%; padding: 0 8mm; }
+  .print-area .no-print { display: none !important; }
+  .print-area .card, .print-area .blueprint { break-inside: avoid; box-shadow: none !important; }
+}
