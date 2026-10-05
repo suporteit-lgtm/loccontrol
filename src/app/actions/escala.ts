@@ -235,7 +235,7 @@ export async function reiniciarEscala(): Promise<Res> {
   await auditar({ pessoa: ESCALA, ator: u.nome, tabela: "escala_dia", campo: "reinício", antes: "escala de teste", depois: "apagada e recalculada" });
   const erro = await rematerializar("grupo");
   atualizar();
-  return erro ? { ok: false, msg: erro } : { ok: true, msg: "Escala reiniciada a partir da data âncora." };
+  return erro ? { ok: false, msg: erro } : { ok: true, msg: "Escala reiniciada: dias de teste apagados e escala recalculada a partir de hoje." };
 }
 
 // ── Calendário do RH ─────────────────────────────────────────────────────────

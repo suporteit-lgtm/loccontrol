@@ -34,8 +34,8 @@ export async function middleware(req: NextRequest) {
   const sessaoPortal = req.cookies
     .getAll()
     .some((c) => /^sb-[^-]+-auth-token(\.\d+)?$/.test(c.name));
-  // "/" é a escolha do módulo: fica acessível para todos
-  if (habilitada && path !== "/" && sessaoPortal && !req.cookies.has("lc_sessao")) {
+  // colaborador logado só no portal não vê nada do LocControl — nem a escolha de módulo
+  if (habilitada && sessaoPortal && !req.cookies.has("lc_sessao")) {
     return NextResponse.redirect(new URL("/escala", req.url));
   }
   return NextResponse.next();
