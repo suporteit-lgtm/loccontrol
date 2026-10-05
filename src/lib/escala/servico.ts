@@ -65,7 +65,7 @@ export async function feriadosDa(unidadeId: string, de: string, ate: string): Pr
  */
 export async function materializarUnidade(unidadeId: string, motivo = "feriado", agora = new Date()) {
   const cfg = await configDa(unidadeId);
-  if (!cfg.data_ancora) return { ok: false as const, erro: "Defina a data âncora em Configurações da Escala." };
+  if (!cfg.data_ancora) return { ok: false as const, erro: "Escolha o grupo da segunda em Configurações da Escala e salve." };
 
   const hoje = hojeSP(agora);
   const ate = somarDias(hoje, DIAS_MATERIALIZADOS);

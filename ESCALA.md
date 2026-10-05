@@ -8,6 +8,8 @@ livres para agendamento. Feriado na segunda ou na sexta leva o grupo daquele dia
 - **RH/Admin:** seção **ESCALA** do menu (Dashboard, Calendário, Participantes, Feriados, Configurações).
 - **Regras de vaga, fila e prazo:** funções SQL com advisory lock por unidade e dia (`supabase/migrations/0025`, `0028`, `0029`).
 - **Separação de acesso:** RLS e grants (`0026`, `0027`). O portal só lê as próprias linhas.
+- **Acesso do colaborador:** quem é incluído como participante já entra no portal. Com sessão só do portal, qualquer endereço do LocControl (inclusive a escolha de módulo em `/`) volta para `/escala`. O link para divulgar é `https://loccontrol.locgrupo.com.br/escala`.
+- **Alternância:** não há âncora para o RH configurar. A referência interna é fixa; o RH só escolhe quem vem na segunda desta semana.
 
 ## Variáveis de ambiente
 
@@ -72,8 +74,8 @@ O comando acima roda os testes de regra pura. Os testes de banco precisam da var
 2. [ ] Na Vercel, configurar `ESCALA_HABILITADA=1`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `CRON_SECRET` e `NEXT_PUBLIC_APP_URL`.
 3. [ ] No Supabase, configurar a Auth URL Configuration com `https://<domínio>/escala/**`.
 4. [ ] Criar os dois segredos do Vault, `escala_cron_url` e `escala_cron_secret`. O primeiro disparo aparece no log das automações.
-5. [ ] Definir a data âncora real e o grupo inicial, e incluir os participantes nos Grupos A/B (diferença máxima de 1 pessoa).
-6. [ ] Cadastrar os feriados municipais de BH e os dias sem expediente.
+5. [ ] Em Configurações, escolher qual grupo vem na segunda desta semana (o resto alterna sozinho) e incluir os participantes nos Grupos A/B (diferença máxima de 1 pessoa).
+6. [ ] RH cadastra manualmente os feriados municipais de BH e os dias sem expediente (os nacionais vêm da BrasilAPI).
 7. [ ] Antes da liberação: rodar "Reiniciar a escala" para apagar os dados de teste.
 8. [ ] Ativar e-mails em TESTE e conferir os e-mails na allowlist.
 9. [ ] Liberar o escopo `calendar` no Admin Console, ligar o Google em TESTE e clicar em "Preparar ambiente de teste". Conferir se o evento aparece na agenda.

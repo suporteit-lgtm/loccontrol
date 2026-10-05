@@ -309,7 +309,7 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
           <span className="text-muted" style={{ fontSize: 12 }}>Ter a qui são dias livres (sem escalados), por isso aparecem com “—”.</span>
         </div>
         <div className="card">
-          <span className="card-kicker">Desde a âncora · acumulado</span>
+          <span className="card-kicker">Desde o início da escala · acumulado</span>
           <span className="card-title">Dias de A × B por mês</span>
           <AxBMensal meses={d.abMensal} />
         </div>

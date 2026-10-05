@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/ui";
 import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
 import { criarAgendaProducaoRH, prepararAmbienteTesteRH, reiniciarEscala, rodarAgora, salvarModos, salvarParametros, type ParametrosForm } from "@/app/actions/escala";
-import { horaSP } from "@/lib/escala/formato";
+import { dataCurta, horaSP } from "@/lib/escala/formato";
+import { diaDaSemana, grupoFixo, hojeSP, outroGrupo, segundaDaSemana, somarDias, type Grupo } from "@/lib/escala/calendario";
 import type { ConfigEscala } from "@/lib/escala/servico";
 import type { Modo, Modos } from "@/lib/escala/envio";
 import type { UnidadeEscala } from "@/lib/escala/rh";
@@ -105,6 +106,17 @@ export function ConfigEscalaClient({
           ? `Sincronizado ${horaSP(ultimoGoogle.inicio)}`
           : `Erro: ${ultimoGoogle.erro ?? "falha"}`;
 
+  // Alternância sem "âncora" para o RH: a referência interna é fixa e o RH só escolhe
+  // quem vem na segunda DESTA semana (no fim de semana, da próxima); o resto alterna sozinho.
+  const hoje = hojeSP();
+  const segRef = [0, 6].includes(diaDaSemana(hoje)) ? somarDias(segundaDaSemana(hoje), 7) : segundaDaSemana(hoje);
+  const ancora = p.data_ancora ?? segRef;
+  const segAtual: Grupo = grupoFixo(segRef, { ancora, grupoInicial: p.grupo_inicial }) ?? p.grupo_inicial;
+  const escolherSegunda = (g: Grupo) => {
+    const comA = grupoFixo(segRef, { ancora, grupoInicial: "A" });
+    setP((x) => ({ ...x, data_ancora: ancora, grupo_inicial: comA === "A" ? g : outroGrupo(g) }));
+  };
+
   const grade = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 } as const;
 
   return (
@@ -122,11 +134,11 @@ export function ConfigEscalaClient({
           <Campo rotulo="Capacidade de lugares">
             <input className="input" type="number" min={1} value={p.capacidade} onChange={(e) => set("capacidade", num(e.target.value))} />
           </Campo>
-          <Campo rotulo="Data âncora (semana 1)" ajuda="A semana desta data é a semana 1 da alternância.">
-            <input className="input" type="date" value={p.data_ancora ?? ""} onChange={(e) => set("data_ancora", e.target.value || null)} />
-          </Campo>
-          <Campo rotulo="Segunda da semana 1 é do" ajuda="Na semana 1 a sexta é do outro grupo; na semana 2 inverte.">
-            <SelectCustom className="input" value={`Grupo ${p.grupo_inicial}`} options={["Grupo A", "Grupo B"]} onChange={(v) => set("grupo_inicial", v.endsWith("A") ? "A" : "B")} />
+          <Campo
+            rotulo={`Nesta semana (seg ${dataCurta(segRef).slice(5)}), a segunda é do`}
+            ajuda={`A sexta é do outro grupo e tudo alterna toda semana. Próxima semana: seg ${outroGrupo(segAtual)}, sex ${segAtual}.`}
+          >
+            <SelectCustom className="input" value={`Grupo ${segAtual}`} options={["Grupo A", "Grupo B"]} onChange={(v) => escolherSegunda(v.endsWith("A") ? "A" : "B")} />
           </Campo>
           <Campo rotulo="Limite de agendamentos por mês" ajuda="Vazio = sem limite.">
             <input
@@ -159,7 +171,7 @@ export function ConfigEscalaClient({
             {pending ? "Salvando..." : "Salvar parâmetros"}
           </button>
           <span className="text-muted" style={{ fontSize: 12 }}>
-            Mudar a âncora, o grupo inicial ou o prazo recalcula os dias futuros (o passado não muda).
+            Trocar o grupo da segunda ou o prazo recalcula os dias futuros (o passado não muda).
           </span>
         </div>
       </section>
@@ -328,7 +340,7 @@ export function ConfigEscalaClient({
           <div className="card-kicker" style={{ color: "var(--danger)" }}>Antes da liberação</div>
           <div className="card-title" style={{ fontSize: 17 }}>Reiniciar a escala</div>
           <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
-            Apaga os dias, reservas, filas e ausências de teste e recalcula a partir da data âncora. Participantes e feriados continuam.
+            Apaga os dias, reservas, filas e ausências de teste e recalcula a escala a partir de hoje. Participantes e feriados continuam.
             Só aparece enquanto a escala não está liberada.
           </p>
           <div style={{ display: "flex", gap: 8 }}>
