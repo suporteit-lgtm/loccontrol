@@ -19,7 +19,9 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 export function lerFiltros(sp: Record<string, string | undefined>, hoje = hojeSP()): Filtros {
   const de = ISO.test(sp.de ?? "") ? sp.de! : `${hoje.slice(0, 7)}-01`;
-  let ate = ISO.test(sp.ate ?? "") ? sp.ate! : hoje;
+  // padrão: o mês inteiro (dias realizados + previstos); os cards só contam até hoje
+  const [a, m] = hoje.split("-").map(Number);
+  let ate = ISO.test(sp.ate ?? "") ? sp.ate! : new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
   if (ate < de) ate = de;
   const grupo = sp.grupo === "A" || sp.grupo === "B" ? sp.grupo : "";
   return { de, ate, grupo, pessoa: /^[0-9a-f-]{36}$/.test(sp.pessoa ?? "") ? sp.pessoa! : "" };

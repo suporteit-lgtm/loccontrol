@@ -886,3 +886,10 @@ select.input option {
 .esc-switch[aria-checked="true"] .esc-switch-trilho { background: var(--ok); }
 .esc-switch[aria-checked="true"] .esc-switch-trilho > span { transform: translateX(18px); }
 .esc-switch:focus-visible .esc-switch-trilho { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* ── Dashboard da Escala: grades que ocupam a largura toda ── */
+.esc-grade-2, .esc-grade-21 { display: grid; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) {
+  .esc-grade-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .esc-grade-21 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+}
