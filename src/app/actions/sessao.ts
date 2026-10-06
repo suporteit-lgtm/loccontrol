@@ -18,7 +18,8 @@ import type { Papel } from "@/lib/types";
  */
 export async function entrarComEmail(
   email: string,
-  senha: string
+  senha: string,
+  lembrar = true
 ): Promise<{ ok: false; msg: string } | never> {
   const em = email.trim().toLowerCase();
   if (!em.includes("@") || !senha) return { ok: false, msg: "Informe e-mail e senha" };
@@ -31,7 +32,7 @@ export async function entrarComEmail(
   if (!verificarSenha(senha, u.senha_hash)) return { ok: false, msg: "E-mail ou senha incorretos" };
 
   await db().from("usuarios").update({ ultimo_acesso: new Date().toISOString() }).eq("id", u.id);
-  await setSessionCookie(u.id);
+  await setSessionCookie(u.id, lembrar);
   redirect((u.papel as Papel).includes("T.I") ? "/dash-ti" : "/dash");
 }
 

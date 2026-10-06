@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { entrarComEmail } from "@/app/actions/sessao";
 import { CampoSenha } from "@/components/CampoSenha";
 
@@ -9,10 +9,27 @@ export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) 
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
   const [pending, start] = useTransition();
+  const [lembrar, setLembrar] = useState(true);
+  const senhaRef = useRef<HTMLDivElement>(null);
+
+  // "Lembrar de mim": o e-mail fica salvo neste navegador
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem("lc_email");
+      if (salvo) {
+        setEmail(salvo);
+        senhaRef.current?.querySelector("input")?.focus();
+      }
+    } catch {}
+  }, []);
 
   const entrar = () =>
     start(async () => {
-      const r = await entrarComEmail(email, senha);
+      try {
+        if (lembrar) localStorage.setItem("lc_email", email.trim().toLowerCase());
+        else localStorage.removeItem("lc_email");
+      } catch {}
+      const r = await entrarComEmail(email, senha, lembrar);
       if (r && !r.ok) setErro(r.msg);
     });
 
@@ -57,7 +74,15 @@ export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) 
             </p>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* form de verdade: o navegador oferece salvar a senha */}
+          <form
+            id="form-login"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (email.includes("@") && senha && !pending) entrar();
+            }}
+            style={{ display: "flex", flexDirection: "column", gap: 20 }}
+          >
             <div className="field">
               <label style={{ fontSize: 12, marginBottom: 8 }}>E-mail corporativo</label>
               <input
@@ -72,12 +97,9 @@ export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) 
                   setEmail(e.target.value);
                   setErro("");
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") entrar();
-                }}
               />
             </div>
-            <div className="field">
+            <div className="field" ref={senhaRef}>
               <label style={{ fontSize: 12, marginBottom: 8 }}>Senha</label>
               <CampoSenha
                 value={senha}
@@ -87,10 +109,25 @@ export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) 
                   setSenha(v);
                   setErro("");
                 }}
-                onEnter={entrar}
               />
             </div>
-          </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={lembrar}
+              className="esc-switch"
+              onClick={() => setLembrar(!lembrar)}
+              style={{ marginTop: -6 }}
+            >
+              <span className="esc-switch-trilho" aria-hidden><span /></span>
+              <span>
+                <strong style={{ fontSize: 13 }}>Lembrar de mim</strong>
+                <span className="text-muted" style={{ display: "block", fontSize: 11.5 }}>
+                  Mantém você conectado por 30 dias e guarda o seu e-mail neste navegador.
+                </span>
+              </span>
+            </button>
+          </form>
 
           {erro && (
             <div
@@ -110,9 +147,10 @@ export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) 
           )}
 
           <button
+            type="submit"
+            form="form-login"
             className="btn btn-primary btn-block"
             disabled={pending || !email.includes("@") || !senha}
-            onClick={entrar}
             style={{ height: 48, fontSize: 15, marginTop: 0, fontWeight: 700 }}
           >
             {pending ? "Entrando..." : "Entrar"}
