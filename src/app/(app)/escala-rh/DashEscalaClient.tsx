@@ -23,6 +23,11 @@ function baixar(nome: string, conteudo: string) {
   URL.revokeObjectURL(a.href);
 }
 
+function fimDoMes(hoje: string): string {
+  const [a, m] = hoje.split("-").map(Number);
+  return new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
+}
+
 function mesAnterior(hoje: string): [string, string] {
   const [a, m] = hoje.split("-").map(Number);
   const ini = new Date(Date.UTC(a, m - 2, 1)).toISOString().slice(0, 10);
@@ -31,56 +36,74 @@ function mesAnterior(hoje: string): [string, string] {
 }
 
 // ── Gráficos (SVG puro, mesmo padrão do Dashboard RH) ────────────────────────
+const SEM = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+/** Ocupação por dia em HTML (altura fixa; texto não cresce com a largura da tela). */
 function OcupacaoDiaria({ dias, capacidade }: { dias: Dashboard["dias"]; capacidade: number }) {
   if (!dias.length) return <p className="text-muted" style={{ fontSize: 13 }}>Nenhum dia útil no período.</p>;
-  const W = 720;
-  const H = 200;
-  const T = 26; // espaço para o número acima da barra
-  const B = H - 22; // espaço para o dia embaixo
-  const max = Math.max(capacidade, ...dias.map((d) => d.presentes)) * 1.06;
-  const y = (v: number) => B - (v / max) * (B - T);
-  const passo = (W - 8) / dias.length;
-  const larg = Math.max(3, Math.min(44, passo * 0.62));
-  const rotular = dias.length <= 31; // poucos dias: número e dia em cada barra
+  const ALT = 180; // px da área das barras
+  const max = Math.max(capacidade, ...dias.map((d) => d.presentes));
+  const h = (v: number) => (v / max) * ALT;
+  const poucos = dias.length <= 31;
   return (
-    <>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} role="img" aria-label="Ocupação por dia">
-        {[T, (T + B) / 2, B].map((yy, i) => (
-          <line key={i} x1={0} x2={W} y1={yy} y2={yy} stroke="var(--color-divider)" strokeDasharray="2 6" />
+    <div style={{ display: "flex", gap: 10, paddingTop: 8 }}>
+      {/* eixo */}
+      <div className="text-muted" style={{ position: "relative", height: ALT, width: 26, flex: "none", fontSize: 11, fontFamily: "var(--mono)" }}>
+        {[max, Math.round(max / 2), 0].map((v) => (
+          <span key={v} style={{ position: "absolute", right: 0, bottom: h(v) - 7 }}>{v}</span>
         ))}
-        <line x1={0} x2={W} y1={y(capacidade)} y2={y(capacidade)} stroke="var(--danger)" strokeWidth={1.2} strokeDasharray="6 4" opacity={0.7} />
-        <text x={W - 4} y={y(capacidade) - 6} textAnchor="end" fontSize={11} fontFamily="var(--mono)" fill="var(--danger)">
-          {`capacidade ${capacidade}`}
-        </text>
-        {dias.map((d, i) => {
-          const cx = 4 + i * passo + passo / 2;
-          const cor = d.grupo ? COR[d.grupo] : "var(--color-neutral-400)";
-          const alto = Math.max(3, B - y(d.presentes));
-          return (
-            <g key={d.data}>
-              <title>{`${dataCurta(d.data)}${d.grupo ? ` · Grupo ${d.grupo}` : " · dia livre"}: ${d.presentes} de ${d.capacidade} lugares${d.futuro ? " (previsto)" : ""}`}</title>
-              <rect x={cx - larg / 2} y={B - alto} width={larg} height={alto} rx={4} fill={cor} opacity={d.futuro ? 0.3 : 0.9} />
-              {rotular && (
-                <text x={cx} y={B - alto - 6} textAnchor="middle" fontSize={11} fontWeight={700} fontFamily="var(--mono)" fill="var(--color-text)">
-                  {String(d.presentes)}
-                </text>
-              )}
-              {rotular && (
-                <text x={cx} y={H - 6} textAnchor="middle" fontSize={10} fontFamily="var(--mono)" fill="var(--color-neutral-500)">
-                  {d.data.slice(8)}
-                </text>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-      {!rotular && (
-        <div style={{ display: "flex", justifyContent: "space-between" }} className="text-muted">
-          <span style={{ fontSize: 11, fontFamily: "var(--mono)" }}>{dataCurta(dias[0].data)}</span>
-          <span style={{ fontSize: 11, fontFamily: "var(--mono)" }}>{dataCurta(dias[dias.length - 1].data)}</span>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ position: "relative", height: ALT, borderBottom: "1px solid var(--color-divider)" }}>
+          {[0.5, 1].map((p) => (
+            <div key={p} style={{ position: "absolute", left: 0, right: 0, bottom: ALT * p, borderTop: "1px dashed var(--color-divider)" }} />
+          ))}
+          <div title={`Capacidade: ${capacidade} lugares`} style={{ position: "absolute", left: 0, right: 0, bottom: h(capacidade), borderTop: "2px dashed color-mix(in srgb, var(--danger) 70%, transparent)" }}>
+            <span style={{ position: "absolute", right: 0, top: -18, fontSize: 11, fontWeight: 600, color: "var(--danger)" }}>capacidade {capacidade}</span>
+          </div>
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: poucos ? 6 : 2 }}>
+            {dias.map((d) => {
+              const cor = d.grupo ? COR[d.grupo] : "var(--color-neutral-400)";
+              return (
+                <div
+                  key={d.data}
+                  title={`${dataCurta(d.data)}${d.grupo ? ` · Grupo ${d.grupo}` : " · dia livre"}: ${d.presentes} de ${d.capacidade} lugares${d.futuro ? " (previsto)" : ""}`}
+                  style={{ flex: "1 1 0", maxWidth: 44, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}
+                >
+                  {poucos && <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "var(--mono)", marginBottom: 3 }}>{d.presentes}</span>}
+                  <div
+                    style={{
+                      width: "100%",
+                      height: Math.max(3, h(d.presentes)),
+                      borderRadius: "5px 5px 2px 2px",
+                      background: cor,
+                      opacity: d.futuro ? 0.35 : 0.9,
+                      backgroundImage: d.futuro ? "repeating-linear-gradient(45deg, transparent 0 4px, rgb(255 255 255 / .25) 4px 6px)" : undefined,
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
-      )}
-    </>
+        {poucos ? (
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 4 }}>
+            {dias.map((d) => (
+              <div key={d.data} className="text-muted" style={{ flex: "1 1 0", maxWidth: 44, minWidth: 0, textAlign: "center", fontSize: 10.5, lineHeight: 1.25, fontFamily: "var(--mono)" }}>
+                {d.data.slice(8)}
+                <br />
+                {SEM[new Date(d.data + "T12:00:00Z").getUTCDay()]}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }} className="text-muted">
+            <span style={{ fontSize: 11, fontFamily: "var(--mono)" }}>{dataCurta(dias[0].data)}</span>
+            <span style={{ fontSize: 11, fontFamily: "var(--mono)" }}>{dataCurta(dias[dias.length - 1].data)}</span>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -138,9 +161,10 @@ function MapaPrevisao({ dias }: { dias: Dashboard["previsao"] }) {
             borderRadius: 8,
             padding: "6px 4px",
             textAlign: "center",
-            background: `color-mix(in srgb, var(--color-accent) ${Math.round(8 + Math.min(100, d.ocupacao) * 0.6)}%, transparent)`,
-            outline: d.poucas ? "2px solid var(--danger)" : "none",
-            outlineOffset: -2,
+            // semáforo: verde = sobra lugar, amarelo = enchendo, vermelho = poucas vagas
+            background: d.poucas ? "var(--danger-bg)" : d.ocupacao >= 60 ? "var(--warn-bg)" : "var(--ok-bg)",
+            color: d.poucas ? "var(--danger-forte)" : d.ocupacao >= 60 ? "var(--warn-forte)" : "var(--ok-forte)",
+            border: `1px solid color-mix(in srgb, ${d.poucas ? "var(--danger)" : d.ocupacao >= 60 ? "var(--warn-forte)" : "var(--ok)"} 35%, transparent)`,
           }}
         >
           <div style={{ fontSize: 10.5 }}>{dataCurta(d.data).slice(0, 3)} · {d.grupo ?? "livre"}</div>
@@ -212,7 +236,7 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
 
   const [mpIni, mpFim] = mesAnterior(d.hoje);
   const presets: { t: string; de: string; ate: string }[] = [
-    { t: "Este mês", de: `${d.hoje.slice(0, 7)}-01`, ate: d.hoje },
+    { t: "Este mês", de: `${d.hoje.slice(0, 7)}-01`, ate: fimDoMes(d.hoje) },
     { t: "Mês passado", de: mpIni, ate: mpFim },
     { t: "Últimos 90 dias", de: somarDias(d.hoje, -90), ate: d.hoje },
     { t: "Próximos 30 dias", de: somarDias(d.hoje, 1), ate: somarDias(d.hoje, 30) },
@@ -292,9 +316,9 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "var(--space-4)" }}>
+      <div className="esc-grade-2" style={{ gap: "var(--space-4)" }}>
         <div className="card" style={{ gridColumn: "1 / -1" }}>
-          <span className="card-kicker">{periodo} · barras claras = previsto</span>
+          <span className="card-kicker">{periodo} · barras listradas = previsto</span>
           <span className="card-title">Ocupação diária</span>
           <OcupacaoDiaria dias={d.dias} capacidade={d.capacidade} />
           <div className="card-meta" style={{ gap: 14 }}>
@@ -327,14 +351,14 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
           <span className="card-title">Previsão de ocupação</span>
           <MapaPrevisao dias={d.previsao} />
           <span className="text-muted" style={{ fontSize: 12 }}>
-            Quanto mais escuro, mais cheio. Contorno vermelho = poucas vagas (até 15% da capacidade).{" "}
+            Verde = sobram lugares · amarelo = mais de 60% ocupado · vermelho = poucas vagas (até 15% da capacidade).{" "}
             {d.previsao.filter((x) => x.poucas).length > 0 && <strong>{d.previsao.filter((x) => x.poucas).length} dia(s) com poucas vagas.</strong>}
           </span>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "var(--space-4)" }}>
-        <div className="card" style={{ gridColumn: "span 2", minWidth: 0 }}>
+      <div className="esc-grade-21" style={{ gap: "var(--space-4)" }}>
+        <div className="card" style={{ minWidth: 0 }}>
           <span className="card-kicker">Clique no nome para ver o histórico · clique no título para ordenar</span>
           <span className="card-title">Frequência por pessoa</span>
           {linhas.length === 0 ? (
