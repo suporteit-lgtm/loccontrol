@@ -3,8 +3,14 @@
 import Link from "next/link";
 import { GrupoBadge } from "@/components/escala/GrupoBadge";
 import { AcoesDia, LivreBadge, StatusTag, TituloDia, textoVagas } from "@/components/escala/AcoesDia";
-import { dataCurta, dataLonga, maiuscula } from "@/lib/escala/formato";
+import { dataLonga, maiuscula } from "@/lib/escala/formato";
 import type { ContextoPortal, DiaPortal } from "@/lib/escala/portal";
+
+/** "hoje", "amanhã", "em 3 dias" */
+function quando(data: string, hoje: string): string {
+  const n = Math.round((Date.parse(data) - Date.parse(hoje)) / 86_400_000);
+  return n <= 0 ? "hoje" : n === 1 ? "amanhã" : `em ${n} dias`;
+}
 
 function Bloco({ kicker, titulo, children, vazio }: { kicker: string; titulo: string; children?: React.ReactNode; vazio?: string }) {
   return (
@@ -32,18 +38,18 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
   if (!hoje.util) hojeTexto = hoje.feriado ? `Hoje é feriado: ${hoje.feriado}.` : "Hoje não é dia útil.";
   else if (!hoje.grupo) {
     const reservou = hoje.reserva?.status === "CONFIRMADA" || hoje.reserva?.status === "UTILIZADA";
-    hojeTexto = reservou ? "Hoje é dia livre — você agendou presença." : "Hoje é dia livre (sem equipe fixa).";
+    hojeTexto = reservou ? "Você agendou presença hoje." : "Hoje não há grupo fixo — qualquer pessoa pode agendar.";
     if (reservou) hojeTom = "ok";
   }
-  else if (hoje.meuDia && ctx.afastado) hojeTexto = `Hoje é dia do Grupo ${hoje.grupo}, mas você está afastado.`;
-  else if (hoje.meuDia && hoje.ausente) hojeTexto = `Hoje é dia do Grupo ${hoje.grupo} — você avisou que não vai.`;
+  else if (hoje.meuDia && ctx.afastado) hojeTexto = "Você está afastado(a) — hoje o seu lugar fica livre.";
+  else if (hoje.meuDia && hoje.ausente) hojeTexto = "Hoje é o dia do seu grupo, e você avisou que não vem.";
   else if (hoje.meuDia) {
-    hojeTexto = `Hoje é dia do Grupo ${hoje.grupo} — você está escalado.`;
+    hojeTexto = "Hoje é o dia do seu grupo no escritório.";
     hojeTom = "ok";
   } else if (hoje.reserva?.status === "CONFIRMADA" || hoje.reserva?.status === "UTILIZADA") {
-    hojeTexto = `Hoje é dia do Grupo ${hoje.grupo} — você tem reserva.`;
+    hojeTexto = "Você agendou presença hoje.";
     hojeTom = "ok";
-  } else hojeTexto = `Hoje é dia do Grupo ${hoje.grupo}. Hoje não é seu dia.`;
+  } else hojeTexto = "Hoje não é o dia do seu grupo.";
 
   return (
     <>
@@ -77,9 +83,12 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
           <div className="esc-lista">
             {proximos.map((d) => (
               <div key={d.data} className="esc-linha" style={{ flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <strong style={{ fontSize: 14 }}>{maiuscula(dataCurta(d.data))}</strong>
-                  {d.hoje && <StatusTag tipo="accent">hoje</StatusTag>}
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <TituloDia dia={d} />
+                  <span className="text-muted" style={{ fontSize: 12.5 }}>
+                    {maiuscula(quando(d.data, ctx.hoje))}
+                    {d.ausente ? " · ausência avisada" : ""}
+                  </span>
                 </div>
                 <AcoesDia dia={d} ctx={ctx} compacto />
               </div>
@@ -88,7 +97,7 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
         ) : undefined}
       </Bloco>
 
-      <Bloco kicker="Reservas e fila" titulo="Seus dias extras" vazio="Você não tem reservas nem posições na fila.">
+      <Bloco kicker="Agendamentos e lista de espera" titulo="Seus dias extras" vazio="Você não tem agendamentos nem está em lista de espera.">
         {meus.length > 0 ? (
           <div className="esc-lista">
             {meus.map((d) => (
@@ -107,7 +116,7 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
       <Bloco
         kicker="Vagas livres"
         titulo="Agendar outro dia"
-        vazio={ctx.afastado ? "Durante o afastamento não é possível reservar." : "Sem dias disponíveis nas próximas semanas."}
+        vazio={ctx.afastado ? "Durante o afastamento não é possível agendar." : "Sem dias disponíveis nas próximas semanas."}
       >
         {vagas.length > 0 && !ctx.afastado ? (
           <div className="esc-lista">
@@ -115,7 +124,7 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
               <div key={d.data} className="esc-linha" style={{ flexWrap: "wrap" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <TituloDia dia={d} />
-                  <span className="text-muted" style={{ fontSize: 12.5 }}>{textoVagas(d)}</span>
+                  <span className="text-muted" style={{ fontSize: 12.5 }}>{maiuscula(quando(d.data, ctx.hoje))} · {textoVagas(d)}</span>
                 </div>
                 <AcoesDia dia={d} ctx={ctx} compacto />
               </div>

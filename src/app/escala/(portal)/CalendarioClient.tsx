@@ -18,14 +18,15 @@ function mesVizinho(ref: string, delta: number): string {
 /** Uma linha curta de status para a célula. */
 function resumoCelula(d: DiaPortal, ctx: ContextoPortal): string | null {
   if (!d.util) return d.feriado ?? null;
-  if (d.meuDia) return ctx.afastado ? "afastado" : d.ausente ? "você não vai" : "seu dia";
-  if (d.reserva?.status === "CONFIRMADA" || d.reserva?.status === "UTILIZADA") return "reservado";
-  if (d.fila?.status === "OFERECIDA") return "vaga oferecida!";
-  if (d.fila?.status === "AGUARDANDO") return `fila: ${d.fila.posicao}º`;
-  if (d.passado || d.hoje) return null;
+  if (d.meuDia) return ctx.afastado ? "Afastado(a)" : d.ausente ? "Ausência avisada" : "Seu dia";
+  if (d.reserva?.status === "CONFIRMADA" || d.reserva?.status === "UTILIZADA") return "Agendado";
+  if (d.fila?.status === "OFERECIDA") return "Vaga para você";
+  if (d.fila?.status === "AGUARDANDO") return `${d.fila.posicao}º na espera`;
+  if (d.hoje) return "Hoje";
+  if (d.passado) return null;
   const o = d.ocupacao;
   if (!o) return null;
-  return o.vagasDisponiveis > 0 && o.fila === 0 ? `${o.vagasDisponiveis} livre${o.vagasDisponiveis > 1 ? "s" : ""}` : o.fila ? `lotado · ${o.fila} fila` : "lotado";
+  return o.vagasDisponiveis > 0 && o.fila === 0 ? `${o.vagasDisponiveis} vaga${o.vagasDisponiveis > 1 ? "s" : ""}` : o.fila ? `Lotado · ${o.fila} na espera` : "Lotado";
 }
 
 export function CalendarioClient({
@@ -126,7 +127,7 @@ export function CalendarioClient({
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {dia.grupo ? <GrupoBadge grupo={dia.grupo} rotulo /> : <LivreBadge rotulo />}
             {!dia.grupo ? (
-              <StatusTag tipo="neutro">Sem equipe fixa — qualquer pessoa agenda</StatusTag>
+              <StatusTag tipo="neutro">Sem grupo fixo — qualquer pessoa pode agendar</StatusTag>
             ) : dia.meuDia ? (
               <StatusTag tipo="ok">Dia do seu grupo</StatusTag>
             ) : (

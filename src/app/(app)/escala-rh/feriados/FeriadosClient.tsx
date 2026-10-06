@@ -72,9 +72,10 @@ export function FeriadosClient({
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input className="input" type="date" value={data} onChange={(e) => setData(e.target.value)} style={{ width: 170 }} />
           <input className="input" placeholder="Nome (ex.: Assunção de Nossa Senhora)" value={nome} onChange={(e) => setNome(e.target.value)} style={{ flex: 1, minWidth: 240 }} />
-          <label className="radio">
-            <input type="checkbox" checked={semExp} onChange={(e) => setSemExp(e.target.checked)} /> Dia sem expediente
-          </label>
+          <button type="button" role="switch" aria-checked={semExp} className="esc-switch" onClick={() => setSemExp(!semExp)}>
+            <span className="esc-switch-trilho" aria-hidden><span /></span>
+            <span style={{ fontSize: 13.5 }}>Dia sem expediente</span>
+          </button>
           <button
             className="btn btn-primary"
             disabled={pending || !data || !nome.trim()}
@@ -84,7 +85,7 @@ export function FeriadosClient({
           </button>
         </div>
         <p className="text-muted" style={{ fontSize: 12.5, margin: 0 }}>
-          Ao cadastrar ou remover, a escala dos dias futuros é recalculada. Reservas e posições na fila do dia ficam canceladas e as
+          Ao cadastrar ou remover, a escala dos dias futuros é recalculada. Agendamentos e listas de espera do dia são cancelados e as
           pessoas afetadas são avisadas por e-mail (conforme o modo de envio).
         </p>
       </section>

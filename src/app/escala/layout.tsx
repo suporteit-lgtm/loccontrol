@@ -4,7 +4,7 @@ import { escalaHabilitada } from "@/lib/escala/auth";
 
 export const metadata: Metadata = {
   title: "Escala de Presença · Locagora",
-  description: "Seus dias no escritório, reservas e lista de espera",
+  description: "Seus dias no escritório, agendamentos e lista de espera",
 };
 
 /** Portal do colaborador: layout próprio, sem o menu e sem links do LocControl. */

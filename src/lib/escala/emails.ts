@@ -92,7 +92,7 @@ export const emailLembrete = (nome: string, data: string, motivo: "grupo" | "res
     titulo: `Amanhã é dia de escritório`,
     paragrafos: [
       `Olá, ${nome}. Lembrete de que você vai ao escritório amanhã, ${dataLonga(data)}.`,
-      motivo === "reserva" ? "Você tem uma reserva confirmada para este dia." : `É o dia do Grupo ${grupo}.`,
+      motivo === "reserva" ? "Você tem um agendamento confirmado para este dia." : `É o dia do Grupo ${grupo}.`,
       "Não vai poder ir? Avise pelo portal para liberar o seu lugar para outra pessoa.",
     ],
     cta: { texto: "Abrir a escala", rota: "/escala" },
@@ -104,10 +104,10 @@ export const emailVagaConfirmada = (nome: string, data: string, viaFila: boolean
     tom: "ok",
     titulo: `Sua vaga em ${dataLonga(data)} está confirmada`,
     paragrafos: [
-      `Olá, ${nome}. ${viaFila ? "Abriu uma vaga e ela foi atribuída a você pela lista de espera." : "Sua reserva foi registrada."}`,
+      `Olá, ${nome}. ${viaFila ? "Abriu uma vaga e ela é sua pela lista de espera." : "Seu agendamento foi registrado."}`,
       `Se não puder ir, cancele até ${horaSP(prazo)} para liberar o lugar.`,
     ],
-    cta: { texto: "Ver minhas reservas", rota: "/escala/reservas" },
+    cta: { texto: "Ver meus agendamentos", rota: "/escala/reservas" },
   });
 
 export const emailVagaOferecida = (nome: string, data: string, expira: string, token: string) =>
@@ -116,28 +116,28 @@ export const emailVagaOferecida = (nome: string, data: string, expira: string, t
     tom: "warn",
     titulo: `Abriu uma vaga em ${dataLonga(data)}`,
     paragrafos: [
-      `Olá, ${nome}. Você é o próximo da lista de espera.`,
+      `Olá, ${nome}. Você é a próxima pessoa da lista de espera.`,
       `A vaga fica reservada para você até ${horaSP(expira)}. Depois disso, ela passa para a próxima pessoa.`,
     ],
     cta: { texto: "Aceitar ou recusar a vaga", rota: `/escala/oferta/${token}` },
   });
 
 const MOTIVOS: Record<string, string> = {
-  pessoa: "Você cancelou a reserva.",
-  admin: "O RH cancelou a reserva.",
+  pessoa: "Você cancelou o agendamento.",
+  admin: "O RH cancelou o agendamento.",
   feriado: "O dia deixou de ser dia útil (feriado ou dia sem expediente).",
   grupo: "A escala mudou e este dia passou a ser do seu próprio grupo — seu lugar está garantido.",
   remanejamento: "Um grupo foi remanejado para este dia por causa de um feriado e não sobrou lugar para todos os agendamentos.",
-  afastado: "Você está afastado neste período.",
+  afastado: "Você está afastado(a) neste período.",
   desligado: "Você não participa mais da escala.",
 };
 
 export const emailReservaCancelada = (nome: string, data: string, motivo: string) =>
   templateEscala({
-    eyebrow: "Reserva cancelada",
+    eyebrow: "Agendamento cancelado",
     tom: "danger",
-    titulo: `Reserva de ${dataLonga(data)} cancelada`,
-    paragrafos: [`Olá, ${nome}. ${MOTIVOS[motivo] ?? "A reserva foi cancelada."}`],
+    titulo: `Agendamento de ${dataLonga(data)} cancelado`,
+    paragrafos: [`Olá, ${nome}. ${MOTIVOS[motivo] ?? "O agendamento foi cancelado."}`],
     cta: { texto: "Abrir a escala", rota: "/escala" },
   });
 

@@ -3,6 +3,7 @@ import { contaPortal } from "@/lib/escala/auth";
 import { AvatarCircle } from "@/components/ui";
 import { ThemeToggleButton } from "@/components/ThemeToggle";
 import { PortalNav } from "@/components/escala/PortalNav";
+import { AoVivo } from "@/components/escala/AoVivo";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,7 @@ export default async function PortalLayout({ children }: { children: React.React
     <div style={{ minHeight: "100vh", background: "var(--color-bg)" }}>
       <Cabecalho nome={conta.nome} />
       {comAbas && <PortalNav />}
+      {comAbas && <AoVivo />}
       <main className="esc-main">
         {conteudo}
       </main>

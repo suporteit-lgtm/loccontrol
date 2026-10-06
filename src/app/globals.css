@@ -870,3 +870,16 @@ select.input option {
   .print-area .no-print { display: none !important; }
   .print-area .card, .print-area .blueprint { break-inside: avoid; box-shadow: none !important; }
 }
+
+/* ── Escala: barra de ocupação do dia (Calendário do RH) ── */
+.esc-barra { display: block; height: 5px; border-radius: 999px; background: color-mix(in srgb, var(--color-text) 10%, transparent); overflow: hidden; }
+.esc-barra > span { display: block; height: 100%; border-radius: inherit; transition: width .3s ease; }
+
+/* ── Escala: interruptor liga/desliga (Preferências do portal) ── */
+.esc-switch { display: flex; align-items: center; gap: 12px; text-align: left; background: none; border: 0; padding: 4px 0; color: inherit; font: inherit; cursor: pointer; }
+.esc-switch:disabled { opacity: .6; cursor: progress; }
+.esc-switch-trilho { flex: none; width: 42px; height: 24px; border-radius: 999px; background: var(--color-neutral-300, #c9ced6); position: relative; transition: background .2s; }
+.esc-switch-trilho > span { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: transform .2s; }
+.esc-switch[aria-checked="true"] .esc-switch-trilho { background: var(--ok); }
+.esc-switch[aria-checked="true"] .esc-switch-trilho > span { transform: translateX(18px); }
+.esc-switch:focus-visible .esc-switch-trilho { outline: 2px solid var(--color-accent); outline-offset: 2px; }

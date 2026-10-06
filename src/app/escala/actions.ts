@@ -19,7 +19,7 @@ export interface Resultado {
 const MENSAGENS: Record<string, string> = {
   ...MENSAGEM_BLOQUEIO,
   LOTADO: "Este dia está lotado. Você pode entrar na lista de espera.",
-  HA_VAGAS: "Ainda há vagas neste dia — faça a reserva direto.",
+  HA_VAGAS: "Ainda há vagas neste dia — agende direto.",
   PRAZO_ENCERRADO: "O prazo para cancelar já passou.",
   NAO_ESCALADO: "Este não é um dia do seu grupo.",
   JA_AUSENTE: "Você já avisou que não vai neste dia.",
@@ -56,7 +56,7 @@ export async function reservar(data: string): Promise<Resultado> {
   if (!r.ok) return { ok: false, msg: texto(r.codigo), extra: r.codigo };
   await avisarReservaDireta(p.id, r.reserva_id as string, data);
   atualizar();
-  return { ok: true, msg: "Reserva confirmada." };
+  return { ok: true, msg: "Agendamento confirmado." };
 }
 
 export async function entrarFila(data: string): Promise<Resultado> {
@@ -73,7 +73,7 @@ export async function cancelarReserva(reservaId: string): Promise<Resultado> {
   if (!r.ok) return { ok: false, msg: texto(r.codigo) };
   await processarAcoes(r.acoes);
   atualizar();
-  return { ok: true, msg: "Reserva cancelada." };
+  return { ok: true, msg: "Agendamento cancelado." };
 }
 
 export async function sairFila(filaId: string): Promise<Resultado> {
@@ -114,7 +114,7 @@ export async function aceitarOferta(filaId: string): Promise<Resultado> {
   if (!r.ok) return { ok: false, msg: texto(r.codigo) };
   await avisarReservaDireta(p.id, r.reserva_id as string, r.data as string);
   atualizar();
-  return { ok: true, msg: "Vaga aceita — reserva confirmada." };
+  return { ok: true, msg: "Vaga aceita — agendamento confirmado." };
 }
 
 export async function recusarOferta(filaId: string): Promise<Resultado> {
@@ -139,7 +139,7 @@ export async function responderOfertaPorToken(token: string, aceitar: boolean): 
   if (aceitar) await avisarReservaDireta(r.participante_id as string, r.reserva_id as string, r.data as string);
   atualizar();
   return aceitar
-    ? { ok: true, msg: "Vaga aceita — sua reserva está confirmada." }
+    ? { ok: true, msg: "Vaga aceita — seu agendamento está confirmado." }
     : { ok: true, msg: "Oferta recusada. A vaga passou para a próxima pessoa." };
 }
 
