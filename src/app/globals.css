@@ -854,12 +854,15 @@ select.input option {
   .esc-dia {
     min-height: 0;
     /* 328px = cabeçalho + abas + topo do card + rodapé; 8px = espaço entre semanas */
-    height: clamp(50px, calc((100dvh - 328px - (var(--linhas, 5) - 1) * 8px) / var(--linhas, 5)), 130px);
+    height: clamp(50px, calc((100dvh - 328px - (var(--linhas, 5) - 1) * 8px) / var(--linhas, 5)), 210px);
     padding: 10px 12px; gap: 6px; border-radius: var(--radius-lg); overflow: hidden;
   }
-  .esc-dia-num { font-size: 19px; }
+  .esc-dia-num { font-size: clamp(17px, 1.05vw, 24px); }
   .esc-dia .tag { font-size: 12px; padding: 3px 10px; }
-  .esc-dia-info { font-size: 13px; line-height: 1.35; }
+  .esc-dia-info { font-size: clamp(12.5px, 0.75vw, 15px); line-height: 1.35; }
+  /* portal: a largura do calendário acompanha a altura da tela, para o dia ficar
+     proporcional (≈ 1,5 × mais largo que alto) em qualquer monitor */
+  .esc-main:has(.esc-cal) { max-width: clamp(1100px, calc((100dvh - 330px) / 5 * 1.5 * 7 + 140px), 1800px); }
 }
 
 /* ── Exportação em PDF (imprimir) do Dashboard da Escala ── */
