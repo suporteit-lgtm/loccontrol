@@ -9,6 +9,7 @@ import { GrupoBadge } from "@/components/escala/GrupoBadge";
 import { Folha, LivreBadge, StatusTag } from "@/components/escala/AcoesDia";
 import { agendarRH, cancelarReservaRH, detalheDia, registrarAusenciaRH, type DetalheDia } from "@/app/actions/escala";
 import { SelectCustom } from "@/components/SelectCustom";
+import { BarraOcupacao } from "@/components/escala/BarraOcupacao";
 import { dataLonga, horaSP, maiuscula, nomeMes } from "@/lib/escala/formato";
 
 export interface DiaRH {
@@ -40,17 +41,6 @@ const SITUACAO = {
   ausente_em_cima: ["warn", "Ausência em cima da hora"],
   afastado: ["warn", "Afastado(a)"],
 } as const;
-
-/** Barra de ocupação do dia (verde → amarelo → vermelho conforme enche). */
-function Barra({ n, de }: { n: number; de: number }) {
-  const p = de > 0 ? Math.min(100, Math.round((n / de) * 100)) : 0;
-  const cor = p >= 100 ? "var(--danger)" : p >= 85 ? "var(--warn-forte)" : "var(--ok)";
-  return (
-    <span className="esc-barra" aria-hidden>
-      <span style={{ width: `${p}%`, background: cor }} />
-    </span>
-  );
-}
 
 export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string; refMes: string; dias: DiaRH[] }) {
   const router = useRouter();
@@ -135,7 +125,7 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
                     <strong>{d.presentes}</strong>
                     <span className="text-muted">/{d.capacidade} lugares</span>
                   </span>
-                  <Barra n={d.presentes} de={d.capacidade} />
+                  <BarraOcupacao n={d.presentes} de={d.capacidade} />
                   {(d.ausencias + d.afastados > 0 || d.fila > 0) && (
                     <span className="esc-dia-info" style={{ fontSize: 11.5 }}>
                       {d.ausencias + d.afastados > 0 && <span style={{ color: "var(--warn-forte)" }}>{d.ausencias + d.afastados} ausente{d.ausencias + d.afastados > 1 ? "s" : ""}</span>}
