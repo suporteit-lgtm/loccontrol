@@ -57,6 +57,9 @@ export function ParticipantesClient({
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [destino, setDestino] = useState<"A" | "B">("A");
   const [confirmarSaida, setConfirmarSaida] = useState<string | null>(null);
+  // cada grupo mostra 5 pessoas; o resto abre na seta
+  const [abertos, setAbertos] = useState<Record<"A" | "B", boolean>>({ A: false, B: false });
+  const VISIVEIS = 5;
 
   const ativos = participantes.filter((p) => p.ativo);
   const porGrupo = { A: ativos.filter((p) => p.grupo === "A"), B: ativos.filter((p) => p.grupo === "B") };
@@ -110,9 +113,9 @@ export function ParticipantesClient({
           <p className="text-muted" style={{ fontSize: 13.5, margin: 0 }}>Ninguém neste grupo ainda.</p>
         ) : (
           <div className="esc-lista">
-            {lista.map((p) => (
+            {(abertos[g] ? lista : lista.slice(0, VISIVEIS)).map((p) => (
               <div key={p.id} className="esc-linha" style={{ flexWrap: "wrap" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: "1 1 220px" }}>
                   <strong style={{ fontSize: 14 }}>{p.nome}</strong>
                   <span className="text-muted" style={{ fontSize: 12 }}>
                     {p.cargo} · {p.unidade}
@@ -127,7 +130,7 @@ export function ParticipantesClient({
                     {!p.email && <span className="tag" style={{ fontSize: 10, background: "var(--warn-bg)", color: "var(--warn-forte)" }}>sem e-mail</span>}
                   </span>
                 </div>
-                <div style={{ display: "flex", gap: 6 }}>
+                <div style={{ display: "flex", gap: 6, flex: "none", marginLeft: "auto" }}>
                   {confirmarSaida === p.id ? (
                     <>
                       <button className="btn btn-danger" disabled={pending} onClick={() => exec(() => removerParticipante(p.id), () => setConfirmarSaida(null))}>
@@ -153,6 +156,18 @@ export function ParticipantesClient({
                 </div>
               </div>
             ))}
+            {lista.length > VISIVEIS && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                aria-expanded={abertos[g]}
+                onClick={() => setAbertos((x) => ({ ...x, [g]: !x[g] }))}
+                style={{ alignSelf: "center", marginTop: 6, fontSize: 13, gap: 6 }}
+              >
+                {abertos[g] ? "Mostrar menos" : `Ver mais ${lista.length - VISIVEIS} pessoa${lista.length - VISIVEIS === 1 ? "" : "s"}`}
+                <span aria-hidden style={{ display: "inline-block", transition: "transform .2s", transform: abertos[g] ? "rotate(180deg)" : "none" }}>▾</span>
+              </button>
+            )}
           </div>
         )}
       </section>
