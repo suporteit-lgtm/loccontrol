@@ -126,10 +126,15 @@ export function ConfigEscalaClient({
       {/* ── Parâmetros ── */}
       <section className="card elev-sm" style={{ gap: 14 }}>
         <div className="card-kicker">Parâmetros da unidade</div>
-        <label className="radio" style={{ gap: 10, fontWeight: 600 }}>
-          <input type="checkbox" checked={p.habilitado} onChange={(e) => set("habilitado", e.target.checked)} />
-          Escala liberada para os colaboradores desta unidade
-        </label>
+        <button type="button" role="switch" aria-checked={p.habilitado} className="esc-switch" onClick={() => set("habilitado", !p.habilitado)}>
+          <span className="esc-switch-trilho" aria-hidden><span /></span>
+          <span>
+            <strong style={{ fontSize: 14 }}>{p.habilitado ? "Escala liberada para os colaboradores" : "Escala ainda não liberada"}</strong>
+            <span className="text-muted" style={{ display: "block", fontSize: 12.5 }}>
+              Marca a unidade como em operação (vale depois de “Salvar parâmetros”). Quem está em Participantes já acessa o portal.
+            </span>
+          </span>
+        </button>
         <div style={grade}>
           <Campo rotulo="Capacidade de lugares">
             <input className="input" type="number" min={1} value={p.capacidade} onChange={(e) => set("capacidade", num(e.target.value))} />
@@ -150,13 +155,13 @@ export function ConfigEscalaClient({
               onChange={(e) => set("limite_mensal", e.target.value === "" ? null : Number(e.target.value))}
             />
           </Campo>
-          <Campo rotulo="Prazo de cancelamento" ajuda="Horário do dia útil anterior.">
+          <Campo rotulo="Prazo para cancelar ou avisar ausência" ajuda="Horário do dia útil anterior.">
             <input className="input" type="time" value={p.prazo_hora} onChange={(e) => set("prazo_hora", e.target.value)} />
           </Campo>
-          <Campo rotulo="Validade da oferta da fila (min)" ajuda="Nunca passa da meia-noite do dia da vaga.">
+          <Campo rotulo="Prazo para aceitar vaga da lista de espera (min)" ajuda="Nunca passa da meia-noite do dia da vaga.">
             <input className="input" type="number" min={5} value={p.oferta_validade_min} onChange={(e) => set("oferta_validade_min", num(e.target.value))} />
           </Campo>
-          <Campo rotulo="Lembrete da véspera">
+          <Campo rotulo="Horário do lembrete da véspera">
             <input className="input" type="time" value={p.lembrete_hora} onChange={(e) => set("lembrete_hora", e.target.value)} />
           </Campo>
           <Campo rotulo="Resumo semanal do RH">

@@ -36,17 +36,24 @@ export function PreferenciasClient({
       <section className="card elev-sm">
         <div className="card-kicker">Lembretes</div>
         <div className="card-title" style={{ fontSize: 17 }}>Lembrete por e-mail na véspera</div>
-        <label className="radio" style={{ gap: 10 }}>
-          <input
-            type="checkbox"
-            checked={lembretes}
-            disabled={pending}
-            onChange={(e) => exec(() => salvarLembretes(e.target.checked))}
-          />
-          Receber lembrete em {email}
-        </label>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={lembretes}
+          className="esc-switch"
+          disabled={pending}
+          onClick={() => exec(() => salvarLembretes(!lembretes))}
+        >
+          <span className="esc-switch-trilho" aria-hidden><span /></span>
+          <span>
+            <strong style={{ fontSize: 14 }}>{lembretes ? "Lembretes ligados" : "Lembretes desligados"}</strong>
+            <span className="text-muted" style={{ display: "block", fontSize: 12.5 }}>
+              {lembretes ? `Você recebe um e-mail em ${email} às vésperas dos seus dias no escritório.` : "Você não recebe o lembrete da véspera."}
+            </span>
+          </span>
+        </button>
         <p className="text-muted" style={{ fontSize: 12.5, margin: 0 }}>
-          Avisos de reserva, de vaga oferecida e de mudança na escala são sempre enviados.
+          Avisos de agendamento, de vaga na lista de espera e de mudança na escala são sempre enviados.
         </p>
       </section>
 
@@ -61,8 +68,8 @@ export function PreferenciasClient({
           )}
         </div>
         <p className="text-muted" style={{ fontSize: 13, margin: 0, lineHeight: 1.5 }}>
-          Os dias do seu grupo aparecem na agenda compartilhada da escala, e as reservas confirmadas entram como convite
-          para você.
+          Os dias do seu grupo aparecem automaticamente na sua agenda do Google, e os dias que você agendar entram como
+          convite para você.
         </p>
       </section>
 

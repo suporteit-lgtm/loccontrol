@@ -103,7 +103,7 @@ export function ParticipantesClient({
           {email && <span className="text-muted" style={{ fontSize: 12 }}>{email}</span>}
         </div>
         <span className="text-muted" style={{ fontSize: 12.5 }}>
-          {g === grupoInicial ? "Segunda nas semanas ímpares e sexta nas pares" : "Sexta nas semanas ímpares e segunda nas pares"} ·{" "}
+          {g === grupoInicial ? "Esta semana vem na segunda; na próxima, na sexta" : "Esta semana vem na sexta; na próxima, na segunda"} ·{" "}
           {presentes(g)} de {capacidade} lugares nos dias fixos
         </span>
         {lista.length === 0 ? (
@@ -120,9 +120,9 @@ export function ParticipantesClient({
                   <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <StatusPill status={p.status} />
                     {p.vinculado ? (
-                      <span className="tag tag-accent" style={{ fontSize: 10 }}>usa o portal</span>
+                      <span className="tag tag-accent" style={{ fontSize: 10 }}>já entrou no portal</span>
                     ) : (
-                      <span className="tag tag-neutral" style={{ fontSize: 10 }}>ainda não entrou</span>
+                      <span className="tag tag-neutral" style={{ fontSize: 10 }}>nunca entrou no portal</span>
                     )}
                     {!p.email && <span className="tag" style={{ fontSize: 10, background: "var(--warn-bg)", color: "var(--warn-forte)" }}>sem e-mail</span>}
                   </span>
@@ -191,8 +191,8 @@ export function ParticipantesClient({
         <div className="card-kicker">Incluir na escala</div>
         <div className="card-title" style={{ fontSize: 17 }}>Colaboradores cadastrados</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <SelectCustom className="input" style={{ minWidth: 180 }} value={cidade} options={cidades} onChange={(v) => { setCidade(v); setUnid(TODAS); }} />
-          <SelectCustom className="input" style={{ minWidth: 180 }} value={unid} options={unidades} onChange={setUnid} />
+          <div style={{ flex: "1 1 180px", maxWidth: 240 }}><SelectCustom className="input" value={cidade} options={cidades} onChange={(v) => { setCidade(v); setUnid(TODAS); }} /></div>
+          <div style={{ flex: "1 1 180px", maxWidth: 240 }}><SelectCustom className="input" value={unid} options={unidades} onChange={setUnid} /></div>
           <input className="input" placeholder="Buscar pelo nome" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
         </div>
 

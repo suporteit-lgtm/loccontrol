@@ -22,7 +22,8 @@ function resumoCelula(d: DiaPortal, ctx: ContextoPortal): string | null {
   if (d.reserva?.status === "CONFIRMADA" || d.reserva?.status === "UTILIZADA") return "Agendado";
   if (d.fila?.status === "OFERECIDA") return "Vaga para você";
   if (d.fila?.status === "AGUARDANDO") return `${d.fila.posicao}º na espera`;
-  if (d.passado || d.hoje) return null;
+  if (d.hoje) return "Hoje";
+  if (d.passado) return null;
   const o = d.ocupacao;
   if (!o) return null;
   return o.vagasDisponiveis > 0 && o.fila === 0 ? `${o.vagasDisponiveis} vaga${o.vagasDisponiveis > 1 ? "s" : ""}` : o.fila ? `Lotado · ${o.fila} na espera` : "Lotado";

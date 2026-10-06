@@ -32,43 +32,54 @@ function mesAnterior(hoje: string): [string, string] {
 
 // ── Gráficos (SVG puro, mesmo padrão do Dashboard RH) ────────────────────────
 function OcupacaoDiaria({ dias, capacidade }: { dias: Dashboard["dias"]; capacidade: number }) {
-  const W = 640;
-  const H = 170;
-  const T = 18;
-  const B = H - 6;
-  const max = Math.max(capacidade, ...dias.map((d) => d.presentes)) * 1.08;
-  const y = (v: number) => B - (v / max) * (B - T);
-  const passo = dias.length ? (W - 8) / dias.length : 0;
-  const larg = Math.max(2, Math.min(22, passo * 0.7));
   if (!dias.length) return <p className="text-muted" style={{ fontSize: 13 }}>Nenhum dia útil no período.</p>;
+  const W = 720;
+  const H = 200;
+  const T = 26; // espaço para o número acima da barra
+  const B = H - 22; // espaço para o dia embaixo
+  const max = Math.max(capacidade, ...dias.map((d) => d.presentes)) * 1.06;
+  const y = (v: number) => B - (v / max) * (B - T);
+  const passo = (W - 8) / dias.length;
+  const larg = Math.max(3, Math.min(44, passo * 0.62));
+  const rotular = dias.length <= 31; // poucos dias: número e dia em cada barra
   return (
     <>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} role="img" aria-label="Ocupação por dia">
         {[T, (T + B) / 2, B].map((yy, i) => (
           <line key={i} x1={0} x2={W} y1={yy} y2={yy} stroke="var(--color-divider)" strokeDasharray="2 6" />
         ))}
+        <line x1={0} x2={W} y1={y(capacidade)} y2={y(capacidade)} stroke="var(--danger)" strokeWidth={1.2} strokeDasharray="6 4" opacity={0.7} />
+        <text x={W - 4} y={y(capacidade) - 6} textAnchor="end" fontSize={11} fontFamily="var(--mono)" fill="var(--danger)">
+          {`capacidade ${capacidade}`}
+        </text>
         {dias.map((d, i) => {
-          const x = 4 + i * passo + (passo - larg) / 2;
+          const cx = 4 + i * passo + passo / 2;
           const cor = d.grupo ? COR[d.grupo] : "var(--color-neutral-400)";
+          const alto = Math.max(3, B - y(d.presentes));
           return (
             <g key={d.data}>
-              <rect x={x} y={y(d.presentes)} width={larg} height={B - y(d.presentes)} rx={3} fill={cor} opacity={d.futuro ? 0.35 : 0.85} />
-              <title>
-                {dataCurta(d.data)}{d.grupo ? ` · Grupo ${d.grupo}` : " · livre"}: {d.presentes} de {d.capacidade}
-                {d.futuro ? " (previsto)" : ""}
-              </title>
+              <title>{`${dataCurta(d.data)}${d.grupo ? ` · Grupo ${d.grupo}` : " · dia livre"}: ${d.presentes} de ${d.capacidade} lugares${d.futuro ? " (previsto)" : ""}`}</title>
+              <rect x={cx - larg / 2} y={B - alto} width={larg} height={alto} rx={4} fill={cor} opacity={d.futuro ? 0.3 : 0.9} />
+              {rotular && (
+                <text x={cx} y={B - alto - 6} textAnchor="middle" fontSize={11} fontWeight={700} fontFamily="var(--mono)" fill="var(--color-text)">
+                  {String(d.presentes)}
+                </text>
+              )}
+              {rotular && (
+                <text x={cx} y={H - 6} textAnchor="middle" fontSize={10} fontFamily="var(--mono)" fill="var(--color-neutral-500)">
+                  {d.data.slice(8)}
+                </text>
+              )}
             </g>
           );
         })}
-        <line x1={0} x2={W} y1={y(capacidade)} y2={y(capacidade)} stroke="var(--danger)" strokeWidth={1.5} strokeDasharray="6 4" />
-        <text x={W - 4} y={y(capacidade) - 5} textAnchor="end" fontSize={11} fontFamily="var(--mono)" fill="var(--danger)">
-          capacidade {capacidade}
-        </text>
       </svg>
-      <div style={{ display: "flex", justifyContent: "space-between" }} className="text-muted">
-        <span style={{ fontSize: 11, fontFamily: "var(--mono)" }}>{dataCurta(dias[0].data)}</span>
-        <span style={{ fontSize: 11, fontFamily: "var(--mono)" }}>{dataCurta(dias[dias.length - 1].data)}</span>
-      </div>
+      {!rotular && (
+        <div style={{ display: "flex", justifyContent: "space-between" }} className="text-muted">
+          <span style={{ fontSize: 11, fontFamily: "var(--mono)" }}>{dataCurta(dias[0].data)}</span>
+          <span style={{ fontSize: 11, fontFamily: "var(--mono)" }}>{dataCurta(dias[dias.length - 1].data)}</span>
+        </div>
+      )}
     </>
   );
 }
@@ -103,7 +114,7 @@ function AxBMensal({ meses }: { meses: Dashboard["abMensal"] }) {
               {(["A", "B"] as const).map((g) => (
                 <div key={g} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                   <span style={{ fontSize: 10.5, fontFamily: "var(--mono)" }}>{g === "A" ? m.a : m.b}</span>
-                  <div style={{ width: 14, height: `${((g === "A" ? m.a : m.b) / max) * 92}px`, background: COR[g], borderRadius: "4px 4px 0 0", opacity: 0.85 }} />
+                  <div style={{ width: 24, minHeight: 3, height: `${((g === "A" ? m.a : m.b) / max) * 92}px`, background: COR[g], borderRadius: "4px 4px 0 0", opacity: 0.85 }} />
                 </div>
               ))}
             </div>
@@ -189,7 +200,7 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
 
   const exportarDias = () =>
     baixar(`escala-dias_${sufixo}.csv`, csv(
-      ["Data", "Grupo do dia", "Capacidade", "Escalados", "Afastados", "Ausências", "Em cima da hora", "Agendamentos", "Presentes", "Ocupação %", "Fila", "Fila sem atendimento", "Ofertas expiradas", "Previsto"],
+      ["Data", "Grupo do dia", "Capacidade", "Escalados", "Afastados", "Ausências", "Em cima da hora", "Agendamentos", "Presentes", "Ocupação %", "Lista de espera", "Espera sem vaga", "Ofertas expiradas", "Previsto"],
       d.dias.map((x) => [x.data, x.grupo ?? "livre", x.capacidade, x.escalados, x.afastados, x.ausencias, x.emCima, x.reservas, x.presentes,
         Math.round((x.presentes / x.capacidade) * 1000) / 10, x.fila, x.filaSemAtendimento, x.ofertasExpiradas, x.futuro ? "sim" : "não"]),
     ));
@@ -231,21 +242,19 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
           <label className="text-muted" style={{ fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
             Até <input className="input" type="date" value={f.ate} onChange={(e) => e.target.value && ir({ ate: e.target.value })} />
           </label>
-          <SelectCustom className="input" style={{ minWidth: 170 }} value={d.unidades[0].nome} options={d.unidades.map((u) => u.nome)} onChange={() => {}} />
-          <SelectCustom
+          <div style={{ flex: "1 1 180px", maxWidth: 240 }}><SelectCustom className="input" value={d.unidades[0].nome} options={d.unidades.map((u) => u.nome)} onChange={() => {}} /></div>
+          <div style={{ flex: "1 1 160px", maxWidth: 200 }}><SelectCustom
             className="input"
-            style={{ minWidth: 140 }}
             value={f.grupo ? `Grupo ${f.grupo}` : "Todos os grupos"}
             options={["Todos os grupos", "Grupo A", "Grupo B"]}
             onChange={(v) => ir({ grupo: v === "Grupo A" ? "A" : v === "Grupo B" ? "B" : "", pessoa: "" })}
-          />
-          <SelectCustom
+          /></div>
+          <div style={{ flex: "1 1 220px", maxWidth: 300 }}><SelectCustom
             className="input"
-            style={{ minWidth: 220 }}
             value={f.pessoa ? (rotuloPessoa.get(f.pessoa) ?? "Todas as pessoas") : "Todas as pessoas"}
             options={["Todas as pessoas", ...rotuloPessoa.values()]}
             onChange={(v) => ir({ pessoa: idPorRotulo.get(v) ?? "" })}
-          />
+          /></div>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
           {presets.map((p) => (
@@ -273,7 +282,7 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
         <StatCard label="Ocupação média" n={pctTxt(c.ocupacaoMedia)} cor="var(--color-accent-700)" icone="colabs" rodape={`${c.diasRealizados} dia(s) útil(eis) realizados`} />
         <StatCard label="Taxa de ausência" n={pctTxt(c.taxaAusencia)} cor="var(--warn-forte)" icone="afastado" rodape="ausências ÷ escalados não afastados" />
         <StatCard label="Agendamentos / vagas abertas" n={`${c.reservasUsadas}/${c.vagasOferecidas}`} cor="var(--ok)" icone="calendario" rodape="presenças agendadas ÷ vagas livres" />
-        <StatCard label="Dias com fila" n={c.diasComFila} cor="var(--color-text)" icone="fila" rodape="dias com lista de espera" />
+        <StatCard label="Dias com lista de espera" n={c.diasComFila} cor="var(--color-text)" icone="fila" rodape="dias com lista de espera" />
         <StatCard
           label="Diferença A×B"
           n={c.difAB}
@@ -283,7 +292,7 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-4)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: "var(--space-4)" }}>
         <div className="card" style={{ gridColumn: "1 / -1" }}>
           <span className="card-kicker">{periodo} · barras claras = previsto</span>
           <span className="card-title">Ocupação diária</span>
@@ -372,18 +381,18 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
           )}
         </div>
         <div className="card">
-          <span className="card-kicker">Fila que terminou sem vaga</span>
+          <span className="card-kicker">Lista de espera que terminou sem vaga</span>
           <span className="card-title">Demanda reprimida</span>
           <p style={{ fontSize: 14, margin: 0 }}>
             {d.demanda.diasSemAtendimento === 0
-              ? "Neste período ninguém ficou sem lugar: toda fila foi atendida."
+              ? "Neste período ninguém ficou sem lugar: toda a lista de espera foi atendida."
               : `Em ${d.demanda.diasSemAtendimento} dia(s) deste período houve mais procura que lugares — ${d.demanda.pessoasSemVaga} pedido(s) não foram atendidos.`}
           </p>
           <div style={{ display: "flex", gap: 24, paddingTop: 6 }}>
             {[
-              { t: "Fila média", v: d.demanda.filaMedia.toLocaleString("pt-BR") },
+              { t: "Média na espera", v: d.demanda.filaMedia.toLocaleString("pt-BR") },
               { t: "Ofertas expiradas", v: d.demanda.ofertasExpiradas },
-              { t: "Dias com fila", v: c.diasComFila },
+              { t: "Dias com espera", v: c.diasComFila },
             ].map((x) => (
               <div key={x.t}>
                 <div className="text-muted" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" }}>{x.t}</div>
@@ -396,7 +405,7 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
               {d.demanda.dias.map((x) => (
                 <div key={x.data} className="esc-linha" style={{ padding: "6px 0", fontSize: 13 }}>
                   <span>{dataCurta(x.data)}</span>
-                  <span className="text-muted">{x.fila} na fila · {x.semAtendimento} sem vaga</span>
+                  <span className="text-muted">{x.fila} na lista de espera · {x.semAtendimento} sem vaga</span>
                 </div>
               ))}
             </div>

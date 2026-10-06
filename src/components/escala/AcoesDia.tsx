@@ -61,12 +61,12 @@ export function StatusTag({ tipo, children }: { tipo: "ok" | "warn" | "danger" |
   );
 }
 
-/** Texto do contador de vagas: "2 de 4 vagas livres" / "Lotado — 3 na fila" */
+/** Texto do contador de vagas: "4 vagas livres" / "Lotado · 3 na lista de espera" */
 export function textoVagas(d: DiaPortal): string | null {
   const o = d.ocupacao;
   if (!o) return null;
   if (o.vagasDisponiveis > 0 && o.fila === 0)
-    return `${o.vagasDisponiveis} de ${Math.max(o.totalReserva, o.vagasDisponiveis)} vaga${o.vagasDisponiveis > 1 ? "s" : ""} livre${o.vagasDisponiveis > 1 ? "s" : ""}`;
+    return `${o.vagasDisponiveis} vaga${o.vagasDisponiveis > 1 ? "s" : ""} livre${o.vagasDisponiveis > 1 ? "s" : ""}`;
   return o.fila ? `Lotado · ${o.fila} na lista de espera` : "Lotado";
 }
 
