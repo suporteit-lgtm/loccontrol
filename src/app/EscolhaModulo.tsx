@@ -4,7 +4,7 @@ import type { DiaSemana } from "@/lib/escala/semana";
 
 export type { DiaSemana };
 
-export function EscolhaModulo({ semana }: { semana: DiaSemana[] | null }) {
+export function EscolhaModulo({ semana, hrefEscala = "/escala" }: { semana: DiaSemana[] | null; hrefEscala?: string }) {
   return (
     <div className="login-split">
       <div className="login-form-panel">
@@ -35,7 +35,7 @@ export function EscolhaModulo({ semana }: { semana: DiaSemana[] | null }) {
           </div>
 
           {/* Destaque: Escala de Presença */}
-          <CartaoEscala semana={semana} href="/escala" />
+          <CartaoEscala semana={semana} href={hrefEscala} />
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, color: "rgb(255 255 255 / 0.4)", fontSize: 11.5 }}>
             <span style={{ flex: 1, height: 1, background: "rgb(255 255 255 / 0.14)" }} />
