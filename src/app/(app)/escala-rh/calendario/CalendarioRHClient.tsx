@@ -7,7 +7,8 @@ import { PageHeader } from "@/components/ui";
 import { useToast } from "@/components/Toast";
 import { GrupoBadge } from "@/components/escala/GrupoBadge";
 import { Folha, LivreBadge, StatusTag } from "@/components/escala/AcoesDia";
-import { cancelarReservaRH, detalheDia, registrarAusenciaRH, type DetalheDia } from "@/app/actions/escala";
+import { agendarRH, cancelarReservaRH, detalheDia, registrarAusenciaRH, type DetalheDia } from "@/app/actions/escala";
+import { SelectCustom } from "@/components/SelectCustom";
 import { dataLonga, horaSP, maiuscula, nomeMes } from "@/lib/escala/formato";
 
 export interface DiaRH {
@@ -46,6 +47,7 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
   const [pending, start] = useTransition();
   const [aberto, setAberto] = useState<string | null>(null);
   const [det, setDet] = useState<DetalheDia | null>(null);
+  const [quem, setQuem] = useState("");
   const [ano, mes] = refMes.split("-").map(Number);
   const primeiroSem = new Date(Date.UTC(ano, mes - 1, 1)).getUTCDay();
   const dia = dias.find((d) => d.data === aberto) ?? null;
@@ -53,6 +55,7 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
   const carregar = (data: string) => start(async () => setDet(await detalheDia(data)));
   useEffect(() => {
     setDet(null);
+    setQuem("");
     if (aberto) carregar(aberto);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto]);
@@ -181,6 +184,36 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
                   </div>
                 )}
               </div>
+              {!dia.passado && !dia.hoje && (
+                <div>
+                  <h6 className="text-muted" style={{ margin: "0 0 6px" }}>Agendar para alguém</h6>
+                  {det.elegiveis.length === 0 ? (
+                    <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
+                      Todos os participantes {det.grupo ? `fora do Grupo ${det.grupo} ` : ""}já estão neste dia.
+                    </p>
+                  ) : (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <SelectCustom
+                        className="input"
+                        style={{ flex: 1, minWidth: 200 }}
+                        value={det.elegiveis.find((p) => p.id === quem) ? `${det.elegiveis.find((p) => p.id === quem)!.nome} (${det.elegiveis.find((p) => p.id === quem)!.grupo})` : "Escolha a pessoa"}
+                        options={det.elegiveis.map((p) => `${p.nome} (${p.grupo})`)}
+                        onChange={(v) => setQuem(det.elegiveis.find((p) => `${p.nome} (${p.grupo})` === v)?.id ?? "")}
+                      />
+                      <button
+                        className="btn btn-primary"
+                        disabled={pending || !quem}
+                        onClick={() => exec(async () => { const r = await agendarRH(quem, dia.data); if (r.ok) setQuem(""); return r; })}
+                      >
+                        Agendar
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-muted" style={{ fontSize: 11.5, margin: "6px 0 0" }}>
+                    Mesmas regras do portal: não agenda quem já é do grupo do dia, nem passa da capacidade. A pessoa recebe o e-mail de confirmação.
+                  </p>
+                </div>
+              )}
               {det.fila.length > 0 && (
                 <div>
                   <h6 className="text-muted" style={{ margin: "0 0 6px" }}>Lista de espera ({det.fila.length})</h6>
