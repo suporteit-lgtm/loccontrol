@@ -67,7 +67,7 @@ export function textoVagas(d: DiaPortal): string | null {
   if (!o) return null;
   if (o.vagasDisponiveis > 0 && o.fila === 0)
     return `${o.vagasDisponiveis} de ${Math.max(o.totalReserva, o.vagasDisponiveis)} vaga${o.vagasDisponiveis > 1 ? "s" : ""} livre${o.vagasDisponiveis > 1 ? "s" : ""}`;
-  return o.fila ? `Lotado — ${o.fila} na fila` : "Lotado";
+  return o.fila ? `Lotado · ${o.fila} na lista de espera` : "Lotado";
 }
 
 // ── Ações de um dia (mesma regra das funções SQL, só para exibir) ───────────
@@ -105,7 +105,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
 
   // ── Dia do meu grupo ──
   if (dia.meuDia) {
-    if (ctx.afastado) return aviso("Você está afastado — seu lugar fica livre para outra pessoa.");
+    if (ctx.afastado) return aviso("Você está afastado(a) — seu lugar fica livre para outra pessoa.");
     if (dia.ausente)
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -113,7 +113,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
           {!dia.passado &&
             linha(
               <button className="btn btn-secondary" disabled={pending} onClick={() => exec(() => desfazerAusencia(dia.data))}>
-                Desfazer — vou neste dia
+                Desfazer — vou comparecer
               </button>,
             )}
         </div>
@@ -121,7 +121,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
     if (dia.passado) return aviso("Dia do seu grupo.");
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {!compacto && linha(<StatusTag tipo="ok">Você está escalado</StatusTag>)}
+        {!compacto && linha(<StatusTag tipo="ok">Você está escalado(a) neste dia</StatusTag>)}
         {!confirmar ? (
           linha(
             <button className="btn btn-secondary" disabled={pending} onClick={() => setConfirmar(true)}>
@@ -139,7 +139,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
             {linha(
               <>
                 <button className="btn btn-primary" disabled={pending} onClick={() => exec(() => naoVou(dia.data))}>
-                  {pending ? "Registrando..." : "Sim, não vou"}
+                  {pending ? "Registrando..." : "Confirmar ausência"}
                 </button>
                 <button className="btn btn-ghost" disabled={pending} onClick={() => setConfirmar(false)}>
                   Voltar
@@ -156,12 +156,12 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
   const r = dia.reserva;
   const f = dia.fila;
   if (r && (r.status === "CONFIRMADA" || r.status === "UTILIZADA")) {
-    if (r.status === "UTILIZADA" || dia.passado) return linha(<StatusTag tipo="ok">Reserva utilizada</StatusTag>);
+    if (r.status === "UTILIZADA" || dia.passado) return linha(<StatusTag tipo="ok">Presença registrada</StatusTag>);
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {linha(
           <>
-            <StatusTag tipo="ok">Reserva confirmada{r.origem === "FILA" ? " (via fila)" : ""}</StatusTag>
+            <StatusTag tipo="ok">Agendamento confirmado{r.origem === "FILA" ? " (pela lista de espera)" : ""}</StatusTag>
             {!dia.prazoPassou && !compacto && <span className="text-muted" style={{ fontSize: 12 }}>cancele até {prazoTxt}</span>}
           </>,
         )}
@@ -169,7 +169,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
           ? aviso(`O prazo para cancelar terminou (${prazoTxt}). Se não puder ir, avise o RH.`)
           : linha(
               <button className="btn btn-secondary" disabled={pending} onClick={() => exec(() => cancelarReserva(r.id))}>
-                Cancelar reserva
+                Cancelar agendamento
               </button>,
             )}
       </div>
@@ -202,7 +202,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
   if (f && f.status === "AGUARDANDO")
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {linha(<StatusTag tipo="accent">Na fila — posição {f.posicao ?? "?"}</StatusTag>)}
+        {linha(<StatusTag tipo="accent">Lista de espera · {f.posicao ?? "?"}ª posição</StatusTag>)}
         {!compacto &&
           aviso(
             dia.prazoPassou
@@ -211,17 +211,17 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
           )}
         {linha(
           <button className="btn btn-ghost" disabled={pending} onClick={() => exec(() => sairFila(f.id))}>
-            Sair da fila
+            Sair da lista de espera
           </button>,
         )}
       </div>
     );
 
-  if (encerrado) return aviso(dia.hoje ? "As reservas para hoje já foram encerradas." : "Dia já passou.");
-  if (ctx.afastado) return aviso("Durante o afastamento não é possível reservar nem entrar na fila.");
+  if (encerrado) return aviso(dia.hoje ? "Os agendamentos para hoje já foram encerrados." : "Este dia já passou.");
+  if (ctx.afastado) return aviso("Durante o afastamento não é possível agendar nem entrar na lista de espera.");
   const usadas = ctx.reservasNoMes[dia.data.slice(0, 7)] ?? 0;
   if (ctx.limiteMensal !== null && usadas >= ctx.limiteMensal)
-    return aviso(`Você atingiu o limite de ${ctx.limiteMensal} reservas neste mês.`);
+    return aviso(`Você atingiu o limite de ${ctx.limiteMensal} agendamentos neste mês.`);
 
   const o = dia.ocupacao;
   const temVaga = !!o && o.vagasDisponiveis > 0 && o.fila === 0;
@@ -231,7 +231,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
       {linha(
         temVaga ? (
           <button className="btn btn-primary" disabled={pending} onClick={() => exec(() => reservar(dia.data))}>
-            {pending ? "Reservando..." : "Reservar vaga"}
+            {pending ? "Agendando..." : "Agendar presença"}
           </button>
         ) : (
           <button className="btn btn-secondary" disabled={pending} onClick={() => exec(() => entrarFila(dia.data))}>
@@ -239,7 +239,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
           </button>
         ),
       )}
-      {!compacto && ctx.limiteMensal !== null && aviso(`Reservas usadas neste mês: ${usadas} de ${ctx.limiteMensal}.`)}
+      {!compacto && ctx.limiteMensal !== null && aviso(`Agendamentos neste mês: ${usadas} de ${ctx.limiteMensal}.`)}
     </div>
   );
 }

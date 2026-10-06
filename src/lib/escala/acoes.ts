@@ -63,7 +63,7 @@ export async function processarAcoes(acoes: Acao[] | null | undefined, modos?: M
       msg = { chave: `oferta:${a.fila_id}:${a.expira_em}`, tipo: "VAGA_OFERECIDA", assunto: "Abriu uma vaga para você — Escala de Presença", ...t };
     } else if (a.tipo === "RESERVA_CANCELADA") {
       const t = emailReservaCancelada(p.nome, a.data, a.motivo ?? "");
-      msg = { chave: `cancelada:${a.id}`, tipo: "RESERVA_CANCELADA", assunto: "Reserva cancelada — Escala de Presença", ...t };
+      msg = { chave: `cancelada:${a.id}`, tipo: "RESERVA_CANCELADA", assunto: "Agendamento cancelado — Escala de Presença", ...t };
     }
     if (msg) {
       await despachar({ ...msg, para: p.email }, md);
@@ -78,5 +78,5 @@ export async function avisarReservaDireta(participanteId: string, reservaId: str
   const p = (await pessoas([participanteId])).get(participanteId);
   if (!p?.email) return;
   const t = emailVagaConfirmada(p.nome, data, false, await prazoDe(p.unidadeId, data));
-  await despachar({ chave: `confirmada:${reservaId}`, para: p.email, tipo: "VAGA_CONFIRMADA", assunto: "Reserva confirmada — Escala de Presença", ...t });
+  await despachar({ chave: `confirmada:${reservaId}`, para: p.email, tipo: "VAGA_CONFIRMADA", assunto: "Agendamento confirmado — Escala de Presença", ...t });
 }

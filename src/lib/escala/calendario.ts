@@ -223,13 +223,13 @@ export type MotivoBloqueio =
 
 export const MENSAGEM_BLOQUEIO: Record<MotivoBloqueio, string> = {
   NAO_E_DIA_UTIL: "Este dia não é útil (fim de semana, feriado ou sem expediente).",
-  DIA_PASSADO: "As reservas para este dia já foram encerradas.",
-  DIA_DO_PROPRIO_GRUPO: "Este já é o dia do seu grupo — seu lugar está garantido, não é preciso reservar.",
-  AFASTADO: "Durante o afastamento não é possível reservar nem entrar na fila.",
+  DIA_PASSADO: "Os agendamentos para este dia já foram encerrados.",
+  DIA_DO_PROPRIO_GRUPO: "Este já é o dia do seu grupo — seu lugar está garantido, não é preciso agendar.",
+  AFASTADO: "Durante o afastamento não é possível agendar nem entrar na lista de espera.",
   INATIVO: "Você não está ativo nesta escala. Procure o RH.",
-  JA_RESERVADO: "Você já tem uma reserva para este dia.",
-  JA_NA_FILA: "Você já está na fila deste dia.",
-  LIMITE_MENSAL: "Você atingiu o limite de reservas deste mês.",
+  JA_RESERVADO: "Você já tem um agendamento para este dia.",
+  JA_NA_FILA: "Você já está na lista de espera deste dia.",
+  LIMITE_MENSAL: "Você atingiu o limite de agendamentos deste mês.",
 };
 
 export function motivoBloqueioReserva(c: {

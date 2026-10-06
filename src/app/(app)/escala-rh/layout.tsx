@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { contextoEscalaRH, unidadeDaEscala } from "@/lib/escala/rh";
 import { lerModos } from "@/lib/escala/envio";
+import { AoVivo } from "@/components/escala/AoVivo";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export default async function EscalaRHLayout({ children }: { children: React.Rea
           </Link>
         </div>
       )}
+      <AoVivo />
       {children}
     </div>
   );

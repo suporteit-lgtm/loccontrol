@@ -36,7 +36,7 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
     if (reservou) hojeTom = "ok";
   }
   else if (hoje.meuDia && ctx.afastado) hojeTexto = `Hoje é dia do Grupo ${hoje.grupo}, mas você está afastado.`;
-  else if (hoje.meuDia && hoje.ausente) hojeTexto = `Hoje é dia do Grupo ${hoje.grupo} — você avisou que não vai.`;
+  else if (hoje.meuDia && hoje.ausente) hojeTexto = `Hoje é dia do Grupo ${hoje.grupo} — você avisou ausência.`;
   else if (hoje.meuDia) {
     hojeTexto = `Hoje é dia do Grupo ${hoje.grupo} — você está escalado.`;
     hojeTom = "ok";
@@ -88,7 +88,7 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
         ) : undefined}
       </Bloco>
 
-      <Bloco kicker="Reservas e fila" titulo="Seus dias extras" vazio="Você não tem reservas nem posições na fila.">
+      <Bloco kicker="Agendamentos e lista de espera" titulo="Seus dias extras" vazio="Você não tem agendamentos nem está em lista de espera.">
         {meus.length > 0 ? (
           <div className="esc-lista">
             {meus.map((d) => (
@@ -107,7 +107,7 @@ export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo
       <Bloco
         kicker="Vagas livres"
         titulo="Agendar outro dia"
-        vazio={ctx.afastado ? "Durante o afastamento não é possível reservar." : "Sem dias disponíveis nas próximas semanas."}
+        vazio={ctx.afastado ? "Durante o afastamento não é possível agendar." : "Sem dias disponíveis nas próximas semanas."}
       >
         {vagas.length > 0 && !ctx.afastado ? (
           <div className="esc-lista">

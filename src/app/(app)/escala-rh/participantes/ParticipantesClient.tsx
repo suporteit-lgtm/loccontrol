@@ -141,7 +141,7 @@ export function ParticipantesClient({
                         className="btn btn-secondary"
                         disabled={pending}
                         onClick={() => exec(() => moverParticipante(p.id, g === "A" ? "B" : "A"))}
-                        title="Reservas futuras em dias do novo grupo são canceladas"
+                        title="Agendamentos futuros em dias do novo grupo são cancelados"
                       >
                         Mover para {g === "A" ? "B" : "A"}
                       </button>

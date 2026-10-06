@@ -150,7 +150,7 @@ const COLUNAS: { k: Coluna; t: string }[] = [
   { k: "presencas", t: "Presenças" },
   { k: "ausencias", t: "Ausências" },
   { k: "emCima", t: "Em cima da hora" },
-  { k: "reservasUsadas", t: "Reservas usadas" },
+  { k: "reservasUsadas", t: "Agendamentos" },
   { k: "frequencia", t: "% frequência" },
 ];
 
@@ -189,13 +189,13 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
 
   const exportarDias = () =>
     baixar(`escala-dias_${sufixo}.csv`, csv(
-      ["Data", "Grupo do dia", "Capacidade", "Escalados", "Afastados", "Ausências", "Em cima da hora", "Reservas", "Presentes", "Ocupação %", "Fila", "Fila sem atendimento", "Ofertas expiradas", "Previsto"],
+      ["Data", "Grupo do dia", "Capacidade", "Escalados", "Afastados", "Ausências", "Em cima da hora", "Agendamentos", "Presentes", "Ocupação %", "Fila", "Fila sem atendimento", "Ofertas expiradas", "Previsto"],
       d.dias.map((x) => [x.data, x.grupo ?? "livre", x.capacidade, x.escalados, x.afastados, x.ausencias, x.emCima, x.reservas, x.presentes,
         Math.round((x.presentes / x.capacidade) * 1000) / 10, x.fila, x.filaSemAtendimento, x.ofertasExpiradas, x.futuro ? "sim" : "não"]),
     ));
   const exportarPessoas = () =>
     baixar(`escala-frequencia_${sufixo}.csv`, csv(
-      ["Nome", "Grupo", "Dias escalados", "Presenças", "Ausências", "Em cima da hora", "Afastado (dias)", "Reservas usadas", "% frequência"],
+      ["Nome", "Grupo", "Dias escalados", "Presenças", "Ausências", "Em cima da hora", "Afastado (dias)", "Agendamentos", "% frequência"],
       linhas.map((p) => [p.nome, p.grupo, p.escalados, p.presencas, p.ausencias, p.emCima, p.afastados, p.reservasUsadas, p.frequencia]),
     ));
 
@@ -272,8 +272,8 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "var(--space-3)" }}>
         <StatCard label="Ocupação média" n={pctTxt(c.ocupacaoMedia)} cor="var(--color-accent-700)" icone="colabs" rodape={`${c.diasRealizados} dia(s) útil(eis) realizados`} />
         <StatCard label="Taxa de ausência" n={pctTxt(c.taxaAusencia)} cor="var(--warn-forte)" icone="afastado" rodape="ausências ÷ escalados não afastados" />
-        <StatCard label="Reservas usadas / oferecidas" n={`${c.reservasUsadas}/${c.vagasOferecidas}`} cor="var(--ok)" icone="calendario" rodape="agendamentos ÷ vagas abertas" />
-        <StatCard label="Dias com fila" n={c.diasComFila} cor="var(--color-text)" icone="fila" rodape="mais procura que lugares" />
+        <StatCard label="Agendamentos / vagas abertas" n={`${c.reservasUsadas}/${c.vagasOferecidas}`} cor="var(--ok)" icone="calendario" rodape="presenças agendadas ÷ vagas livres" />
+        <StatCard label="Dias com fila" n={c.diasComFila} cor="var(--color-text)" icone="fila" rodape="dias com lista de espera" />
         <StatCard
           label="Diferença A×B"
           n={c.difAB}

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const ABAS = [
   { href: "/escala", label: "Calendário" },
   { href: "/escala/meus-dias", label: "Meus dias" },
-  { href: "/escala/reservas", label: "Minhas reservas" },
+  { href: "/escala/reservas", label: "Meus agendamentos" },
   { href: "/escala/preferencias", label: "Preferências" },
 ];
 

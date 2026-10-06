@@ -85,7 +85,7 @@ export async function moverParticipante(participanteId: string, letra: "A" | "B"
   await auditar({ pessoa: nome, ator: u.nome, tabela: "escala_participante", campo: "grupo", antes: `Grupo ${antes}`, depois: `Grupo ${letra}` });
   atualizar();
   const n = r.canceladas?.length ?? 0;
-  return { ok: true, msg: `${nome.split(" ")[0]} agora é do Grupo ${letra}.${n ? ` ${n} reserva(s) em dias do novo grupo foram canceladas.` : ""}` };
+  return { ok: true, msg: `${nome.split(" ")[0]} agora é do Grupo ${letra}.${n ? ` ${n} agendamento(s) em dias do novo grupo foram cancelado(s).` : ""}` };
 }
 
 export async function removerParticipante(participanteId: string): Promise<Res> {
@@ -342,10 +342,10 @@ const BLOQUEIO_RH: Record<string, string> = {
   DIA_DO_PROPRIO_GRUPO: "É o dia do grupo dessa pessoa — o lugar dela já está garantido.",
   AFASTADO: "A pessoa está afastada neste dia.",
   INATIVO: "A pessoa não está ativa na escala.",
-  JA_RESERVADO: "A pessoa já tem reserva neste dia.",
-  JA_NA_FILA: "A pessoa já está na fila deste dia.",
-  LIMITE_MENSAL: "A pessoa atingiu o limite de reservas do mês.",
-  LOTADO: "Dia lotado (ou com fila) — não há vaga livre.",
+  JA_RESERVADO: "A pessoa já tem agendamento neste dia.",
+  JA_NA_FILA: "A pessoa já está na lista de espera deste dia.",
+  LIMITE_MENSAL: "A pessoa atingiu o limite de agendamentos do mês.",
+  LOTADO: "Dia lotado (ou com lista de espera) — não há vaga livre.",
 };
 
 /** RH agenda um participante num dia (mesmas regras e lock do portal; a pessoa recebe a confirmação). */
@@ -369,7 +369,7 @@ export async function cancelarReservaRH(reservaId: string): Promise<Res> {
     .select("data, participante_id, escala_participante(colaboradores(nome))")
     .eq("id", reservaId)
     .single();
-  if (!rv) return { ok: false, msg: "Reserva não encontrada." };
+  if (!rv) return { ok: false, msg: "Agendamento não encontrado." };
   const r = await rpc("escala_cancelar_reserva", { p_reserva: reservaId, p_participante: null, p_motivo: "admin" });
   if (!r.ok) return { ok: false, msg: `Não foi possível: ${r.codigo}` };
   // avisa a pessoa (o RH cancelou) e repassa a vaga para a fila
@@ -380,7 +380,7 @@ export async function cancelarReservaRH(reservaId: string): Promise<Res> {
   const nome = (rv.escala_participante as unknown as { colaboradores: { nome: string } })?.colaboradores?.nome;
   await auditar({ pessoa: nome, ator: u.nome, tabela: "escala_reserva", campo: "status", antes: `CONFIRMADA (${rv?.data})`, depois: "CANCELADA pelo RH" });
   atualizar();
-  return { ok: true, msg: "Reserva cancelada." };
+  return { ok: true, msg: "Agendamento cancelado." };
 }
 
 // ── Google (ambiente de teste e agenda de produção) ─────────────────────────

@@ -21,7 +21,7 @@ export default async function OfertaPage({ params }: { params: Promise<{ token: 
         {!o ? (
           <>
             <div className="card-title">Link inválido ou já usado</div>
-            <p className="card-body">Abra o portal para ver as suas reservas.</p>
+            <p className="card-body">Abra o portal para ver os seus agendamentos.</p>
           </>
         ) : !ativa ? (
           <>

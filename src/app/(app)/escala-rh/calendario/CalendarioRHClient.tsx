@@ -35,11 +35,22 @@ function mesVizinho(ref: string, delta: number): string {
 }
 
 const SITUACAO = {
-  presente: ["ok", "vai"],
-  ausente: ["neutro", "avisou que não vai"],
-  ausente_em_cima: ["warn", "não vai (em cima da hora)"],
-  afastado: ["warn", "afastado"],
+  presente: ["ok", "Presença confirmada"],
+  ausente: ["neutro", "Ausência avisada"],
+  ausente_em_cima: ["warn", "Ausência em cima da hora"],
+  afastado: ["warn", "Afastado(a)"],
 } as const;
+
+/** Barra de ocupação do dia (verde → amarelo → vermelho conforme enche). */
+function Barra({ n, de }: { n: number; de: number }) {
+  const p = de > 0 ? Math.min(100, Math.round((n / de) * 100)) : 0;
+  const cor = p >= 100 ? "var(--danger)" : p >= 85 ? "var(--warn-forte)" : "var(--ok)";
+  return (
+    <span className="esc-barra" aria-hidden>
+      <span style={{ width: `${p}%`, background: cor }} />
+    </span>
+  );
+}
 
 export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string; refMes: string; dias: DiaRH[] }) {
   const router = useRouter();
@@ -53,6 +64,11 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
   const dia = dias.find((d) => d.data === aberto) ?? null;
 
   const carregar = (data: string) => start(async () => setDet(await detalheDia(data)));
+  // tempo real: quando a tela recarrega os dias (AoVivo), o dia aberto também se atualiza
+  useEffect(() => {
+    if (aberto) detalheDia(aberto).then(setDet).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dias]);
   useEffect(() => {
     setDet(null);
     setQuem("");
@@ -88,7 +104,7 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
           <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="A" /> Grupo A</span>
           <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="B" /> Grupo B</span>
           <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><LivreBadge /> Ter a qui: livre</span>
-          <span>“vão” = escalados presentes + reservas · clique no dia para ver nomes e agir</span>
+          <span>Ocupação = escalados que vão + agendamentos · clique no dia para ver os nomes, agendar ou registrar ausência</span>
         </div>
 
         <div className="esc-cal" role="grid" aria-label={`Escala de ${nomeMes(mes)}`} style={{ "--linhas": Math.ceil((primeiroSem + dias.length) / 7) } as React.CSSProperties}>
@@ -105,7 +121,7 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
               disabled={!d.util}
               onClick={() => setAberto(d.data)}
               title={d.feriado ?? undefined}
-              aria-label={`${dataLonga(d.data)}${d.util ? `, ${d.presentes} de ${d.capacidade} vão` : ""}`}
+              aria-label={`${dataLonga(d.data)}${d.util ? `, ${d.presentes} de ${d.capacidade} lugares ocupados` : ""}`}
             >
               <span className="esc-dia-num">
                 {Number(d.data.slice(8))}
@@ -114,11 +130,20 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
               {!d.util ? (
                 d.feriado && <span className="esc-dia-info">{d.feriado}</span>
               ) : (
-                <span className="esc-dia-info">
-                  <strong>{d.presentes}/{d.capacidade}</strong> vão
-                  {d.ausencias + d.afastados > 0 && ` · ${d.ausencias + d.afastados} fora`}
-                  {d.fila > 0 && ` · fila ${d.fila}`}
-                </span>
+                <>
+                  <span className="esc-dia-info">
+                    <strong>{d.presentes}</strong>
+                    <span className="text-muted">/{d.capacidade} lugares</span>
+                  </span>
+                  <Barra n={d.presentes} de={d.capacidade} />
+                  {(d.ausencias + d.afastados > 0 || d.fila > 0) && (
+                    <span className="esc-dia-info" style={{ fontSize: 11.5 }}>
+                      {d.ausencias + d.afastados > 0 && <span style={{ color: "var(--warn-forte)" }}>{d.ausencias + d.afastados} ausente{d.ausencias + d.afastados > 1 ? "s" : ""}</span>}
+                      {d.ausencias + d.afastados > 0 && d.fila > 0 && " · "}
+                      {d.fila > 0 && <span style={{ color: "var(--color-accent-700)" }}>{d.fila} na espera</span>}
+                    </span>
+                  )}
+                </>
               )}
             </button>
           ))}
@@ -129,18 +154,18 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
         <Folha titulo={maiuscula(dataLonga(dia.data))} onFechar={() => setAberto(null)}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {dia.grupo ? <GrupoBadge grupo={dia.grupo} rotulo /> : <LivreBadge rotulo />}
-            <StatusTag tipo="neutro">{dia.presentes} de {dia.capacidade} vão</StatusTag>
-            {dia.fila > 0 && <StatusTag tipo="accent">{dia.fila} na fila</StatusTag>}
+            <StatusTag tipo="neutro">{dia.presentes} de {dia.capacidade} lugares ocupados</StatusTag>
+            {dia.fila > 0 && <StatusTag tipo="accent">{dia.fila} na lista de espera</StatusTag>}
           </div>
           {!det ? (
-            <p className="text-muted" style={{ fontSize: 13 }}>Carregando...</p>
+            <p className="text-muted" style={{ fontSize: 13 }}>Carregando…</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 14, maxHeight: "60vh", overflowY: "auto" }}>
               {det.grupo && (
                 <div>
                   <h6 className="text-muted" style={{ margin: "0 0 6px" }}>Escalados do Grupo {det.grupo} ({det.escalados.length})</h6>
                   {det.escalados.length === 0 ? (
-                    <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>Ninguém no grupo.</p>
+                    <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>Ninguém neste grupo ainda.</p>
                   ) : (
                     <div className="esc-lista">
                       {det.escalados.map((p) => (
@@ -170,14 +195,14 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
                       <div key={r.id} className="esc-linha" style={{ padding: "8px 0" }}>
                         <span style={{ fontSize: 13.5, display: "flex", gap: 6, alignItems: "center" }}>
                           {r.nome} <GrupoBadge grupo={r.grupo} />
-                          {r.origem === "FILA" && <span className="text-muted" style={{ fontSize: 11 }}>via fila</span>}
+                          {r.origem === "FILA" && <span className="text-muted" style={{ fontSize: 11 }}>pela lista de espera</span>}
                         </span>
                         {r.status === "CONFIRMADA" && !dia.passado ? (
                           <button className="btn btn-ghost" style={{ fontSize: 12, color: "var(--danger)" }} disabled={pending} onClick={() => exec(() => cancelarReservaRH(r.id))}>
                             Cancelar
                           </button>
                         ) : (
-                          <StatusTag tipo="neutro">{r.status === "UTILIZADA" ? "utilizada" : "confirmada"}</StatusTag>
+                          <StatusTag tipo={r.status === "UTILIZADA" ? "neutro" : "ok"}>{r.status === "UTILIZADA" ? "Compareceu" : "Confirmado"}</StatusTag>
                         )}
                       </div>
                     ))}
@@ -222,9 +247,9 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
                       <div key={f.id} className="esc-linha" style={{ padding: "8px 0" }}>
                         <span style={{ fontSize: 13.5 }}>{i + 1}º · {f.nome}</span>
                         {f.status === "OFERECIDA" && f.expira ? (
-                          <StatusTag tipo="warn">oferta até {horaSP(f.expira)}</StatusTag>
+                          <StatusTag tipo="warn">Vaga oferecida até {horaSP(f.expira)}</StatusTag>
                         ) : (
-                          <StatusTag tipo="accent">aguardando</StatusTag>
+                          <StatusTag tipo="accent">Aguardando vaga</StatusTag>
                         )}
                       </div>
                     ))}

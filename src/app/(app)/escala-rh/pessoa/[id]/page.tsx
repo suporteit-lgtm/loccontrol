@@ -42,7 +42,7 @@ export default async function PessoaEscalaPage({ params }: { params: Promise<{ i
         <StatCard label="Dias escalados" n={r.escalados} cor="var(--color-text)" />
         <StatCard label="Presenças" n={r.presencas} cor="var(--ok)" />
         <StatCard label="Ausências" n={r.ausencias} cor="var(--warn-forte)" rodape={`${r.emCima} em cima da hora`} />
-        <StatCard label="Reservas usadas" n={r.reservasUsadas} cor="var(--ok)" />
+        <StatCard label="Agendamentos" n={r.reservasUsadas} cor="var(--ok)" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--space-4)" }}>
@@ -75,17 +75,17 @@ export default async function PessoaEscalaPage({ params }: { params: Promise<{ i
         </section>
 
         <section className="card elev-sm">
-          <span className="card-kicker">Agendamentos</span>
-          <span className="card-title">Reservas</span>
+          <span className="card-kicker">Dias livres e vagas</span>
+          <span className="card-title">Agendamentos</span>
           {d.reservas.length === 0 ? (
-            <p className="text-muted" style={{ fontSize: 13 }}>Nenhuma reserva.</p>
+            <p className="text-muted" style={{ fontSize: 13 }}>Nenhum agendamento.</p>
           ) : (
             <div className="esc-lista" style={{ maxHeight: 420, overflowY: "auto" }}>
               {d.reservas.map((x) => (
                 <div key={x.id} className="esc-linha" style={{ padding: "7px 0", fontSize: 13.5 }}>
                   <span>
                     {dataCurta(x.data)}
-                    {x.origem === "FILA" && <span className="text-muted" style={{ fontSize: 11 }}> · via fila</span>}
+                    {x.origem === "FILA" && <span className="text-muted" style={{ fontSize: 11 }}> · pela lista de espera</span>}
                   </span>
                   <StatusTag tipo={TOM_RESERVA[x.status as keyof typeof TOM_RESERVA] ?? "neutro"}>
                     {x.status.toLowerCase()}
@@ -99,9 +99,9 @@ export default async function PessoaEscalaPage({ params }: { params: Promise<{ i
 
         <section className="card elev-sm">
           <span className="card-kicker">Lista de espera</span>
-          <span className="card-title">Fila</span>
+          <span className="card-title">Lista de espera</span>
           {d.fila.length === 0 ? (
-            <p className="text-muted" style={{ fontSize: 13 }}>Nunca entrou na fila.</p>
+            <p className="text-muted" style={{ fontSize: 13 }}>Nunca entrou na lista de espera.</p>
           ) : (
             <div className="esc-lista" style={{ maxHeight: 420, overflowY: "auto" }}>
               {d.fila.map((x) => (
