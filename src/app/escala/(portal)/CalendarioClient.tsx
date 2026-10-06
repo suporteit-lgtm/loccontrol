@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AcoesDia, Folha, LivreBadge, StatusTag } from "@/components/escala/AcoesDia";
 import { GrupoBadge } from "@/components/escala/GrupoBadge";
+import { BarraOcupacao } from "@/components/escala/BarraOcupacao";
 import { dataLonga, maiuscula, nomeMes } from "@/lib/escala/formato";
 import type { ContextoPortal, DiaPortal } from "@/lib/escala/portal";
 
@@ -115,6 +116,11 @@ export function CalendarioClient({
               {resumo && (
                 <span className="esc-dia-info" style={{ fontWeight: d.meuDia || d.reserva?.status === "CONFIRMADA" ? 700 : 400 }}>
                   {resumo}
+                </span>
+              )}
+              {d.ocupacao && (
+                <span style={{ display: "block", marginTop: 2 }}>
+                  <BarraOcupacao n={d.ocupacao.capacidade - d.ocupacao.vagasLivres} de={d.ocupacao.capacidade} />
                 </span>
               )}
             </button>
