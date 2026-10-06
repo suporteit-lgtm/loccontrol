@@ -179,6 +179,26 @@ async function ciclo(): Promise<Execucao> {
   return { itens, detalhe: feitas };
 }
 
+/**
+ * Uma sincronização com o Google por vez: se outra (mais antiga) ainda está
+ * RODANDO, espera ela terminar (até ~30 s) antes de ler o estado e mexer na
+ * agenda — duas ao mesmo tempo poderiam criar o mesmo evento duas vezes.
+ */
+async function aguardarGoogleAnterior(logId: number | null) {
+  if (!logId) return;
+  for (let i = 0; i < 15; i++) {
+    const { count } = await db()
+      .from("escala_log_job")
+      .select("id", { count: "exact", head: true })
+      .eq("tarefa", "google")
+      .eq("status", "RODANDO")
+      .lt("id", logId)
+      .gt("inicio", new Date(Date.now() - 3 * 60_000).toISOString());
+    if (!count) return;
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+}
+
 const EXECUTORES: Record<Tarefa, () => Promise<Execucao>> = {
   "ciclo": ciclo,
   "materializar": materializarTodas,
@@ -198,6 +218,7 @@ export async function rodarTarefa(tarefa: Tarefa, disparadoPor = "cron", silenci
     ? await db().from("escala_log_job").insert({ tarefa, disparado_por: disparadoPor }).select("id").single()
     : { data: null };
   try {
+    if (tarefa === "google") await aguardarGoogleAnterior(log?.id ?? null);
     const r = await EXECUTORES[tarefa]();
     if (log) {
       if (silenciosoSeVazio && r.itens === 0) await db().from("escala_log_job").delete().eq("id", log.id);

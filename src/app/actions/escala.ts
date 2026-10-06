@@ -252,6 +252,8 @@ export interface DetalheDia {
   escalados: PessoaDia[];
   reservas: { id: string; participanteId: string; nome: string; grupo: "A" | "B"; status: string; origem: string }[];
   fila: { id: string; nome: string; status: string; expira: string | null }[];
+  /** participantes ativos que podem ser agendados neste dia pelo RH */
+  elegiveis: { id: string; nome: string; grupo: "A" | "B" }[];
 }
 
 export async function detalheDia(data: string): Promise<DetalheDia> {
@@ -308,6 +310,11 @@ export async function detalheDia(data: string): Promise<DetalheDia> {
       origem: r.origem,
     })),
     fila: (fila ?? []).map((f) => ({ id: f.id, nome: info.get(f.participante_id)?.nome ?? "—", status: f.status, expira: f.oferta_expira_em })),
+    // quem não é do grupo fixo do dia e ainda não tem reserva nem lugar na fila
+    elegiveis: [...info.entries()]
+      .filter(([id, v]) => v.ativo && v.grupo !== grupo && !(res ?? []).some((r) => r.participante_id === id) && !(fila ?? []).some((f) => f.participante_id === id))
+      .map(([id, v]) => ({ id, nome: v.nome, grupo: v.grupo }))
+      .sort((a, b) => a.nome.localeCompare(b.nome)),
   };
 }
 
@@ -327,6 +334,32 @@ export async function registrarAusenciaRH(participanteId: string, data: string):
   });
   atualizar();
   return { ok: true, msg: "Ausência registrada; o lugar foi liberado." };
+}
+
+const BLOQUEIO_RH: Record<string, string> = {
+  NAO_E_DIA_UTIL: "Este dia não é útil.",
+  DIA_PASSADO: "Este dia já passou (só dá para agendar a partir de amanhã).",
+  DIA_DO_PROPRIO_GRUPO: "É o dia do grupo dessa pessoa — o lugar dela já está garantido.",
+  AFASTADO: "A pessoa está afastada neste dia.",
+  INATIVO: "A pessoa não está ativa na escala.",
+  JA_RESERVADO: "A pessoa já tem reserva neste dia.",
+  JA_NA_FILA: "A pessoa já está na fila deste dia.",
+  LIMITE_MENSAL: "A pessoa atingiu o limite de reservas do mês.",
+  LOTADO: "Dia lotado (ou com fila) — não há vaga livre.",
+};
+
+/** RH agenda um participante num dia (mesmas regras e lock do portal; a pessoa recebe a confirmação). */
+export async function agendarRH(participanteId: string, data: string): Promise<Res> {
+  const u = await rh();
+  const r = await rpc("escala_reservar", { p_participante: participanteId, p_data: data });
+  if (!r.ok) return { ok: false, msg: BLOQUEIO_RH[r.codigo] ?? `Não foi possível: ${r.codigo}` };
+  const { avisarReservaDireta } = await import("@/lib/escala/acoes");
+  await avisarReservaDireta(participanteId, r.reserva_id as string, data);
+  const { data: p } = await db().from("escala_participante").select("colaboradores(nome)").eq("id", participanteId).single();
+  const nome = (p?.colaboradores as unknown as { nome: string })?.nome ?? "—";
+  await auditar({ pessoa: nome, ator: u.nome, tabela: "escala_reserva", campo: "status", antes: "—", depois: `CONFIRMADA (${data}) pelo RH` });
+  atualizar();
+  return { ok: true, msg: `${nome.split(" ")[0]} agendado(a) para este dia.` };
 }
 
 export async function cancelarReservaRH(reservaId: string): Promise<Res> {
