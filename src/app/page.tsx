@@ -11,7 +11,13 @@ export default async function Home() {
   // o cartão da Escala vai direto: já logado no portal → /escala; senão → login do Google
   if (escalaHabilitada()) {
     const [semana, conta] = await Promise.all([semanaDaEscala(), contaPortal().catch(() => null)]);
-    return <EscolhaModulo semana={semana} hrefEscala={conta ? "/escala" : "/escala/auth/login"} />;
+    return (
+      <EscolhaModulo
+        semana={semana}
+        hrefEscala={conta ? "/escala" : "/escala/auth/login"}
+        hrefSalas={conta ? "/salas" : "/escala/auth/login?volta=salas"}
+      />
+    );
   }
   const u = await usuarioAtual();
   if (!u) redirect("/login");

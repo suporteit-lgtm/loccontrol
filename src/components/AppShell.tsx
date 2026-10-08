@@ -39,6 +39,12 @@ const NAV_ESCALA: NavItem[] = [
   { label: "Feriados", rota: "/escala-rh/feriados", icone: "feriado" },
   { label: "Configurações da Escala", rota: "/escala-rh/configuracoes", icone: "config" },
 ];
+// Agendamento de Salas (todo usuário interno; cadastro só para administradores)
+const NAV_SALAS: NavItem[] = [
+  { label: "Agenda de salas", rota: "/agenda-salas", icone: "sala" },
+  { label: "Reservas de salas", rota: "/agenda-salas/reservas", icone: "calendario" },
+];
+const NAV_SALAS_ADMIN: NavItem = { label: "Cadastro de salas", rota: "/agenda-salas/cadastro", icone: "config" };
 const NAV_GERAL: NavItem[] = [
   { label: "Grupos do Workspace", rota: "/grupos", icone: "membros" },
   { label: "Área restrita", rota: "/restrita", icone: "restrita" },
@@ -276,7 +282,8 @@ function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }
     </div>
   );
 
-  const navTodos = [...(veRH ? NAV_RH : []), ...(veTI ? NAV_TI : []), ...(veEscala ? NAV_ESCALA : []), ...NAV_GERAL];
+  const navSalas = escala ? [...NAV_SALAS, ...(ehAdmin ? [NAV_SALAS_ADMIN] : [])] : [];
+  const navTodos = [...(veRH ? NAV_RH : []), ...(veTI ? NAV_TI : []), ...(veEscala ? NAV_ESCALA : []), ...navSalas, ...NAV_GERAL];
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", alignItems: "stretch" }}>
@@ -391,6 +398,7 @@ function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }
             {veRH && bloco("RH", NAV_RH)}
             {veTI && bloco("TI", NAV_TI)}
             {veEscala && bloco("Escala", NAV_ESCALA)}
+            {navSalas.length > 0 && bloco("Salas", navSalas)}
             {bloco("Geral", NAV_GERAL)}
           </div>
 
@@ -539,6 +547,7 @@ function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }
                     ["RH", veRH ? NAV_RH : []],
                     ["TI", veTI ? NAV_TI : []],
                     ["Escala", veEscala ? NAV_ESCALA : []],
+                    ["Salas", navSalas],
                     ["Geral", NAV_GERAL],
                   ] as const).map(([titulo, itens]) =>
                     itens.length === 0 ? null : (

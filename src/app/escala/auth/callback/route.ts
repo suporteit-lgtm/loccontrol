@@ -1,15 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { setSessionCookie } from "@/lib/session";
-import { emailDoDominio, escalaHabilitada, supabasePortal, vincularConta } from "@/lib/escala/auth";
+import { COOKIE_VOLTA, DESTINOS_PORTAL, emailDoDominio, escalaHabilitada, supabasePortal, vincularConta } from "@/lib/escala/auth";
 
 export const dynamic = "force-dynamic";
 
 /** Retorno do Google: troca o código pela sessão e valida o domínio NO SERVIDOR. */
 export async function GET(req: NextRequest) {
   if (!escalaHabilitada()) return new NextResponse(null, { status: 404 });
-  const voltar = (erro?: string) =>
-    NextResponse.redirect(new URL(erro ? `/escala/login?erro=${erro}` : "/escala", req.url));
+  // módulo que pediu o login (Escala ou Salas), guardado pela rota /escala/auth/login
+  const destino = DESTINOS_PORTAL[req.cookies.get(COOKIE_VOLTA)?.value === "salas" ? "salas" : "escala"];
+  const voltar = (erro?: string) => {
+    const res = NextResponse.redirect(new URL(erro ? `${destino}/login?erro=${erro}` : destino, req.url));
+    res.cookies.delete(COOKIE_VOLTA);
+    return res;
+  };
 
   const code = req.nextUrl.searchParams.get("code");
   if (!code) return voltar("falha");

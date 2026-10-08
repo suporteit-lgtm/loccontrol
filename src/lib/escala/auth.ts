@@ -12,6 +12,11 @@ import { createServerClient } from "@supabase/ssr";
 import { db } from "@/lib/db";
 
 export const DOMINIO = "locgrupo.com.br";
+/** Módulos do portal que usam o mesmo login Google, e o cookie que guarda para onde voltar. */
+export const DESTINOS_PORTAL = { escala: "/escala", salas: "/salas" } as const;
+export type DestinoPortal = keyof typeof DESTINOS_PORTAL;
+export const COOKIE_VOLTA = "lc_volta";
+
 export type PerfilPortal = "COLABORADOR_ESCALA" | "INTERNO";
 
 export function escalaHabilitada(): boolean {
