@@ -11,18 +11,25 @@ export function LogoGoogle() {
   );
 }
 
-/** Cartão da Escala com a faixa da semana real e o "Entrar com Google" (escolha de módulo e login do portal). */
+/**
+ * Cartão do portal do colaborador: um único "Entrar com Google" para os dois
+ * módulos (Escala e Salas), com a faixa da semana real da Escala.
+ */
 export function CartaoEscala({ semana, href }: { semana: DiaSemana[] | null; href: string }) {
   return (
     <a href={href} className="modulo-destaque">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.16em", color: "var(--accent-base)" }}>ESCALA DE PRESENÇA</span>
+        <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.16em", color: "var(--accent-base)" }}>PORTAL DO COLABORADOR</span>
         <span className="modulo-selo">novo</span>
       </div>
-      <span style={{ fontWeight: 800, fontSize: 21, lineHeight: 1.2, color: "#10162b" }}>Seus dias no escritório</span>
+      <span style={{ fontWeight: 800, fontSize: 21, lineHeight: 1.2, color: "#10162b" }}>Escala e salas de reunião</span>
       <span style={{ fontSize: 13.5, lineHeight: 1.5, color: "#4a5468" }}>
-        Veja os dias do seu grupo, reserve uma vaga livre ou entre na lista de espera.
+        Um só login para ver os dias do seu grupo no escritório e agendar salas de reunião.
       </span>
+      <div className="modulo-chips">
+        <span>Escala de presença</span>
+        <span>Salas de reunião</span>
+      </div>
       {semana && (
         <div style={{ display: "flex", flexDirection: "column", gap: 6, margin: "4px 0 2px" }}>
           <span style={{ fontSize: 11, color: "#7a8296" }}>
