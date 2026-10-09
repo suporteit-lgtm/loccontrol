@@ -15,7 +15,6 @@ export default async function Home() {
       <EscolhaModulo
         semana={semana}
         hrefEscala={conta ? "/escala" : "/escala/auth/login"}
-        hrefSalas={conta ? "/salas" : "/escala/auth/login?volta=salas"}
       />
     );
   }

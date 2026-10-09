@@ -15,7 +15,7 @@ export const CONFIG_PADRAO: ConfigSalas = {
   hora_inicio: "08:00",
   hora_fim: "19:00",
   intervalo_min: 30,
-  dias_antecedencia: 30,
+  dias_antecedencia: 15,
   duracao_max_min: 240,
   fim_de_semana: false,
 };

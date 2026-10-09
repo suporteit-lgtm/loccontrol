@@ -10,10 +10,11 @@ const ERROS: Record<string, string> = {
   falha: "Não foi possível concluir o login. Tente de novo.",
 };
 
-/** Mesmo fundo e layout da tela de login do LocControl, com um único botão Google. */
-export default async function EscalaLoginPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
-  if (await contaPortal()) redirect("/escala");
-  const { erro } = await searchParams;
+/** Login único do portal (Escala e Salas): mesmo fundo da tela do LocControl, um botão Google. */
+export default async function EscalaLoginPage({ searchParams }: { searchParams: Promise<{ erro?: string; volta?: string }> }) {
+  const { erro, volta } = await searchParams;
+  const salas = volta === "salas";
+  if (await contaPortal()) redirect(salas ? "/salas" : "/escala");
   const msg = erro ? (ERROS[erro] ?? ERROS.falha) : null;
   const semana = await semanaDaEscala();
 
@@ -29,7 +30,7 @@ export default async function EscalaLoginPage({ searchParams }: { searchParams: 
             style={{ width: 140, maxWidth: "100%", filter: "brightness(1.35) saturate(1.05)" }}
           />
           <div style={{ width: 1, height: 24, background: "rgb(255 255 255 / 0.15)" }} />
-          <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: "0.16em", color: "#fff", opacity: 0.9 }}>ESCALA</div>
+          <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: "0.16em", color: "#fff", opacity: 0.9 }}>PORTAL</div>
         </div>
 
         <div
@@ -57,7 +58,7 @@ export default async function EscalaLoginPage({ searchParams }: { searchParams: 
             </div>
           )}
 
-          <CartaoEscala semana={semana} href="/escala/auth/login" />
+          <CartaoEscala semana={semana} href={salas ? "/escala/auth/login?volta=salas" : "/escala/auth/login"} />
           <p className="text-muted" style={{ fontSize: 12.5, margin: 0, textAlign: "center" }}>Use seu e-mail @locgrupo.com.br</p>
         </div>
 
@@ -72,13 +73,13 @@ export default async function EscalaLoginPage({ searchParams }: { searchParams: 
           <span style={{ color: "var(--ok-base)" }}>sem surpresa</span>
         </h1>
         <p style={{ fontSize: 16, lineHeight: 1.6, color: "color-mix(in srgb, #fff 78%, transparent)", maxWidth: 460, marginTop: 16 }}>
-          Veja os dias do seu grupo, reserve uma vaga livre ou entre na lista de espera.
+          Veja os dias do seu grupo no escritório e agende salas de reunião, tudo com o mesmo login.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 48 }}>
           {[
             "Segunda e sexta do seu grupo; terça a quinta livres para agendar",
             "Não vai? Avise e libere seu lugar para outra pessoa",
-            "Lembretes por e-mail e os dias direto no Google Agenda",
+            "Salas de reunião: veja os horários livres e agende em poucos cliques",
           ].map((linha) => (
             <div key={linha} style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <span style={{ width: 7, height: 7, borderRadius: 999, background: "var(--ok-base)", flex: "none" }} />

@@ -8,10 +8,14 @@ export const dynamic = "force-dynamic";
 /** Retorno do Google: troca o código pela sessão e valida o domínio NO SERVIDOR. */
 export async function GET(req: NextRequest) {
   if (!escalaHabilitada()) return new NextResponse(null, { status: 404 });
-  // módulo que pediu o login (Escala ou Salas), guardado pela rota /escala/auth/login
-  const destino = DESTINOS_PORTAL[req.cookies.get(COOKIE_VOLTA)?.value === "salas" ? "salas" : "escala"];
+  // módulo que pediu o login (Escala ou Salas), guardado pela rota /escala/auth/login;
+  // sem pedido, quem não está em nenhuma escala cai direto nas salas
+  const pedido = req.cookies.get(COOKIE_VOLTA)?.value === "salas" ? "salas" : null;
+  let destino: string = DESTINOS_PORTAL[pedido ?? "escala"];
   const voltar = (erro?: string) => {
-    const res = NextResponse.redirect(new URL(erro ? `${destino}/login?erro=${erro}` : destino, req.url));
+    const res = NextResponse.redirect(
+      new URL(erro ? `/escala/login?erro=${erro}${pedido ? "&volta=salas" : ""}` : destino, req.url),
+    );
     res.cookies.delete(COOKIE_VOLTA);
     return res;
   };
@@ -32,6 +36,10 @@ export async function GET(req: NextRequest) {
   }
 
   const { usuarioInternoId } = await vincularConta(user.id, user.email!);
+  if (!pedido) {
+    const { data: part } = await db().from("escala_participante").select("ativo").eq("auth_user_id", user.id).maybeSingle();
+    if (!part?.ativo) destino = DESTINOS_PORTAL.salas;
+  }
   if (usuarioInternoId) {
     // usuário interno que entrou pelo Google: mantém o mesmo acesso de hoje no LocControl
     await db().from("usuarios").update({ ultimo_acesso: new Date().toISOString() }).eq("id", usuarioInternoId);
