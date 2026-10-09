@@ -957,3 +957,11 @@ button.sal-cel[data-agora="1"] { background: color-mix(in srgb, var(--warn) 9%, 
 .nav-secao { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; background: none; border: 0; border-radius: 8px; cursor: pointer; font-family: inherit; color: color-mix(in srgb, var(--color-text) 55%, transparent); text-align: left; }
 .nav-secao:hover { color: var(--color-text); background: color-mix(in srgb, var(--color-text) 6%, transparent); }
 .nav-secao:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+
+/* seleção de horário na grade de salas */
+button.sal-cel[data-sel="1"] { background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); box-shadow: inset 3px 0 0 var(--color-accent); }
+button.sal-cel[data-sel="1"] > span { opacity: 1; color: var(--color-accent); }
+button.sal-cel[data-pode="1"] { background: color-mix(in srgb, var(--ok) 9%, transparent); }
+.sal-cel[data-bloq="1"] { background: color-mix(in srgb, var(--color-text) 12%, var(--color-surface)); }
+.sal-barra-sel { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px 10px 16px; border-radius: 14px; background: var(--color-surface); border: 1px solid var(--color-accent); box-shadow: var(--shadow-lg); font-size: 14px; }

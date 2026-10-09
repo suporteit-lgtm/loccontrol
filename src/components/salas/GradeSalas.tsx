@@ -6,7 +6,7 @@ import { useToast } from "@/components/Toast";
 import { dataLonga, maiuscula } from "@/lib/escala/formato";
 import { somarDias } from "@/lib/escala/calendario";
 import {
-  diaPermitido, duracao, finsPossiveis, horarios, minutos, type ConfigSalas, type ReservaVista, type Sala,
+  diaPermitido, duracao, finsPossiveis, hhmm, horarios, minutos, type ConfigSalas, type ReservaVista, type Sala,
 } from "@/lib/salas/regras";
 
 type Res = { ok: true } | { ok: false; erro: string };
@@ -25,7 +25,7 @@ export interface GradeProps {
 }
 
 type Aberto =
-  | { tipo: "nova"; sala: Sala; ini: string }
+  | { tipo: "nova"; sala: Sala; ini: string; fim: string }
   | { tipo: "ver"; sala: Sala; r: ReservaVista }
   | null;
 
@@ -37,6 +37,8 @@ export function GradeSalas(props: GradeProps) {
   const router = useRouter();
   const path = usePathname();
   const [aberto, setAberto] = useState<Aberto>(null);
+  // seleção na própria grade: 1º clique = início; cliques seguintes na mesma sala = término
+  const [sel, setSel] = useState<{ sala: Sala; ini: string; fim: string } | null>(null);
 
   const faixas = useMemo(() => horarios(config), [config]);
   const ini0 = minutos(config.hora_inicio);
@@ -46,7 +48,22 @@ export function GradeSalas(props: GradeProps) {
   const ocupada = (salaId: string, h: string) =>
     reservas.some((r) => r.salaId === salaId && minutos(r.ini) <= minutos(h) && minutos(r.fim) > minutos(h));
 
-  const ir = (d: string) => router.push(`${path}?data=${d}`);
+  const ir = (d: string) => {
+    setSel(null);
+    router.push(`${path}?data=${d}`);
+  };
+
+  // até onde a seleção pode ir: duração máxima, próxima reserva da sala ou fim do expediente
+  const limiteSel = sel
+    ? minutos(finsPossiveis({ ini: sel.ini, config, ocupadas: reservas.filter((r) => r.salaId === sel.sala.id), gestor }).at(-1) ?? sel.fim)
+    : 0;
+  const fimDe = (h: string) => hhmm(minutos(h) + config.intervalo_min);
+  const naSel = (salaId: string) => sel?.sala.id === salaId;
+  const clicar = (s: Sala, h: string) => {
+    const fim = fimDe(h);
+    if (sel && naSel(s.id) && minutos(h) >= minutos(sel.ini) && minutos(fim) <= limiteSel) setSel({ ...sel, fim });
+    else setSel({ sala: s, ini: h, fim });
+  };
   const agoraNaGrade = data === hoje && agoraMin >= ini0 && agoraMin < minutos(config.hora_fim);
   const faixaAgora = agoraNaGrade ? faixas.find((h) => minutos(h) <= agoraMin && agoraMin < minutos(h) + config.intervalo_min) : undefined;
   const ocupadasAgora = faixaAgora ? salas.filter((s) => ocupada(s.id, faixaAgora)).length : 0;
@@ -147,12 +164,18 @@ export function GradeSalas(props: GradeProps) {
             {salas.map((s, j) =>
               faixas.map((h) => {
                 if (ocupada(s.id, h)) return null;
-                const fechada = !aberta || passou(h);
+                // com uma seleção nesta sala, o que passa do limite (4h, próxima reserva) fica cinza
+                const foraDoLimite = naSel(s.id) && minutos(h) >= limiteSel;
+                const fechada = !aberta || passou(h) || foraDoLimite;
+                const dentro = naSel(s.id) && minutos(h) >= minutos(sel!.ini) && minutos(h) < minutos(sel!.fim);
+                const estende = naSel(s.id) && !dentro && minutos(h) > minutos(sel!.ini);
                 return fechada ? (
                   <div
                     key={s.id + h}
                     className="sal-cel"
                     data-fechada="1"
+                    data-bloq={foraDoLimite ? "1" : undefined}
+                    title={foraDoLimite ? "Fora do limite deste agendamento" : undefined}
                     data-cheia={h.endsWith(":00") ? "1" : undefined}
                     style={{ gridColumn: j + 2, gridRow: linha(h) }}
                   />
@@ -162,11 +185,14 @@ export function GradeSalas(props: GradeProps) {
                     className="sal-cel"
                     data-cheia={h.endsWith(":00") ? "1" : undefined}
                     data-agora={h === faixaAgora ? "1" : undefined}
+                    data-sel={dentro ? "1" : undefined}
+                    data-pode={naSel(s.id) && !dentro && estende ? "1" : undefined}
                     style={{ gridColumn: j + 2, gridRow: linha(h) }}
-                    onClick={() => setAberto({ tipo: "nova", sala: s, ini: h })}
-                    aria-label={`Agendar ${s.nome} às ${h}`}
+                    onClick={() => clicar(s, h)}
+                    aria-pressed={dentro}
+                    aria-label={estende ? `Usar ${s.nome} até ${fimDe(h)}` : `Agendar ${s.nome} às ${h}`}
                   >
-                    <span>+ Agendar {h}</span>
+                    <span>{dentro ? (h === sel!.ini ? `${sel!.ini}–${sel!.fim}` : "") : estende ? `até ${fimDe(h)}` : `+ Agendar ${h}`}</span>
                   </button>
                 );
               }),
@@ -200,16 +226,38 @@ export function GradeSalas(props: GradeProps) {
         </div>
       )}
 
+      {sel && (
+        <div className="sal-barra-sel" role="status">
+          <span>
+            <strong>{sel.sala.nome}</strong> · {sel.ini}–{sel.fim} ({duracao(minutos(sel.fim) - minutos(sel.ini))})
+            <span className="text-muted sal-oculta-cel">
+              {" "}· clique em outro horário da sala para mudar o término
+              {!gestor && ` (máx. ${duracao(config.duracao_max_min)})`}
+            </span>
+          </span>
+          <span style={{ display: "flex", gap: 8 }}>
+            <button className="btn btn-secondary" onClick={() => setSel(null)}>
+              Desfazer
+            </button>
+            <button className="btn btn-primary" onClick={() => setAberto({ tipo: "nova", sala: sel.sala, ini: sel.ini, fim: sel.fim })}>
+              Agendar
+            </button>
+          </span>
+        </div>
+      )}
+
       {aberto?.tipo === "nova" && (
         <NovaReserva
           sala={aberto.sala}
           data={data}
           ini={aberto.ini}
+          fimInicial={aberto.fim}
           config={config}
           gestor={gestor}
           ocupadas={reservas.filter((r) => r.salaId === aberto.sala.id)}
           reservar={props.reservar}
           fechar={() => setAberto(null)}
+          concluido={() => setSel(null)}
         />
       )}
       {aberto?.tipo === "ver" && (
@@ -223,16 +271,18 @@ function NovaReserva(p: {
   sala: Sala;
   data: string;
   ini: string;
+  fimInicial: string;
   config: ConfigSalas;
   gestor: boolean;
   ocupadas: ReservaVista[];
   reservar: GradeProps["reservar"];
   fechar: () => void;
+  concluido: () => void;
 }) {
   const { toast } = useToast();
   const router = useRouter();
   const fins = finsPossiveis({ ini: p.ini, config: p.config, ocupadas: p.ocupadas, gestor: p.gestor });
-  const [fim, setFim] = useState(fins[Math.min(1, fins.length - 1)] ?? "");
+  const [fim, setFim] = useState(fins.includes(p.fimInicial) ? p.fimInicial : (fins[0] ?? ""));
   const [titulo, setTitulo] = useState("");
   const [para, setPara] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -245,6 +295,7 @@ function NovaReserva(p: {
       const r = await p.reservar({ salaId: p.sala.id, data: p.data, ini: p.ini, fim, titulo, paraEmail: para || undefined });
       if (!r.ok) return setErro(r.erro);
       toast(`${p.sala.nome} agendada: ${p.ini}–${fim}.`, "ok");
+      p.concluido();
       p.fechar();
       router.refresh();
     });
