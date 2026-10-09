@@ -1,10 +1,19 @@
 /** Tela de entrada: Escala de Presença em destaque; LocControl como acesso secundário. */
 import { CartaoEscala } from "@/components/escala/CartaoEscala";
+import { CartaoSalas } from "@/components/salas/CartaoSalas";
 import type { DiaSemana } from "@/lib/escala/semana";
 
 export type { DiaSemana };
 
-export function EscolhaModulo({ semana, hrefEscala = "/escala" }: { semana: DiaSemana[] | null; hrefEscala?: string }) {
+export function EscolhaModulo({
+  semana,
+  hrefEscala = "/escala",
+  hrefSalas = "/salas",
+}: {
+  semana: DiaSemana[] | null;
+  hrefEscala?: string;
+  hrefSalas?: string;
+}) {
   return (
     <div className="login-split">
       <div className="login-form-panel">
@@ -36,6 +45,7 @@ export function EscolhaModulo({ semana, hrefEscala = "/escala" }: { semana: DiaS
 
           {/* Destaque: Escala de Presença */}
           <CartaoEscala semana={semana} href={hrefEscala} />
+          <CartaoSalas href={hrefSalas} compacto />
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, color: "rgb(255 255 255 / 0.4)", fontSize: 11.5 }}>
             <span style={{ flex: 1, height: 1, background: "rgb(255 255 255 / 0.14)" }} />

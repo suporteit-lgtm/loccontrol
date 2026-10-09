@@ -1,53 +1,23 @@
 import { redirect } from "next/navigation";
 import { contaPortal } from "@/lib/escala/auth";
-import { AvatarCircle } from "@/components/ui";
-import { ThemeToggleButton } from "@/components/ThemeToggle";
+import Link from "next/link";
+import { CabecalhoPortal } from "@/components/portal/CabecalhoPortal";
 import { PortalNav } from "@/components/escala/PortalNav";
 import { AoVivo } from "@/components/escala/AoVivo";
 
 export const dynamic = "force-dynamic";
 
-function Cabecalho({ nome }: { nome: string }) {
-  return (
-    <header
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        padding: "12px 16px",
-        background: "var(--color-surface)",
-        borderBottom: "1px solid var(--color-divider)",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="Locagora" data-logo="1" style={{ width: 96 }} />
-        <div style={{ width: 1, height: 20, background: "var(--color-divider)" }} />
-        <span style={{ fontWeight: 800, fontSize: 12, letterSpacing: "0.16em", color: "var(--color-accent)" }}>ESCALA</span>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <ThemeToggleButton />
-        <AvatarCircle nome={nome} tamanho={30} />
-        <form action="/escala/auth/sair" method="post">
-          <button className="btn btn-secondary" style={{ height: 32, fontSize: 13 }}>
-            Sair
-          </button>
-        </form>
-      </div>
-    </header>
-  );
-}
-
-function Aviso({ titulo, texto }: { titulo: string; texto: string }) {
+function Aviso({ titulo, texto, salas }: { titulo: string; texto: string; salas?: boolean }) {
   return (
     <div className="card elev-sm" style={{ textAlign: "center", padding: "var(--space-8)", gap: 8 }}>
       <div className="card-kicker">Escala de Presença</div>
       <div className="card-title">{titulo}</div>
       <p className="card-body">{texto}</p>
+      {salas && (
+        <Link href="/salas" className="btn btn-primary" style={{ alignSelf: "center", marginTop: 8 }}>
+          Agendar uma sala de reunião →
+        </Link>
+      )}
     </div>
   );
 }
@@ -63,12 +33,12 @@ export default async function PortalLayout({ children }: { children: React.React
     conteudo = <Aviso titulo="Escala em preparação" texto="O módulo ainda está sendo configurado. Volte em breve." />;
   } else if (!conta.participante || !conta.participante.ativo) {
     comAbas = false;
-    conteudo = <Aviso titulo="Você ainda não está em nenhuma escala" texto="Procure o RH para ser incluído em um grupo." />;
+    conteudo = <Aviso titulo="Você ainda não está em nenhuma escala" texto="Procure o RH para ser incluído em um grupo. Enquanto isso, você já pode agendar salas de reunião." salas />;
   }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-bg)" }}>
-      <Cabecalho nome={conta.nome} />
+      <CabecalhoPortal nome={conta.nome} modulo="escala" />
       {comAbas && <PortalNav />}
       {comAbas && <AoVivo />}
       <main className="esc-main">
