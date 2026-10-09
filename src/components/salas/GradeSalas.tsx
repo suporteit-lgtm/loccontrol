@@ -61,6 +61,8 @@ export function GradeSalas(props: GradeProps) {
   const naSel = (salaId: string) => sel?.sala.id === salaId;
   const clicar = (s: Sala, h: string) => {
     const fim = fimDe(h);
+    // clicar de novo num horário já selecionado desfaz a seleção
+    if (sel && naSel(s.id) && minutos(h) >= minutos(sel.ini) && minutos(h) < minutos(sel.fim)) return setSel(null);
     if (sel && naSel(s.id) && minutos(h) >= minutos(sel.ini) && minutos(fim) <= limiteSel) setSel({ ...sel, fim });
     else setSel({ sala: s, ini: h, fim });
   };
@@ -190,7 +192,8 @@ export function GradeSalas(props: GradeProps) {
                     style={{ gridColumn: j + 2, gridRow: linha(h) }}
                     onClick={() => clicar(s, h)}
                     aria-pressed={dentro}
-                    aria-label={estende ? `Usar ${s.nome} até ${fimDe(h)}` : `Agendar ${s.nome} às ${h}`}
+                    aria-label={dentro ? `Desmarcar ${s.nome} ${sel!.ini}–${sel!.fim}` : estende ? `Usar ${s.nome} até ${fimDe(h)}` : `Agendar ${s.nome} às ${h}`}
+                    title={dentro ? "Clique para desmarcar" : undefined}
                   >
                     <span>{dentro ? (h === sel!.ini ? `${sel!.ini}–${sel!.fim}` : "") : estende ? `até ${fimDe(h)}` : `+ Agendar ${h}`}</span>
                   </button>
