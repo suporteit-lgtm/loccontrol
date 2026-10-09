@@ -84,6 +84,8 @@ function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [navMin, setNavMin] = useState(false);
+  // seções do menu recolhidas pelo usuário (lembradas neste navegador)
+  const [fechados, setFechados] = useState<string[]>([]);
   const [, start] = useTransition();
 
   useEffect(() => {
@@ -93,6 +95,7 @@ function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }
     on();
     try {
       setNavMin(localStorage.getItem("lc-nav-min") === "1");
+      setFechados(JSON.parse(localStorage.getItem("lc-nav-fechados") ?? "[]"));
     } catch {}
     return () => mq.removeEventListener("change", on);
   }, []);
@@ -215,24 +218,49 @@ function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }
     );
   };
 
+  const alternarSecao = (titulo: string) =>
+    setFechados((atual) => {
+      const novo = atual.includes(titulo) ? atual.filter((t) => t !== titulo) : [...atual, titulo];
+      try {
+        localStorage.setItem("lc-nav-fechados", JSON.stringify(novo));
+      } catch {}
+      return novo;
+    });
+
+  // título da seção com a seta para recolher; recolhida, mostra só a página aberta
+  const tituloSecao = (titulo: string, estilo: React.CSSProperties) => {
+    const fechado = fechados.includes(titulo);
+    return (
+      <button
+        type="button"
+        className="nav-secao"
+        onClick={() => alternarSecao(titulo)}
+        aria-expanded={!fechado}
+        title={fechado ? `Mostrar ${titulo}` : `Recolher ${titulo}`}
+        style={estilo}
+      >
+        <span>{titulo}</span>
+        <span style={{ display: "grid", transform: `rotate(${fechado ? -90 : 0}deg)`, transition: "transform 0.15s ease" }}>
+          <Icone nome="chevron" tamanho={13} />
+        </span>
+      </button>
+    );
+  };
+  const visiveis = (titulo: string, itens: NavItem[]) =>
+    fechados.includes(titulo) ? itens.filter((n) => ativo(n.rota)) : itens;
+
   const bloco = (titulo: string, itens: NavItem[]) => (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {!navMin && (
-        <h6
-          className="text-muted"
-          style={{
-            margin: "4px 0 8px 12px",
-            fontSize: 11,
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            opacity: 0.7,
-          }}
-        >
-          {titulo}
-        </h6>
-      )}
-      {itens.map(linkNav)}
+      {!navMin &&
+        tituloSecao(titulo, {
+          margin: "4px 0 4px",
+          padding: "4px 8px 4px 12px",
+          fontSize: 11,
+          fontWeight: 800,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+        })}
+      {(navMin ? itens : visiveis(titulo, itens)).map(linkNav)}
     </div>
   );
 
@@ -552,10 +580,15 @@ function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }
                   ] as const).map(([titulo, itens]) =>
                     itens.length === 0 ? null : (
                       <div key={titulo} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <h6 className="text-muted" style={{ margin: "0 0 4px" }}>
-                          {titulo}
-                        </h6>
-                        {itens.map((n) => {
+                        {tituloSecao(titulo, {
+                          margin: "0 0 4px",
+                          padding: "4px 4px",
+                          fontSize: 12,
+                          fontWeight: 800,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        })}
+                        {visiveis(titulo, itens).map((n) => {
                           const sel = ativo(n.rota);
                           return (
                             <Link
