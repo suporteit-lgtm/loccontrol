@@ -960,7 +960,8 @@ button.sal-cel[data-agora="1"] { background: color-mix(in srgb, var(--warn) 9%, 
 
 /* seleção de horário na grade de salas */
 button.sal-cel[data-sel="1"] { background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); box-shadow: inset 3px 0 0 var(--color-accent); }
-button.sal-cel[data-sel="1"] > span { opacity: 1; color: var(--color-accent); }
+button.sal-cel[data-sel="1"] > span { opacity: 1; color: var(--color-text); font-weight: 700; }
+button.sal-cel[data-sel="1"]:hover { background: color-mix(in srgb, var(--danger) 14%, var(--color-surface)); box-shadow: inset 3px 0 0 var(--danger); }
 button.sal-cel[data-pode="1"] { background: color-mix(in srgb, var(--ok) 9%, transparent); }
 .sal-cel[data-bloq="1"] { background: color-mix(in srgb, var(--color-text) 12%, var(--color-surface)); }
 .sal-barra-sel { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
