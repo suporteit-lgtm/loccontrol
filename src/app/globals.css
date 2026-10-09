@@ -952,3 +952,8 @@ button.sal-cel[data-agora="1"] { background: color-mix(in srgb, var(--warn) 9%, 
 .modulo-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .modulo-chips span { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--accent-base) 9%, #fff); color: var(--accent-base); }
 @media (max-width: 420px) { .portal-logo { display: none; } }
+
+/* título de seção do menu lateral com seta para recolher */
+.nav-secao { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; background: none; border: 0; border-radius: 8px; cursor: pointer; font-family: inherit; color: color-mix(in srgb, var(--color-text) 55%, transparent); text-align: left; }
+.nav-secao:hover { color: var(--color-text); background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+.nav-secao:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
