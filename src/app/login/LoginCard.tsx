@@ -5,6 +5,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { entrarComEmail } from "@/app/actions/sessao";
 import type { DiaSemana } from "@/lib/escala/semana";
 import { PortalColaborador } from "./PortalColaborador";
+import { HeroPortal } from "./HeroPortal";
 import s from "./login.module.css";
 
 // fonte do mockup "Login · Desktop" — só nesta tela
@@ -309,6 +310,32 @@ export function LoginCard({
       </section>
 
       <aside className={s.hero}>
+        {/* no login Google o lado direito mostra o portal; no acesso administrativo, o ciclo de vida (RH e TI) */}
+        {modo === "portal" && portal ? (
+          <HeroPortal
+            semana={portal.semana}
+            painelRhTi={
+              <div className={s.stages}>
+                {ETAPAS.map((e) => (
+                  <div key={e.nome} className={s.stage}>
+                    <span className={s.stageIcon}>
+                      <Icone>{ICONE[e.icone]}</Icone>
+                    </span>
+                    <div className={s.stageText}>
+                      <span className={s.stageName}>{e.nome}</span>
+                      <span className={s.stageDesc}>{e.desc}</span>
+                    </div>
+                    <div className={s.chips}>
+                      <span className={`${s.chip} ${TOM[e.rh]}`}>RH · {e.rh}</span>
+                      <span className={`${s.chip} ${TOM[e.ti]}`}>TI · {e.ti}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            }
+          />
+        ) : (
+        <>
         <div className={s.heroIntro}>
           <span className={s.pill}>
             <span className={s.dot} />
@@ -361,6 +388,8 @@ export function LoginCard({
             </div>
           ))}
         </div>
+        </>
+        )}
       </aside>
     </main>
   );
