@@ -13,7 +13,6 @@ export default async function LoginPage() {
     const [semana, conta] = await Promise.all([semanaDaEscala(), contaPortal().catch(() => null)]);
     return (
       <LoginCard
-        trocarModulo
         portal={{ semana, href: conta ? "/escala" : "/escala/auth/login" }}
       />
     );

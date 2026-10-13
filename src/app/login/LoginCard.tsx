@@ -85,10 +85,8 @@ function Icone({ size = 18, stroke = "currentColor", width = 2, children }: {
 }
 
 export function LoginCard({
-  trocarModulo = false,
   portal,
 }: {
-  trocarModulo?: boolean;
   /** cartão do portal do colaborador (Escala e Salas); só vem com a Escala habilitada */
   portal?: { semana: DiaSemana[] | null; href: string };
 }) {
@@ -261,12 +259,6 @@ export function LoginCard({
                 </Icone>
                 <span>
                   Acesso restrito a <strong>@locgrupo.com.br</strong>
-                  {trocarModulo && (
-                    <>
-                      {" · "}
-                      <a href="/" className={s.footLink}>Trocar módulo</a>
-                    </>
-                  )}
                 </span>
               </div>
             </div>
