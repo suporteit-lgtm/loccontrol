@@ -69,15 +69,12 @@ export function PageHeader({
   /** Coloca o `sub` do lado do título, na mesma linha, em vez de embaixo. */
   subInline,
   acoes,
-  /** Botão de tema claro/escuro — só aparece se pedido (hoje: Dashboard e Dashboard TI). */
-  themeToggle,
 }: {
   eyebrow?: string;
   titulo: string;
   sub?: React.ReactNode;
   subInline?: boolean;
   acoes?: React.ReactNode;
-  themeToggle?: boolean;
 }) {
   return (
     <div
@@ -117,9 +114,7 @@ export function PageHeader({
       </div>
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
         {acoes}
-        {themeToggle && (
-          <ThemeToggleButton style={{ borderRadius: 999, background: "color-mix(in srgb, var(--color-text) 5%, transparent)", border: "none" }} />
-        )}
+        <ThemeToggleButton style={{ borderRadius: 999, background: "color-mix(in srgb, var(--color-text) 5%, transparent)", border: "none" }} />
       </div>
     </div>
   );
