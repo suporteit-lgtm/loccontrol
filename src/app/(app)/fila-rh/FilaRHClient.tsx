@@ -136,10 +136,9 @@ export function FilaRHClient({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "var(--space-4)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "var(--space-3)",
           alignItems: "start",
-          flex: 1
         }}
       >
         {colsVisiveis.map((col) => {
@@ -147,117 +146,56 @@ export function FilaRHClient({
           const cardsVisiveis = expandido ? col.cards : col.cards.slice(0, LIMITE_CARDS);
           const restantes = col.cards.length - cardsVisiveis.length;
           return (
-          <div
-            key={col.label}
-            style={{
-              display: "flex", flexDirection: "column", gap: 8,
-              background: "color-mix(in srgb, var(--color-surface) 60%, transparent)",
-              padding: "16px",
-              borderRadius: "16px",
-              border: "1px solid color-mix(in srgb, var(--color-divider) 50%, transparent)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <h6 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, color: col.cor, fontSize: 12, letterSpacing: "0.08em" }}>
-                <span style={{ width: 8, height: 8, flex: "none", borderRadius: "50%", background: col.cor, boxShadow: `0 0 8px ${col.cor}` }} />
-                {col.label}
-              </h6>
-              <span style={{ 
-                fontFamily: "var(--mono)", fontSize: 11, fontWeight: 700,
-                background: "var(--color-bg)", padding: "2px 8px", borderRadius: "999px",
-                color: "var(--color-text)", border: "1px solid var(--color-divider)"
-              }}>
-                {col.cards.length}
-              </span>
-            </div>
-
+          <div key={col.label} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <h6 style={{ margin: 0, display: "flex", alignItems: "center", gap: 7, color: col.cor }}>
+              <span style={{ width: 8, height: 8, flex: "none", borderRadius: "50%", background: col.cor }} />
+              {col.label}
+              <span style={{ fontFamily: "var(--mono)", marginLeft: "auto" }}>{col.cards.length}</span>
+            </h6>
             {col.cards.length === 0 && (
               <div
                 className="text-muted"
-                style={{ 
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  border: "1px dashed var(--color-divider)", padding: "32px 16px", 
-                  fontSize: 13, borderRadius: 12, background: "color-mix(in srgb, var(--color-bg) 50%, transparent)"
-                }}
+                style={{ border: "1px dashed var(--color-divider)", padding: 16, fontSize: 12, borderRadius: 10 }}
               >
-                <span style={{ fontSize: 16 }}>✨</span> Nada aqui — bom sinal
+                Nada aqui — bom sinal
               </div>
             )}
-            
             {cardsVisiveis.map((k) => {
               const sl = sla(k.slaAlvo, now);
               return (
-                <div key={k.key} className="card hover-lift" style={{
-                  borderTop: `3px solid ${k.urgCor}`,
-                  gap: 8,
-                  padding: "12px",
-                  background: "var(--color-surface)",
-                  boxShadow: "var(--shadow-sm)",
-                  position: "relative",
-                  overflow: "hidden"
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
-                    <span style={{
-                      fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13.5, lineHeight: 1.3,
-                      flex: 1, wordBreak: "break-word"
-                    }}>
-                      {k.nome}
-                    </span>
+                <div key={k.key} className="card elev-sm" style={{ borderLeft: `3px solid ${k.urgCor}`, gap: 6, minHeight: 148 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                    <span style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 15 }}>{k.nome}</span>
                     {k.id && (
-                      <span style={{
-                        fontFamily: "var(--mono)", fontSize: 10.5, background: "var(--color-bg)",
-                        padding: "3px 7px", borderRadius: 6, border: "1px solid var(--color-divider)",
-                        flex: "none", whiteSpace: "nowrap"
-                      }} className="text-muted">
+                      <span style={{ fontFamily: "var(--mono)", fontSize: 11 }} className="text-muted">
                         {k.id}
                       </span>
                     )}
                   </div>
-
                   <div
                     className="text-muted"
                     title={k.sub}
-                    style={{ fontSize: 11.5, lineHeight: 1.4, display: "flex", flexDirection: "column", gap: 3 }}
+                    style={{ fontSize: 12, display: "flex", flexDirection: "column", gap: 2 }}
                   >
-                    <div>{k.sub}</div>
-                    {k.unidade && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ opacity: 0.7 }}>📍</span> {k.unidade}
-                      </div>
-                    )}
-                    {k.solicitante && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ opacity: 0.7 }}>👤</span> Solicitado por {k.solicitante}
-                      </div>
-                    )}
+                    <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{k.sub}</div>
+                    {k.unidade && <div>{k.unidade}</div>}
+                    {k.solicitante && <div>Solicitado por {k.solicitante}</div>}
                   </div>
-
                   {sl && (
-                    <div style={{ marginTop: 1 }}>
-                      <span style={{
-                        display: "inline-flex", alignItems: "center", gap: 5,
-                        fontFamily: "var(--mono)", fontSize: 10.5,
-                        color: sl.cor, fontWeight: sl.peso,
-                        background: `color-mix(in srgb, ${sl.cor} 10%, transparent)`,
-                        padding: "3px 9px", borderRadius: 999,
-                        border: `1px solid color-mix(in srgb, ${sl.cor} 30%, transparent)`
-                      }}>
-                        ⏳ SLA: {sl.txt}
-                      </span>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 13, color: sl.cor, fontWeight: sl.peso }}>
+                      faltam {sl.txt}
                     </div>
                   )}
-
                   {k.pendencias && <Chips itens={k.pendencias} cor={k.urgCor} />}
-
-                  <div style={{ display: "flex", gap: 6, marginTop: "auto", flexWrap: "wrap", paddingTop: 10, borderTop: "1px solid var(--color-divider)", justifyContent: "flex-end" }}>
-                    <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 12, padding: "3px 12px" }}>
+                  <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
+                    <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 13, padding: "4px 12px" }}>
                       {k.acao}
                     </Link>
                     {k.ativarColabId && (
                       <>
                         <button
                           className="btn btn-ghost"
-                          style={{ fontSize: 12, padding: "3px 7px", color: "var(--danger-forte)" }}
+                          style={{ fontSize: 13, padding: "4px 8px", color: "var(--danger-forte)" }}
                           disabled={pending}
                           onClick={() => setNaoAtivando(k)}
                         >
@@ -265,11 +203,11 @@ export function FilaRHClient({
                         </button>
                         <button
                           className="btn btn-primary"
-                          style={{ fontSize: 12, padding: "3px 12px" }}
+                          style={{ fontSize: 13, padding: "4px 12px" }}
                           disabled={pending}
                           onClick={() => ativar(k.ativarColabId!)}
                         >
-                          {pending ? "Ativando..." : "Ativar"}
+                          {pending ? "Ativando..." : "Ativar na empresa"}
                         </button>
                       </>
                     )}

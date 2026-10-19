@@ -132,17 +132,14 @@ export function FilaTIClient({
     start(async () => {
       const res = await fn();
       if (undoId && res.ok) {
-        toast(
-          res.msg,
-          () =>
-            start(async () => {
-              await reativarChamado(undoId);
-              router.refresh();
-            }),
-          "ok"
+        toast(res.msg, () =>
+          start(async () => {
+            await reativarChamado(undoId);
+            router.refresh();
+          })
         );
       } else {
-        toast(res.msg, res.ok ? "ok" : "erro");
+        toast(res.msg);
       }
       router.refresh();
     });
@@ -242,7 +239,7 @@ export function FilaTIClient({
     : null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", width: "100%", minHeight: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
       <PageHeader
         eyebrow="Visão TI"
         titulo="Fila da TI"
@@ -267,10 +264,9 @@ export function FilaTIClient({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "var(--space-4)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "var(--space-3)",
           alignItems: "start",
-          flex: 1
         }}
       >
         {COLS.map((col) => {
@@ -283,44 +279,26 @@ export function FilaTIClient({
               key={col.key}
               data-col-key={col.key}
               style={{
-                display: "flex", flexDirection: "column", gap: 8,
-                background:
-                  colAlvo === col.key
-                    ? `color-mix(in srgb, ${col.cor} 8%, var(--color-surface) 60%)`
-                    : "color-mix(in srgb, var(--color-surface) 60%, transparent)",
-                padding: "16px",
-                borderRadius: "16px",
-                border:
-                  colAlvo === col.key
-                    ? `1px dashed ${col.cor}`
-                    : "1px solid color-mix(in srgb, var(--color-divider) 50%, transparent)",
-                transition: "border-color 0.15s, background 0.15s",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                borderRadius: 10,
+                outline: colAlvo === col.key ? `1px dashed ${col.cor}` : "none",
+                outlineOffset: 4,
+                background: colAlvo === col.key ? `color-mix(in srgb, ${col.cor} 6%, transparent)` : undefined,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                <h6 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, color: col.cor, fontSize: 12, letterSpacing: "0.08em" }}>
-                  <span style={{ width: 8, height: 8, flex: "none", borderRadius: "50%", background: col.cor, boxShadow: `0 0 8px ${col.cor}` }} />
-                  {col.label}
-                </h6>
-                <span style={{ 
-                  fontFamily: "var(--mono)", fontSize: 11, fontWeight: 700,
-                  background: "var(--color-bg)", padding: "2px 8px", borderRadius: "999px",
-                  color: "var(--color-text)", border: "1px solid var(--color-divider)"
-                }}>
-                  {doGrupo.length}
-                </span>
-              </div>
-              
+              <h6 style={{ margin: 0, display: "flex", alignItems: "center", gap: 7, color: col.cor }}>
+                <span style={{ width: 8, height: 8, flex: "none", borderRadius: "50%", background: col.cor }} />
+                {col.label}
+                <span style={{ fontFamily: "var(--mono)", marginLeft: "auto" }}>{doGrupo.length}</span>
+              </h6>
               {doGrupo.length === 0 && (
                 <div
                   className="text-muted"
-                  style={{ 
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    border: "1px dashed var(--color-divider)", padding: "32px 16px", 
-                    fontSize: 13, borderRadius: 12, background: "color-mix(in srgb, var(--color-bg) 50%, transparent)"
-                  }}
+                  style={{ border: "1px dashed var(--color-divider)", padding: 16, fontSize: 12, borderRadius: 10 }}
                 >
-                  <span style={{ fontSize: 16 }}>✨</span> Nada aqui — bom sinal
+                  Nada aqui — bom sinal
                 </div>
               )}
               {doGrupoVisivel.map((k) => {
@@ -342,96 +320,52 @@ export function FilaTIClient({
                 return (
                   <div
                     key={k.id}
-                    className="card hover-lift"
+                    className="card elev-sm"
                     onPointerDown={(e) => iniciarArraste(e, k)}
                     style={{
-                      borderTop: `3px solid ${urg}`,
-                      gap: 8,
-                      padding: "12px",
-                      background: "var(--color-surface)",
-                      boxShadow: "var(--shadow-sm)",
-                      position: "relative",
-                      overflow: "hidden",
+                      borderLeft: `3px solid ${urg}`,
+                      gap: 6,
+                      minHeight: 148,
                       cursor: k.kind === "colab" ? "grab" : undefined,
                       touchAction: k.kind === "colab" ? "none" : undefined,
                       opacity: arrastando?.id === k.id ? 0.35 : 1,
-                      transform: arrastando?.id === k.id ? "scale(0.96)" : "scale(1)",
                     }}
                   >
-                    {/* Linha superior: Título e CH */}
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
-                      <span style={{
-                        fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13.5, lineHeight: 1.3,
-                        flex: 1, wordBreak: "break-word"
-                      }}>
-                        {k.nome}
-                      </span>
-                      <span style={{
-                        fontFamily: "var(--mono)", fontSize: 10.5, background: "var(--color-bg)",
-                        padding: "3px 7px", borderRadius: 6, border: "1px solid var(--color-divider)",
-                        flex: "none", whiteSpace: "nowrap"
-                      }} className="text-muted">
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 15 }}>{k.nome}</span>
+                      <span style={{ fontFamily: "var(--mono)", fontSize: 11 }} className="text-muted">
                         {k.id}
                       </span>
                     </div>
-
-                    {/* Subtítulo: Tipo, Cargo, Data */}
                     <div
                       className="text-muted"
                       title={`${k.tipo} · ${k.sub}`}
-                      style={{ fontSize: 11.5, lineHeight: 1.4, display: "flex", flexDirection: "column", gap: 3 }}
+                      style={{ fontSize: 12, display: "flex", flexDirection: "column", gap: 2 }}
                     >
-                      <div><strong>{k.tipo}</strong> · {k.sub}</div>
-                      {k.kind === "colab" && k.unidade && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ opacity: 0.7 }}>📍</span> {k.unidade}
-                        </div>
-                      )}
-                      {k.kind === "colab" && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ opacity: 0.7 }}>👤</span> Responsável: {k.analista ?? "fila geral"}
-                        </div>
-                      )}
-                      {k.kind === "colab" && k.data && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ opacity: 0.7 }}>📅</span> Previsão: {k.data}
-                        </div>
-                      )}
-                      {k.kind === "unid" && (
-                        <div>{admin ? "Aguardando sua aprovação" : "Aguardando um admin"}</div>
-                      )}
+                      <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {k.tipo} · {k.sub}
+                        {k.kind === "colab" && k.data ? ` · ${k.data}` : ""}
+                        {k.kind === "unid" ? ` · ${admin ? "aguardando sua aprovação" : "aguardando um admin"}` : ""}
+                      </div>
+                      {k.kind === "colab" && k.unidade && <div>{k.unidade}</div>}
+                      {k.kind === "colab" && <div>Responsável: {k.analista ?? "fila geral"}</div>}
                     </div>
-                    
-                    {/* SLA Badge */}
                     {sl && col.key !== "pre" && (
-                      <div style={{ marginTop: 1 }}>
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 5,
-                          fontFamily: "var(--mono)", fontSize: 10.5,
-                          color: sl.cor, fontWeight: sl.peso,
-                          background: `color-mix(in srgb, ${sl.cor} 10%, transparent)`,
-                          padding: "3px 9px", borderRadius: 999,
-                          border: `1px solid color-mix(in srgb, ${sl.cor} 30%, transparent)`
-                        }}>
-                          ⏳ SLA: {sl.txt}
-                        </span>
+                      <div style={{ fontFamily: "var(--mono)", fontSize: 13, color: sl.cor, fontWeight: sl.peso }}>
+                        {sl.txt}
                       </div>
                     )}
-
-                    {/* Alertas */}
                     {k.silenciado && (
-                      <div className="text-muted" style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-                        <span>🔕</span> Alertas silenciados
+                      <div className="text-muted" style={{ fontSize: 12 }}>
+                        🔕 alertas silenciados
                       </div>
                     )}
-
-                    {/* Botões (Footer) */}
-                    <div style={{ display: "flex", gap: 6, marginTop: "auto", flexWrap: "wrap", paddingTop: 10, borderTop: "1px solid var(--color-divider)", justifyContent: "flex-end" }}>
+                    <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
                       {k.kind === "colab" && (
                         <button
                           className="btn btn-ghost"
                           disabled={pending}
-                          style={{ fontSize: 12, padding: "3px 7px" }}
+                          style={{ fontSize: 13, padding: "4px 8px" }}
                           onClick={() => {
                             setNovoResp(analistas.find((a) => a !== k.analista) ?? analistas[0] ?? "");
                             setTrocando(k);
@@ -440,41 +374,11 @@ export function FilaTIClient({
                           Trocar responsável
                         </button>
                       )}
-                      {k.kind === "colab" && !k.silenciado && col.key !== "aguardando" && (
-                        <button
-                          className="btn btn-ghost"
-                          disabled={pending}
-                          style={{ fontSize: 12, padding: "3px 7px" }}
-                          onClick={() => acao(() => silenciarChamado(k.id), k.id)}
-                        >
-                          Pré-concluir
-                        </button>
-                      )}
-                      {k.silenciado && (
-                        <button
-                          className="btn btn-ghost"
-                          disabled={pending}
-                          style={{ fontSize: 12, padding: "3px 7px" }}
-                          onClick={() => acao(() => reativarChamado(k.id))}
-                        >
-                          Reativar alertas
-                        </button>
-                      )}
-                      {podeNegar && (
-                        <button
-                          className="btn btn-secondary"
-                          disabled={pending}
-                          style={{ fontSize: 12, padding: "3px 10px", color: "var(--danger-forte)", borderColor: "var(--danger)" }}
-                          onClick={() => acao(() => negarSolicitacao(k.id))}
-                        >
-                          Negar
-                        </button>
-                      )}
                       {k.kind === "colab" && (
                         <button
                           className="btn btn-ghost"
                           disabled={pending}
-                          style={{ fontSize: 12, padding: "3px 7px", color: "var(--danger-forte)" }}
+                          style={{ fontSize: 13, padding: "4px 8px", color: "var(--danger-forte)" }}
                           onClick={() => setExcluindo(k)}
                         >
                           Excluir
@@ -483,7 +387,7 @@ export function FilaTIClient({
                       {k.kind === "colab" && (
                         <button
                           className="btn btn-secondary"
-                          style={{ fontSize: 12, padding: "3px 12px" }}
+                          style={{ fontSize: 13, padding: "4px 12px" }}
                           onClick={() =>
                             router.push(k.tipo === "Desligamento" ? `/offboarding/${k.colabId}` : `/chamados/${k.id}`)
                           }
@@ -495,7 +399,7 @@ export function FilaTIClient({
                         <button
                           className="btn btn-primary"
                           disabled={pending}
-                          style={{ fontSize: 12, padding: "3px 12px" }}
+                          style={{ fontSize: 13, padding: "4px 12px" }}
                           onClick={() =>
                             acao(() =>
                               k.kind === "grupo" ? executarSolicitacaoGrupo(k.id) : executarSolicitacaoUnidade(k.id)
@@ -503,6 +407,36 @@ export function FilaTIClient({
                           }
                         >
                           Executar e concluir
+                        </button>
+                      )}
+                      {podeNegar && (
+                        <button
+                          className="btn btn-secondary"
+                          disabled={pending}
+                          style={{ fontSize: 13, padding: "4px 12px", color: "var(--danger-forte)", borderColor: "var(--danger)" }}
+                          onClick={() => acao(() => negarSolicitacao(k.id))}
+                        >
+                          Negar pedido
+                        </button>
+                      )}
+                      {k.kind === "colab" && !k.silenciado && col.key !== "aguardando" && (
+                        <button
+                          className="btn btn-ghost"
+                          disabled={pending}
+                          style={{ fontSize: 13, padding: "4px 8px" }}
+                          onClick={() => acao(() => silenciarChamado(k.id), k.id)}
+                        >
+                          Pré-concluído
+                        </button>
+                      )}
+                      {k.silenciado && (
+                        <button
+                          className="btn btn-ghost"
+                          disabled={pending}
+                          style={{ fontSize: 13, padding: "4px 8px" }}
+                          onClick={() => acao(() => reativarChamado(k.id))}
+                        >
+                          Reativar alertas
                         </button>
                       )}
                     </div>
@@ -645,7 +579,7 @@ export function FilaTIClient({
                   onClick={() =>
                     start(async () => {
                       const res = await excluirChamado(excluindo.id);
-                      toast(res.msg, res.ok ? "ok" : "erro");
+                      toast(res.msg);
                       setExcluindo(null);
                       router.refresh();
                     })
