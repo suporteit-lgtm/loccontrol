@@ -86,15 +86,10 @@ function Icone({ size = 18, stroke = "currentColor", width = 2, children }: {
 
 export function LoginCard({
   portal,
-  admin = false,
 }: {
   /** cartão do portal do colaborador (Escala e Salas); só vem com a Escala habilitada */
   portal?: { semana: DiaSemana[] | null; href: string };
-  /** abrir direto no login por e-mail e senha (?admin=1) */
-  admin?: boolean;
 }) {
-  // com o portal ligado, a tela abre no login Google; RH e TI seguem para o e-mail e senha
-  const [modo, setModo] = useState<"portal" | "admin">(portal && !admin ? "portal" : "admin");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [verSenha, setVerSenha] = useState(false);
@@ -105,7 +100,6 @@ export function LoginCard({
 
   // "Manter conectado": o e-mail fica salvo neste navegador
   useEffect(() => {
-    if (modo !== "admin") return;
     try {
       const salvo = localStorage.getItem("lc_email");
       if (salvo) {
@@ -113,7 +107,7 @@ export function LoginCard({
         senhaRef.current?.focus();
       }
     } catch {}
-  }, [modo]);
+  }, []);
 
   const entrar = () =>
     start(async () => {
@@ -147,43 +141,10 @@ export function LoginCard({
             }}
           >
             <div className={s.head}>
-              <h1 className={s.title}>{modo === "portal" ? "Acesse sua conta" : "Acesso RH e TI"}</h1>
-              <p className={s.subtitle}>
-                {modo === "portal"
-                  ? "Entre com sua conta Google @locgrupo.com.br."
-                  : "Entre com seu e-mail corporativo e senha do LocControl."}
-              </p>
+              <h1 className={s.title}>Acesse sua conta</h1>
+              <p className={s.subtitle}>Entre com seu e-mail corporativo para continuar.</p>
             </div>
 
-            {modo === "portal" && portal && (
-              <>
-                <PortalColaborador semana={portal.semana} href={portal.href} />
-                <div className={s.ou}>
-                  <span />
-                  equipe de RH e TI
-                  <span />
-                </div>
-                <button type="button" className={s.adminBtn} onClick={() => setModo("admin")}>
-                  <span className={s.adminIcone} aria-hidden="true">
-                    <Icone size={17}>
-                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </Icone>
-                  </span>
-                  <span className={s.adminTxt}>
-                    <strong>Acesso administrativo</strong>
-                    <span>LocControl · e-mail e senha</span>
-                  </span>
-                  <Icone width={2.2}>
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </Icone>
-                </button>
-              </>
-            )}
-
-            {modo === "admin" && (
-            <>
             <div className={s.fields}>
               <div className={s.group}>
                 <label htmlFor="email" className={s.label}>E-mail corporativo</label>
@@ -280,15 +241,14 @@ export function LoginCard({
             </button>
 
             {portal && (
-              <button type="button" className={s.voltar} onClick={() => { setModo("portal"); setErro(""); }}>
-                <Icone size={16} width={2.2}>
-                  <path d="M19 12H5" />
-                  <path d="m12 19-7-7 7-7" />
-                </Icone>
-                Voltar para o login com Google
-              </button>
-            )}
-            </>
+              <>
+                <div className={s.ou}>
+                  <span />
+                  ou, se você é colaborador
+                  <span />
+                </div>
+                <PortalColaborador semana={portal.semana} href={portal.href} />
+              </>
             )}
 
             <div className={s.foot}>
