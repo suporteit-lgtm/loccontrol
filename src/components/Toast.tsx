@@ -2,13 +2,16 @@
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 
+export type ToastTipo = "ok" | "erro" | "info";
+
 interface ToastState {
   msg: string;
   undo?: () => void;
+  tipo: ToastTipo;
 }
 
 const ToastContext = createContext<{
-  toast: (msg: string, undo?: () => void) => void;
+  toast: (msg: string, undo?: (() => void) | ToastTipo, tipo?: ToastTipo) => void;
 }>({ toast: () => {} });
 
 export function useToast() {
@@ -19,9 +22,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [atual, setAtual] = useState<ToastState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const toast = useCallback((msg: string, undo?: () => void) => {
+  // toast(msg), toast(msg, undo) ou toast(msg, "ok" | "erro" | "info", undo?)
+  const toast = useCallback((msg: string, undoOuTipo?: (() => void) | ToastTipo, tipo?: ToastTipo) => {
+    const ehTipo = typeof undoOuTipo === "string";
     if (timer.current) clearTimeout(timer.current);
-    setAtual({ msg, undo });
+    setAtual({
+      msg,
+      undo: ehTipo ? undefined : undoOuTipo,
+      tipo: (ehTipo ? undoOuTipo : tipo) ?? "info",
+    });
     timer.current = setTimeout(() => setAtual(null), 8000);
   }, []);
 

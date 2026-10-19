@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { avatar, pill } from "@/lib/format";
 import type { FatiaStatus } from "@/lib/types";
-import { ThemeToggleButton } from "./ThemeToggle";
 
 /** Relógio que atualiza a cada 30s (SLA), como no protótipo. */
 export function useNow(intervaloMs = 30000) {
@@ -71,6 +70,8 @@ export function PageHeader({
   titulo: string;
   sub?: React.ReactNode;
   acoes?: React.ReactNode;
+  /** aceito por compatibilidade; o tema troca no menu lateral */
+  themeToggle?: boolean;
 }) {
   return (
     <div
@@ -148,6 +149,8 @@ export function StatCard({
   rodape?: string;
   cor: string;
   onClick?: () => void;
+  /** aceito por compatibilidade; o cartão não mostra ícone */
+  icone?: string;
 }) {
   return (
     <div

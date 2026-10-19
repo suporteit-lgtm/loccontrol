@@ -45,8 +45,13 @@ export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) 
       }}
     >
       <ThemeToggleButton style={{ position: "absolute", top: 16, right: 16 }} />
-      <div
+      {/* form de verdade: o navegador oferece salvar a senha */}
+      <form
         className="blueprint"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (email.includes("@") && senha && !pending) entrar();
+        }}
         style={{
           width: "min(380px, 100%)",
           padding: "40px 32px",
@@ -88,12 +93,9 @@ export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) 
               setEmail(e.target.value);
               setErro("");
             }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") entrar();
-            }}
           />
         </div>
-        <div className="field" style={{ width: "100%", textAlign: "left" }}>
+        <div className="field" ref={senhaRef} style={{ width: "100%", textAlign: "left" }}>
           <label>Senha</label>
           <CampoSenha
             value={senha}
@@ -102,109 +104,29 @@ export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) 
               setSenha(v);
               setErro("");
             }}
-            onEnter={entrar}
           />
         </div>
+        <label
+          style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", fontSize: 13, cursor: "pointer" }}
+          title="Mantém você conectado por 30 dias e guarda o seu e-mail neste navegador"
+        >
+          <input type="checkbox" checked={lembrar} onChange={(e) => setLembrar(e.target.checked)} />
+          Lembrar de mim
+        </label>
         {erro && (
-          <div style={{ fontSize: 12, color: "var(--danger-forte)", width: "100%", textAlign: "left" }}>{erro}</div>
+          <div role="alert" style={{ fontSize: 12, color: "var(--danger-forte)", width: "100%", textAlign: "left" }}>
+            {erro}
+          </div>
         )}
         <button
+          type="submit"
           className="btn btn-primary btn-block"
           disabled={pending || !email.includes("@") || !senha}
-          onClick={entrar}
           style={{ height: 44, fontSize: 15 }}
         >
-          <div>
-            <h1 style={{ fontSize: 28, margin: 0, letterSpacing: "-0.01em" }}>Acesse sua conta</h1>
-            <p className="text-muted" style={{ fontSize: 14, margin: "8px 0 0", lineHeight: 1.5 }}>
-              Informe seu e-mail corporativo e senha para continuar.
-            </p>
-          </div>
-
-          {/* form de verdade: o navegador oferece salvar a senha */}
-          <form
-            id="form-login"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (email.includes("@") && senha && !pending) entrar();
-            }}
-            style={{ display: "flex", flexDirection: "column", gap: 20 }}
-          >
-            <div className="field">
-              <label style={{ fontSize: 12, marginBottom: 8 }}>E-mail corporativo</label>
-              <input
-                className="input"
-                type="email"
-                autoFocus
-                autoComplete="username"
-                style={{ height: 44 }}
-                placeholder="nome.sobrenome@locgrupo.com.br"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setErro("");
-                }}
-              />
-            </div>
-            <div className="field" ref={senhaRef}>
-              <label style={{ fontSize: 12, marginBottom: 8 }}>Senha</label>
-              <CampoSenha
-                value={senha}
-                autoComplete="current-password"
-                style={{ height: 44 }}
-                onChange={(v) => {
-                  setSenha(v);
-                  setErro("");
-                }}
-              />
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={lembrar}
-              className="esc-switch"
-              onClick={() => setLembrar(!lembrar)}
-              style={{ marginTop: -6 }}
-            >
-              <span className="esc-switch-trilho" aria-hidden><span /></span>
-              <span>
-                <strong style={{ fontSize: 13 }}>Lembrar de mim</strong>
-                <span className="text-muted" style={{ display: "block", fontSize: 11.5 }}>
-                  Mantém você conectado por 30 dias e guarda o seu e-mail neste navegador.
-                </span>
-              </span>
-            </button>
-          </form>
-
-          {erro && (
-            <div
-              role="alert"
-              style={{
-                fontSize: 13,
-                color: "var(--danger-forte)",
-                background: "var(--danger-bg)",
-                border: "1px solid color-mix(in srgb, var(--danger-base) 30%, transparent)",
-                borderRadius: 8,
-                padding: "10px 14px",
-                animation: "entrada 0.18s ease both",
-              }}
-            >
-              {erro}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            form="form-login"
-            className="btn btn-primary btn-block"
-            disabled={pending || !email.includes("@") || !senha}
-            style={{ height: 48, fontSize: 15, marginTop: 0, fontWeight: 700 }}
-          >
-            {pending ? "Entrando..." : "Entrar"}
-          </button>
-        </div>
-
-        <div className="text-muted" style={{ fontSize: 11, marginTop: "var(--space-8)" }}>
+          {pending ? "Entrando..." : "Entrar"}
+        </button>
+        <div className="text-muted" style={{ fontSize: 11, fontFamily: "var(--mono)" }}>
           acesso restrito · @locgrupo.com.br
           {trocarModulo && (
             <>
@@ -213,7 +135,7 @@ export function LoginCard({ trocarModulo = false }: { trocarModulo?: boolean }) 
             </>
           )}
         </div>
-      </div>
+      </form>
     </div>
   );
 }
