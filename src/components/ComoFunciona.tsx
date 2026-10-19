@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 
 export interface PassoFluxo {
@@ -43,22 +42,10 @@ export function ComoFunciona({
       >
         ？ Como funciona
       </button>
-      {aberto &&
-        createPortal(
+      {aberto && (
         <div className="dialog-backdrop" onClick={() => setAberto(false)}>
           <div className="dialog" style={{ width: "min(560px, 100%)" }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-              <span className="dialog-title">{titulo}</span>
-              <button
-                className="btn btn-ghost btn-icon"
-                onClick={() => setAberto(false)}
-                aria-label="Fechar"
-                title="Fechar"
-                style={{ flex: "none", fontSize: 18, lineHeight: 1 }}
-              >
-                ✕
-              </button>
-            </div>
+            <span className="dialog-title">{titulo}</span>
             <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {passos.map((p, i) => (
                 <div key={i} style={{ display: "flex", gap: 12, position: "relative", paddingBottom: 14 }}>
@@ -128,8 +115,7 @@ export function ComoFunciona({
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
     </>
   );

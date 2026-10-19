@@ -8,27 +8,18 @@ export interface SidebarExtras {
   node: React.ReactNode;
 }
 
-// dois contexts separados (não um só com { extras, setExtras }) de propósito:
-// setExtras (do useState) é sempre a mesma função entre renders, mas um objeto
-// { extras, setExtras } novo a cada render do Provider NÃO é — quem lesse esse
-// objeto só pra pegar o setExtras (como usePaginaExtrasNoMenu, abaixo) ia
-// re-renderizar toda vez que "extras" mudasse, chamava setExtras nesse
-// re-render, mudava "extras" de novo... loop infinito ("Maximum update depth
-// exceeded"), e é isso que deixava os cliques na fila do RH bugados.
-const ExtrasCtx = createContext<SidebarExtras | null>(null);
-const SetExtrasCtx = createContext<Dispatch<SetStateAction<SidebarExtras | null>>>(() => {});
+const Ctx = createContext<{
+  extras: SidebarExtras | null;
+  setExtras: Dispatch<SetStateAction<SidebarExtras | null>>;
+}>({ extras: null, setExtras: () => {} });
 
 export function SidebarExtrasProvider({ children }: { children: React.ReactNode }) {
   const [extras, setExtras] = useState<SidebarExtras | null>(null);
-  return (
-    <SetExtrasCtx.Provider value={setExtras}>
-      <ExtrasCtx.Provider value={extras}>{children}</ExtrasCtx.Provider>
-    </SetExtrasCtx.Provider>
-  );
+  return <Ctx.Provider value={{ extras, setExtras }}>{children}</Ctx.Provider>;
 }
 
 export function useSidebarExtras() {
-  return { extras: useContext(ExtrasCtx), setExtras: useContext(SetExtrasCtx) };
+  return useContext(Ctx);
 }
 
 /**
@@ -37,11 +28,10 @@ export function useSidebarExtras() {
  * (ou é substituído se outra página botar o dela primeiro).
  */
 export function usePaginaExtrasNoMenu(rota: string, node: React.ReactNode) {
-  // só o contexto do setExtras (referência estável) — nunca o de "extras",
-  // senão volta o loop explicado acima
-  const setExtras = useContext(SetExtrasCtx);
+  const { setExtras } = useSidebarExtras();
   useEffect(() => {
     setExtras({ rota, node });
     return () => setExtras((atual) => (atual?.rota === rota ? null : atual));
-  }, [rota, node, setExtras]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rota, node]);
 }
