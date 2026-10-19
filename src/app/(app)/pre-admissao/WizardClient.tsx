@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui";
-import { Icone } from "@/components/Icone";
 import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
 import { EQUIPAMENTOS, KIT_PADRAO } from "@/lib/types";
@@ -188,15 +187,14 @@ export function WizardClient({
         sub="O que você digitar fica salvo ao navegar entre telas"
         acoes={
           <button
-            className="btn btn-secondary"
+            className="btn btn-ghost"
             onClick={() => {
               reiniciar();
               void limparDraft();
               toast("Campos da pré-admissão limpos");
             }}
-            style={{ fontSize: 13, gap: 8, color: "var(--danger-forte)", borderColor: "var(--danger)" }}
+            style={{ fontSize: 13, color: "var(--danger-forte)" }}
           >
-            <Icone nome="limpar" tamanho={15} />
             Limpar campos
           </button>
         }

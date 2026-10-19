@@ -3,7 +3,6 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui";
-import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
 import { InputMascarado } from "@/components/Mascaras";
 import {
@@ -296,13 +295,18 @@ export function GruposClient({
           </div>
         ) : (
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <SelectCustom
+            <select
               className="input"
               style={{ maxWidth: 280, fontFamily: "var(--mono)" }}
               value={gExcluir || grupos[0]?.email || ""}
-              options={grupos.map((g) => g.email)}
-              onChange={setGExcluir}
-            />
+              onChange={(e) => setGExcluir(e.target.value)}
+            >
+              {grupos.map((g) => (
+                <option key={g.email} value={g.email}>
+                  {g.email}
+                </option>
+              ))}
+            </select>
             <button
               className="btn btn-danger"
               disabled={pending}
