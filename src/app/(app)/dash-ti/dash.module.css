@@ -1,4 +1,4 @@
-/* Dashboards (RH e TI) no estilo iOS: widgets arredondados, listas agrupadas,
+/* Dashboard da TI no estilo iOS: widgets arredondados, listas agrupadas,
    controle segmentado e cores do sistema da Apple. Claro e escuro. */
 
 .root {
@@ -43,11 +43,7 @@
 .cabecaAcoes { display: flex; align-items: center; gap: 8px; }
 
 /* ── widgets de números ── */
-/* 4 lado a lado ou 2×2: nunca sobra um sozinho na linha */
-.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-@media (max-width: 1100px) {
-  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
 .kpi {
   display: flex;
   flex-direction: column;
@@ -224,90 +220,7 @@ button.kpi:focus-visible { outline: 3px solid color-mix(in srgb, var(--k) 55%, t
 .link { color: var(--ios-blue); font-weight: 400; text-decoration: none; }
 .link:hover { text-decoration: none; opacity: 0.7; }
 
-/* tablet: listas uma embaixo da outra */
-@media (max-width: 860px) {
+@media (max-width: 520px) {
   .duas { grid-template-columns: minmax(0, 1fr); }
-}
-
-/* celular: widgets 2×2, como na tela inicial do iPhone */
-@media (max-width: 640px) {
-  .root { gap: 18px; }
-  .tituloGrande { font-size: 28px; }
-  .subGrande { font-size: 13px; }
-  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .kpi { gap: 8px; padding: 14px; border-radius: 20px; }
-  .kpiIcone { width: 30px; height: 30px; }
-  .kpiNum { font-size: 28px; }
-  .kpiRotulo { font-size: 14px; }
-  .kpiRodape { margin-top: -4px; font-size: 12px; }
-  .secaoTopo { padding: 0 4px; }
-  .secaoTitulo { font-size: 20px; }
-  .linha { padding: 8px 12px; }
-  .linha + .linha::before { left: 54px; }
-}
-
-/* ── peças do dashboard do RH ── */
-.botao {
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--ios-blue);
-  color: #fff;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-}
-.botao:hover { opacity: 0.88; color: #fff; text-decoration: none; }
-.botao:active { transform: scale(0.97); }
-.botao:focus-visible { outline: 3px solid color-mix(in srgb, var(--ios-blue) 45%, transparent); outline-offset: 2px; }
-
-.grafico { padding: 16px 16px 8px; }
-.grafico svg { width: 100%; height: auto; display: block; }
-.meses { display: flex; margin-top: 4px; }
-.meses span { flex: 1; text-align: center; font-size: 12px; color: var(--ios-label2); }
-.legendaGraf { display: flex; gap: 16px; padding: 4px 16px 12px; font-size: 13px; color: var(--ios-label2); }
-.legendaGraf span { display: inline-flex; align-items: center; gap: 6px; }
-.resumo3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 0.5px solid var(--ios-sep); }
-.resumo3 > div { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; }
-.resumo3 > div + div { border-left: 0.5px solid var(--ios-sep); }
-.resumo3 small { font-size: 12px; color: var(--ios-label2); }
-.resumo3 strong { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
-
-button.linha {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-button.linha:hover { background: var(--ios-fill); }
-button.linha:focus-visible { outline: 2px solid var(--ios-blue); outline-offset: -2px; }
-.linhaSeta { color: var(--ios-label3); display: flex; }
-.paginas { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ios-label2); }
-.paginas button {
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 999px;
-  background: var(--ios-fill);
-  color: var(--ios-blue);
-  cursor: pointer;
-}
-.paginas button:disabled { color: var(--ios-label3); cursor: default; }
-
-@media (max-width: 640px) {
-  .resumo3 > div { padding: 10px 12px; }
-  .resumo3 strong { font-size: 18px; }
+  .tituloGrande { font-size: 30px; }
 }
