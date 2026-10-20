@@ -103,22 +103,6 @@ export async function agendaDoDia(data: string, email: string) {
   return { instalado, config, salas, reservas: (linhas ?? []).map((r) => vista(r, email)), hoje, agoraMin };
 }
 
-/** Reservas de todas as salas entre `de` e `ate` (inclusive): disponibilidade da semana. */
-export async function reservasEntre(de: string, ate: string, email: string): Promise<ReservaVista[]> {
-  const { data: linhas, error } = await db()
-    .from("sala_reserva")
-    .select(CAMPOS)
-    .eq("status", "ATIVA")
-    .lt("inicio", instanteSP(somarDias(ate, 1), "00:00").toISOString())
-    .gt("fim", instanteSP(de, "00:00").toISOString())
-    .order("inicio");
-  if (error) {
-    if (tabelaAusente(error.message)) return [];
-    throw new Error(error.message);
-  }
-  return (linhas ?? []).map((r) => vista(r, email));
-}
-
 /** Próximas reservas de uma pessoa (e as dos últimos `diasAtras` dias). */
 export async function reservasDe(email: string, diasAtras = 0) {
   const desde = instanteSP(somarDias(hojeSP(), -diasAtras), "00:00").toISOString();

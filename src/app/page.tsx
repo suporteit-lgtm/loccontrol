@@ -1,11 +1,24 @@
 import { redirect } from "next/navigation";
+import { usuarioAtual } from "@/lib/session";
+import { contaPortal, escalaHabilitada } from "@/lib/escala/auth";
+import { semanaDaEscala } from "@/lib/escala/semana";
+import { EscolhaModulo } from "./EscolhaModulo";
 
 export const dynamic = "force-dynamic";
 
-/**
- * A entrada é o login: ele já mostra o LocControl e, com a Escala liberada,
- * o cartão do portal do colaborador. Quem já está logado o login manda para o painel.
- */
-export default function Home() {
-  redirect("/login");
+export default async function Home() {
+  // com a Escala liberada, a entrada é a escolha do módulo
+  // o cartão da Escala vai direto: já logado no portal → /escala; senão → login do Google
+  if (escalaHabilitada()) {
+    const [semana, conta] = await Promise.all([semanaDaEscala(), contaPortal().catch(() => null)]);
+    return (
+      <EscolhaModulo
+        semana={semana}
+        hrefEscala={conta ? "/escala" : "/escala/auth/login"}
+      />
+    );
+  }
+  const u = await usuarioAtual();
+  if (!u) redirect("/login");
+  redirect(u.papel.includes("T.I") ? "/dash-ti" : "/dash");
 }

@@ -1,5 +1,5 @@
-import { PageLoading } from "@/components/PageLoading";
+import { Splash } from "@/components/Splash";
 
 export default function Loading() {
-  return <PageLoading />;
+  return <Splash />;
 }

@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useNow } from "@/components/ui";
+import { PageHeader, useNow } from "@/components/ui";
+import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
-import { usePaginaExtrasNoMenu } from "@/components/SidebarExtras";
 import { sla } from "@/lib/format";
 import { ativarNaEmpresa, naoAtivarNaEmpresa } from "@/app/actions/colaboradores";
 import { ComoFunciona, FLUXO_ADMISSAO_RH, FLUXO_OFFBOARDING_RH } from "@/components/ComoFunciona";
@@ -33,7 +33,7 @@ export interface CardRH {
 }
 
 /** Cards visíveis por coluna antes do "Ver mais" — cards menores cabem mais na tela. */
-const LIMITE_CARDS = 5;
+const LIMITE_CARDS = 3;
 
 export function Chips({ itens, cor }: { itens: string[]; cor: string }) {
   if (!itens.length) return null;
@@ -106,45 +106,39 @@ export function FilaRHClient({
       router.refresh();
     });
 
-  // filtro, "Como funciona" e "Histórico" saíram do topo da página e agora
-  // aparecem no menu lateral, embaixo do próprio item "Fila do RH"
-  usePaginaExtrasNoMenu(
-    "/fila-rh",
-    <>
-      {/* select nativo (não o SelectCustom) — o dropdown dele é renderizado
-          pelo próprio navegador, então nunca cobre os itens de navegação
-          logo abaixo, no menu lateral estreito */}
-      <select
-        className="input"
-        style={{ fontSize: 12.5, padding: "6px 10px", minHeight: 34, borderRadius: 8 }}
-        value={filtroSol}
-        onChange={(e) => setFiltroSol(e.target.value)}
-      >
-        {opcoesSol.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-      <ComoFunciona
-        titulo="Como funciona a admissão e o desligamento"
-        passos={[...FLUXO_ADMISSAO_RH, ...FLUXO_OFFBOARDING_RH]}
-        pequeno
-      />
-      <Link href="/fila-rh/historico" className="btn btn-secondary" style={{ fontSize: 12.5, padding: "6px 10px" }}>
-        Histórico
-      </Link>
-    </>
-  );
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      <PageHeader
+        eyebrow="Visão RH"
+        titulo="Fila do RH"
+        sub={`Tudo o que depende do RH agora · pré-admissões, offboarding, documentos e afastamentos · ${unidadeAtual}`}
+        acoes={
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <SelectCustom
+              className="input"
+              // largura fixa: a classe .input estica para 100% e jogava os
+              // botões do cabeçalho para uma segunda linha
+              style={{ fontSize: 13, padding: "6px 12px", minHeight: 36, width: 230, borderRadius: 8 }}
+              value={filtroSol}
+              options={opcoesSol}
+              onChange={setFiltroSol}
+            />
+            <ComoFunciona
+              titulo="Como funciona a admissão e o desligamento"
+              passos={[...FLUXO_ADMISSAO_RH, ...FLUXO_OFFBOARDING_RH]}
+            />
+            <Link href="/fila-rh/historico" className="btn btn-secondary">
+              Histórico
+            </Link>
+          </div>
+        }
+      />
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "var(--space-4)",
-          flex: 1
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "var(--space-3)",
+          alignItems: "start",
         }}
       >
         {colsVisiveis.map((col) => {
@@ -152,138 +146,71 @@ export function FilaRHClient({
           const cardsVisiveis = expandido ? col.cards : col.cards.slice(0, LIMITE_CARDS);
           const restantes = col.cards.length - cardsVisiveis.length;
           return (
-          <div
-            key={col.label}
-            style={{
-              display: "flex", flexDirection: "column", gap: 8,
-              background: "color-mix(in srgb, var(--color-surface) 60%, transparent)",
-              padding: "16px",
-              borderRadius: "16px",
-              border: "1px solid color-mix(in srgb, var(--color-divider) 50%, transparent)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <h6 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, color: col.cor, fontSize: 12, letterSpacing: "0.08em" }}>
-                <span style={{ width: 8, height: 8, flex: "none", borderRadius: "50%", background: col.cor, boxShadow: `0 0 8px ${col.cor}` }} />
-                {col.label}
-              </h6>
-              <span style={{ 
-                fontFamily: "var(--mono)", fontSize: 11, fontWeight: 700,
-                background: "var(--color-bg)", padding: "2px 8px", borderRadius: "999px",
-                color: "var(--color-text)", border: "1px solid var(--color-divider)"
-              }}>
-                {col.cards.length}
-              </span>
-            </div>
-
+          <div key={col.label} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <h6 style={{ margin: 0, display: "flex", alignItems: "center", gap: 7, color: col.cor }}>
+              <span style={{ width: 8, height: 8, flex: "none", borderRadius: "50%", background: col.cor }} />
+              {col.label}
+              <span style={{ fontFamily: "var(--mono)", marginLeft: "auto" }}>{col.cards.length}</span>
+            </h6>
             {col.cards.length === 0 && (
-              <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center" }}>
-                <div
-                  className="text-muted"
-                  style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                    border: "1px dashed var(--color-divider)", padding: "24px 20px", maxWidth: 200,
-                    fontSize: 12.5, borderRadius: 12, background: "color-mix(in srgb, var(--color-bg) 50%, transparent)"
-                  }}
-                >
-                  <span style={{ fontSize: 20 }}>☕</span> Nada aqui — bom sinal
-                </div>
+              <div
+                className="text-muted"
+                style={{ border: "1px dashed var(--color-divider)", padding: 16, fontSize: 12, borderRadius: 10 }}
+              >
+                Nada aqui — bom sinal
               </div>
             )}
-            
             {cardsVisiveis.map((k) => {
               const sl = sla(k.slaAlvo, now);
               return (
-                <div key={k.key} className="card hover-lift" style={{
-                  borderTop: `3px solid ${k.urgCor}`,
-                  gap: 6,
-                  padding: "10px",
-                  minHeight: 150,
-                  background: "var(--color-surface)",
-                  boxShadow: "var(--shadow-sm)",
-                  position: "relative",
-                  overflow: "hidden"
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
-                    <span style={{
-                      fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 13.5, lineHeight: 1.3,
-                      flex: 1, wordBreak: "break-word"
-                    }}>
-                      {k.nome}
-                    </span>
+                <div key={k.key} className="card elev-sm" style={{ borderLeft: `3px solid ${k.urgCor}`, gap: 6, minHeight: 148 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                    <span style={{ fontFamily: "var(--font-body)", fontWeight: 700, fontSize: 15 }}>{k.nome}</span>
                     {k.id && (
-                      <span style={{
-                        fontFamily: "var(--mono)", fontSize: 10.5, background: "var(--color-bg)",
-                        padding: "3px 7px", borderRadius: 6, border: "1px solid var(--color-divider)",
-                        flex: "none", whiteSpace: "nowrap"
-                      }} className="text-muted">
+                      <span style={{ fontFamily: "var(--mono)", fontSize: 11 }} className="text-muted">
                         {k.id}
                       </span>
                     )}
                   </div>
-
                   <div
                     className="text-muted"
                     title={k.sub}
-                    style={{ fontSize: 11.5, lineHeight: 1.4, display: "flex", flexDirection: "column", gap: 3 }}
+                    style={{ fontSize: 12, display: "flex", flexDirection: "column", gap: 2 }}
                   >
-                    <div>{k.sub}</div>
-                    {k.unidade && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ opacity: 0.7 }}>📍</span> {k.unidade}
-                      </div>
-                    )}
-                    {k.solicitante && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ opacity: 0.7 }}>👤</span> Solicitado por {k.solicitante}
-                      </div>
-                    )}
+                    <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{k.sub}</div>
+                    {k.unidade && <div>{k.unidade}</div>}
+                    {k.solicitante && <div>Solicitado por {k.solicitante}</div>}
                   </div>
-
-                  {k.pendencias && <Chips itens={k.pendencias} cor={k.urgCor} />}
-
-                  <div style={{
-                    display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap", alignItems: "center",
-                    paddingTop: 8, borderTop: "1px solid var(--color-divider)",
-                    justifyContent: sl ? "space-between" : "flex-end"
-                  }}>
-                    {sl && (
-                      <span style={{
-                        display: "inline-flex", alignItems: "center", gap: 5,
-                        fontFamily: "var(--mono)", fontSize: 10.5,
-                        color: sl.cor, fontWeight: sl.peso,
-                        background: `color-mix(in srgb, ${sl.cor} 10%, transparent)`,
-                        padding: "3px 9px", borderRadius: 999,
-                        border: `1px solid color-mix(in srgb, ${sl.cor} 30%, transparent)`
-                      }}>
-                        ⏳ SLA: {sl.txt}
-                      </span>
-                    )}
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 12, padding: "3px 12px" }}>
-                        {k.acao}
-                      </Link>
-                      {k.ativarColabId && (
-                        <>
-                          <button
-                            className="btn btn-ghost"
-                            style={{ fontSize: 12, padding: "3px 7px", color: "var(--danger-forte)" }}
-                            disabled={pending}
-                            onClick={() => setNaoAtivando(k)}
-                          >
-                            Não ativar
-                          </button>
-                          <button
-                            className="btn btn-primary"
-                            style={{ fontSize: 12, padding: "3px 12px" }}
-                            disabled={pending}
-                            onClick={() => ativar(k.ativarColabId!)}
-                          >
-                            {pending ? "Ativando..." : "Ativar"}
-                          </button>
-                        </>
-                      )}
+                  {sl && (
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 13, color: sl.cor, fontWeight: sl.peso }}>
+                      faltam {sl.txt}
                     </div>
+                  )}
+                  {k.pendencias && <Chips itens={k.pendencias} cor={k.urgCor} />}
+                  <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
+                    <Link href={k.href} className="btn btn-secondary" style={{ fontSize: 13, padding: "4px 12px" }}>
+                      {k.acao}
+                    </Link>
+                    {k.ativarColabId && (
+                      <>
+                        <button
+                          className="btn btn-ghost"
+                          style={{ fontSize: 13, padding: "4px 8px", color: "var(--danger-forte)" }}
+                          disabled={pending}
+                          onClick={() => setNaoAtivando(k)}
+                        >
+                          Não ativar
+                        </button>
+                        <button
+                          className="btn btn-primary"
+                          style={{ fontSize: 13, padding: "4px 12px" }}
+                          disabled={pending}
+                          onClick={() => ativar(k.ativarColabId!)}
+                        >
+                          {pending ? "Ativando..." : "Ativar na empresa"}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );
