@@ -85,7 +85,7 @@ export function MatrizClient({ acessos, cargos, grid: gridInicial }: Props) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", width: "100%" }}>
       <PageHeader
         eyebrow="Visão RH"
         titulo="Matriz de cargos e acessos"
@@ -141,15 +141,16 @@ export function MatrizClient({ acessos, cargos, grid: gridInicial }: Props) {
         </div>
       </div>
       <div
+        className="card"
         style={{
           overflowX: "auto",
-          border: "1px solid var(--color-divider)",
-          borderRadius: 10,
+          padding: 0,
           background: "var(--color-surface)",
+          boxShadow: "var(--shadow-md)"
         }}
       >
         <table className="table" style={{ minWidth: 720 }}>
-          <thead>
+          <thead style={{ position: "sticky", top: 0, zIndex: 10, background: "color-mix(in srgb, var(--color-surface) 85%, transparent)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", boxShadow: "0 1px 0 var(--color-divider)" }}>
             <tr>
               <th style={{ minWidth: 170 }}>Cargo</th>
               {acessos.map((a) => (
@@ -218,23 +219,67 @@ export function MatrizClient({ acessos, cargos, grid: gridInicial }: Props) {
                               ? "Obrigatório — clique para tornar opcional"
                               : "Opcional — clique para tornar obrigatório"
                           }
-                          style={{ ...botaoMini, fontSize: 14, opacity: cel?.obrig ? 1 : 0.35 }}
+                          style={{ 
+                            ...botaoMini, 
+                            display: "inline-flex", alignItems: "center", justifyContent: "center",
+                            width: 24, height: 24, borderRadius: "50%",
+                            background: cel?.obrig ? "color-mix(in srgb, var(--warn) 15%, transparent)" : "color-mix(in srgb, var(--color-text) 5%, transparent)",
+                            color: cel?.obrig ? "var(--warn-forte)" : "var(--color-neutral-400)",
+                            boxShadow: cel?.obrig ? "0 0 8px color-mix(in srgb, var(--warn) 20%, transparent)" : "none",
+                            transition: "all 0.2s ease"
+                          }}
                           disabled={pending}
                           onClick={() => acao(() => alternarObrigatorio(cargo, a))}
                         >
-                          {cel?.obrig ? "🔒" : "🔓"}
+                          {cel?.obrig ? (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                          ) : (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                              <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                            </svg>
+                          )}
                         </button>
                       ) : cel?.obrig ? (
-                        <span title="Obrigatório" style={{ fontSize: 13 }}>
-                          🔒
+                        <span title="Obrigatório" style={{ 
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          width: 24, height: 24, borderRadius: "50%",
+                          background: "color-mix(in srgb, var(--warn) 15%, transparent)",
+                          color: "var(--warn-forte)",
+                          boxShadow: "0 0 8px color-mix(in srgb, var(--warn) 20%, transparent)"
+                        }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                          </svg>
                         </span>
                       ) : (
-                        <input
-                          type="checkbox"
-                          checked={!!cel?.on}
-                          onChange={() => toggle(cargo, a)}
-                          style={{ accentColor: "var(--color-accent)", width: 15, height: 15 }}
-                        />
+                        <label style={{ display: "inline-flex", cursor: "pointer", position: "relative" }}>
+                          <input
+                            type="checkbox"
+                            checked={!!cel?.on}
+                            onChange={() => toggle(cargo, a)}
+                            style={{ opacity: 0, position: "absolute", width: 0, height: 0 }}
+                          />
+                          <div style={{
+                            width: 32, height: 18, borderRadius: 10,
+                            background: cel?.on ? "var(--color-accent)" : "color-mix(in srgb, var(--color-divider) 50%, transparent)",
+                            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                            boxShadow: cel?.on ? "0 2px 8px color-mix(in srgb, var(--color-accent) 40%, transparent)" : "none",
+                            position: "relative"
+                          }}>
+                            <div style={{
+                              position: "absolute", top: 2, left: cel?.on ? 16 : 2,
+                              width: 14, height: 14, borderRadius: "50%",
+                              background: "#fff",
+                              transition: "left 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+                            }} />
+                          </div>
+                        </label>
                       )}
                     </td>
                   );

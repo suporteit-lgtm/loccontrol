@@ -14,6 +14,20 @@ export interface DiaSemana {
 
 const NOMES = ["Seg", "Ter", "Qua", "Qui", "Sex"];
 
+/**
+ * Só as datas de segunda a sexta (sem grupo nem vagas): plano B quando a
+ * escala não carrega, para a faixa da semana não sumir da tela.
+ */
+export function semanaSoDatas(): DiaSemana[] {
+  const hoje = hojeSP();
+  const dow = diaDaSemana(hoje);
+  const segunda = dow === 0 ? somarDias(hoje, 1) : dow === 6 ? somarDias(hoje, 2) : somarDias(hoje, 1 - dow);
+  return NOMES.map((nome, i) => {
+    const data = somarDias(segunda, i);
+    return { nome, data, util: false, grupo: null, feriado: null, hoje: data === hoje };
+  });
+}
+
 async function semana(unidade: string, segunda: string, hoje: string): Promise<DiaSemana[] | null> {
   const sexta = somarDias(segunda, 4);
   const [{ data: dias }, { data: feriados }] = await Promise.all([

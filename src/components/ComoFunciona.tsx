@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 
 export interface PassoFluxo {
@@ -20,18 +21,44 @@ const COR_QUEM: Record<PassoFluxo["quem"], string> = {
  * qualquer pessoa nova (RH, TI, gestão) entenda o processo sem treinamento —
  * cada tela-chave explica o próprio pedaço do fluxo.
  */
-export function ComoFunciona({ titulo, passos }: { titulo: string; passos: PassoFluxo[] }) {
+export function ComoFunciona({
+  titulo,
+  passos,
+  /** Botão menor, pra caber em espaços apertados (ex.: dropdown do menu lateral). */
+  pequeno,
+}: {
+  titulo: string;
+  passos: PassoFluxo[];
+  pequeno?: boolean;
+}) {
   const [aberto, setAberto] = useState(false);
 
   return (
     <>
-      <button className="btn btn-ghost" onClick={() => setAberto(true)} title="Entenda o fluxo desta tela">
+      <button
+        className={pequeno ? "btn btn-secondary" : "btn btn-ghost"}
+        onClick={() => setAberto(true)}
+        title="Entenda o fluxo desta tela"
+        style={pequeno ? { fontSize: 12.5, padding: "6px 10px" } : undefined}
+      >
         ？ Como funciona
       </button>
-      {aberto && (
+      {aberto &&
+        createPortal(
         <div className="dialog-backdrop" onClick={() => setAberto(false)}>
           <div className="dialog" style={{ width: "min(560px, 100%)" }} onClick={(e) => e.stopPropagation()}>
-            <span className="dialog-title">{titulo}</span>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+              <span className="dialog-title">{titulo}</span>
+              <button
+                className="btn btn-ghost btn-icon"
+                onClick={() => setAberto(false)}
+                aria-label="Fechar"
+                title="Fechar"
+                style={{ flex: "none", fontSize: 18, lineHeight: 1 }}
+              >
+                ✕
+              </button>
+            </div>
             <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {passos.map((p, i) => (
                 <div key={i} style={{ display: "flex", gap: 12, position: "relative", paddingBottom: 14 }}>
@@ -101,7 +128,8 @@ export function ComoFunciona({ titulo, passos }: { titulo: string; passos: Passo
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

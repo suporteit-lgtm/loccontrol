@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/ui";
 import { useToast } from "@/components/Toast";
 import {
   alternarNotif,
@@ -31,36 +30,35 @@ const EVENTOS: [string, string, string][] = [
 
 function Toggle({ ativo, onClick }: { ativo: boolean; onClick: () => void }) {
   return (
-    <button
+    <div
       onClick={onClick}
       role="switch"
       aria-checked={ativo}
       style={{
-        width: 38,
-        height: 22,
+        width: 44,
+        height: 24,
         flex: "none",
         borderRadius: 999,
-        border: `1px solid ${ativo ? "var(--color-accent)" : "var(--color-neutral-400)"}`,
-        background: ativo ? "var(--color-accent)" : "var(--color-neutral-300)",
+        background: ativo ? "var(--color-accent)" : "color-mix(in srgb, var(--color-text) 15%, transparent)",
         position: "relative",
         cursor: "pointer",
-        padding: 0,
+        transition: "background 0.3s ease",
       }}
     >
-      <span
+      <div
         style={{
           position: "absolute",
           top: 2,
-          left: ativo ? 17 : 2,
-          width: 16,
-          height: 16,
+          left: ativo ? 22 : 2,
+          width: 20,
+          height: 20,
           borderRadius: "50%",
           background: "#fff",
-          transition: "left 0.15s ease",
-          display: "block",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+          transition: "left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
         }}
       />
-    </button>
+    </div>
   );
 }
 
@@ -76,6 +74,38 @@ const ROTULO_MODELO: Record<string, [string, string]> = {
   "credenciais-externo": ["Credenciais (conta externa)", "Usado quando a TI marca \"e-mail criado em outro lugar\": mesmas credenciais, com o link do webmail em vez do Gmail."],
   "boas-vindas": ["Chamados (boas-vindas)", "Sai 5 min após o primeiro login, no corporativo. Explica como abrir chamados."],
   "acesso-quark": ["Acesso ao QuarkRH", "Sai junto com o de chamados, 5 min após o primeiro login. Criação da senha do portal."],
+};
+
+const cardStyle: React.CSSProperties = {
+  display: "flex", flexDirection: "column", gap: 16,
+  background: "color-mix(in srgb, var(--color-surface) 30%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--color-text) 5%, transparent)",
+  borderRadius: 24, padding: 24,
+  backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+};
+
+const kickerStyle: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: "var(--color-accent)", textTransform: "uppercase", letterSpacing: "0.06em" };
+const cardTitleStyle: React.CSSProperties = { fontSize: 20, fontWeight: 700, color: "var(--color-text)", margin: 0 };
+const cardBodyStyle: React.CSSProperties = { fontSize: 13, color: "color-mix(in srgb, var(--color-text) 70%, transparent)", lineHeight: 1.5, margin: 0 };
+
+const btnPrimaryStyle: React.CSSProperties = {
+  background: "var(--color-accent)", color: "#fff", border: "none", borderRadius: 999,
+  padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", alignSelf: "flex-start",
+  transition: "opacity 0.2s"
+};
+
+const btnSecondaryStyle: React.CSSProperties = {
+  background: "color-mix(in srgb, var(--color-text) 8%, transparent)", color: "var(--color-text)",
+  border: "none", borderRadius: 999, padding: "10px 20px", fontSize: 13, fontWeight: 600,
+  cursor: "pointer", alignSelf: "flex-start", transition: "background 0.2s"
+};
+
+const inputWrapperStyle: React.CSSProperties = {
+  display: "flex", flexDirection: "column", gap: 6,
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 12, fontWeight: 600, color: "color-mix(in srgb, var(--color-text) 70%, transparent)"
 };
 
 export function ConfigClient({
@@ -114,40 +144,40 @@ export function ConfigClient({
   const nTi = template.filter((t) => t.lista === "ti").length;
 
   const colunaTpl = (lista: "rh" | "ti", rotulo: string) => (
-    <div style={{ flex: 1, minWidth: 240, display: "flex", flexDirection: "column", gap: 6 }}>
-      <h6 className="text-muted" style={{ margin: 0 }}>{rotulo}</h6>
+    <div style={{ flex: 1, minWidth: 260, display: "flex", flexDirection: "column", gap: 8 }}>
+      <h6 style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "color-mix(in srgb, var(--color-text) 60%, transparent)" }}>{rotulo}</h6>
       {tpl.map((item, i) =>
         item.lista !== lista ? null : (
-          <div key={i} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <input
-              className="input"
-              style={{ fontSize: 13, minHeight: 32 }}
+              style={{ 
+                flex: 1, fontSize: 13, padding: "10px 14px", borderRadius: 12,
+                background: "color-mix(in srgb, var(--color-text) 5%, transparent)",
+                border: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)",
+                color: "var(--color-text)", outline: "none"
+              }}
               value={item.titulo}
               onChange={(e) => setTpl((t) => t.map((x, j) => (j === i ? { ...x, titulo: e.target.value } : x)))}
             />
-            <button
+            <div
               title="Remover item"
               onClick={() => setTpl((t) => t.filter((_, j) => j !== i))}
               style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--danger-forte)",
-                fontSize: 13,
-                padding: 2,
+                background: "color-mix(in srgb, var(--danger) 15%, transparent)", color: "var(--danger)",
+                width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", transition: "background 0.2s"
               }}
             >
-              ✕
-            </button>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
           </div>
         )
       )}
       <button
-        className="btn btn-ghost"
-        style={{ fontSize: 12, alignSelf: "flex-start" }}
+        style={{ ...btnSecondaryStyle, background: "transparent", color: "var(--color-accent)", padding: "8px 0" }}
         onClick={() => setTpl((t) => [...t, { lista, titulo: "" }])}
       >
-        + adicionar item
+        + Adicionar item
       </button>
     </div>
   );
@@ -161,16 +191,13 @@ export function ConfigClient({
     <div
       key={k}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "9px 0",
-        borderBottom: "1px solid var(--color-divider)",
+        display: "flex", alignItems: "center", gap: 16, padding: "12px 0",
+        borderBottom: "1px solid color-mix(in srgb, var(--color-text) 5%, transparent)",
       }}
     >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 600 }}>{label}</div>
-        <div className="text-muted" style={{ fontSize: 12 }}>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div>
+        <div style={{ fontSize: 12, color: "color-mix(in srgb, var(--color-text) 60%, transparent)" }}>
           {desc}
         </div>
       </div>
@@ -179,230 +206,247 @@ export function ConfigClient({
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", maxWidth: 820 }}>
-      <PageHeader eyebrow="Transversal" titulo="Configurações" />
+    <div style={{ display: "flex", flexDirection: "column", gap: 32, width: "100%" }}>
+      {/* HEADER */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "color-mix(in srgb, var(--color-text) 40%, transparent)" }}>
+          Transversal
+        </span>
+        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1 }}>
+          Configurações
+        </h1>
+      </div>
 
-      <div className="card" style={{ gap: 12, maxWidth: 460 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <span className="card-kicker">Conta</span>
-          <span className="card-title">Minha senha</span>
-          <span className="card-body" style={{ margin: 0 }}>
-            Troque a sua senha de acesso. Só você pode alterá-la — para os demais, fale com o Admin T.I.
-          </span>
-        </div>
-        <div className="field">
-          <label>Senha atual</label>
-          <CampoSenha value={senhaAtual} onChange={setSenhaAtual} autoComplete="current-password" />
-        </div>
-        <div className="field">
-          <label>Nova senha · mínimo 8 caracteres</label>
-          <CampoSenha value={senhaNova} onChange={setSenhaNova} />
-        </div>
-        <button
-          className="btn btn-primary"
-          style={{ alignSelf: "flex-start" }}
-          disabled={pending || senhaNova.length < 8}
-          onClick={() =>
-            start(async () => {
-              const res = await trocarMinhaSenha(senhaAtual, senhaNova);
-              toast(res.msg);
-              if (res.ok) {
-                setSenhaAtual("");
-                setSenhaNova("");
-              }
-            })
-          }
-        >
-          {pending ? "Salvando..." : "Alterar minha senha"}
-        </button>
-      </div>
-      <div className="card" style={{ gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span className="card-kicker">Alertas</span>
-            <span className="card-title">Notificações</span>
-            <span className="card-body" style={{ margin: 0 }}>
-              O sistema avisa as pessoas certas quando algo precisa de ação.
-            </span>
-          </div>
-          <button
-            className="btn btn-secondary"
-            style={{ fontSize: 12 }}
-            onClick={() =>
-              start(async () => {
-                const res = await enviarNotifTeste();
-                toast(res.msg);
-              })
-            }
-          >
-            Enviar teste
-          </button>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "16px 36px" }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <h6 className="text-muted" style={{ margin: "0 0 4px" }}>Canais</h6>
-            {CANAIS.map(([k, label, desc]) => linha(k, label, desc(email)))}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <h6 className="text-muted" style={{ margin: "0 0 4px" }}>Eventos</h6>
-            {EVENTOS.map(([k, label, desc]) => linha(k, label, desc))}
-          </div>
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-3)" }}>
-        <div className="card">
-          <span className="card-kicker">Integração</span>
-          <span className="card-title">QuarkRH</span>
-          <span className="card-body">Fonte dos dados de pré-admissão. Busca por CPF ou matrícula.</span>
-          <div className="card-meta">
-            <span style={{ width: 8, height: 8, background: quarkOk ? "var(--ok)" : "var(--warn)", borderRadius: "50%" }} />
-            {quarkOk ? "conectado" : "integração pendente"} ·{" "}
-            <span style={{ fontFamily: "var(--mono)" }}>api.quarkrh.com.br</span>
-          </div>
-        </div>
-        <div className="card">
-          <span className="card-kicker">Integração</span>
-          <span className="card-title">Google Workspace</span>
-          <span className="card-body">Criação de contas, grupos e o bloqueio de emergência.</span>
-          <div className="card-meta">
-            <span style={{ width: 8, height: 8, background: workspaceOk ? "var(--ok)" : "var(--warn)", borderRadius: "50%" }} />
-            {workspaceOk ? "conectado" : "integração pendente"} ·{" "}
-            <span style={{ fontFamily: "var(--mono)" }}>locgrupo.com.br</span>
-          </div>
-        </div>
-        <div className="card">
-          <span className="card-kicker">Alertas</span>
-          <span className="card-title">Destinatários</span>
-          <span className="card-body">Recebem os alertas de 24h e 12h antes de cada admissão.</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 12, border: "1px solid var(--color-divider)", padding: "3px 8px" }}>
-              rh@locgrupo.com.br
-            </span>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 12, border: "1px solid var(--color-divider)", padding: "3px 8px" }}>
-              suporte.ti@locgrupo.com.br
-            </span>
-          </div>
-        </div>
-        <div className="card">
-          <span className="card-kicker">Templates</span>
-          <span className="card-title">Checklist de offboarding</span>
-          <span className="card-body">
-            {nRh} itens de RH e {nTi} de TI. Aplicado a cada novo desligamento.
-          </span>
-          <button
-            className="btn btn-secondary"
-            style={{ alignSelf: "flex-start" }}
-            onClick={() => {
-              if (!admin) {
-                toast("Somente administradores editam o template");
-                return;
-              }
-              setTpl(template);
-              setEditandoTpl(true);
-            }}
-          >
-            Editar template
-          </button>
-        </div>
-        {modelos.map((m) => {
-          const [titulo, desc] = ROTULO_MODELO[m.chave] ?? [m.chave, "Modelo de e-mail automático."];
-          return (
-            <div className="card" key={m.chave}>
-              <span className="card-kicker">E-mails automáticos</span>
-              <span className="card-title">{titulo}</span>
-              <span className="card-body">{desc}</span>
-              {m.anexo_nome && (
-                <span className="text-muted" style={{ fontSize: 12, fontFamily: "var(--mono)" }}>
-                  📎 {m.anexo_nome}
-                </span>
-              )}
-              <button
-                className="btn btn-secondary"
-                style={{ alignSelf: "flex-start" }}
-                onClick={() => {
-                  if (!admin) {
-                    toast("Somente administradores editam o modelo");
-                    return;
+      <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-start" }}>
+        {/* COLUNA ESQUERDA - SENHA E ALERTAS */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 24, flex: 1, minWidth: 320, maxWidth: 500 }}>
+          
+          <div style={cardStyle}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={kickerStyle}>Conta</span>
+              <h2 style={cardTitleStyle}>Minha senha</h2>
+              <p style={cardBodyStyle}>Troque a sua senha de acesso. Só você pode alterá-la — para os demais, fale com o Admin T.I.</p>
+            </div>
+            
+            <div style={inputWrapperStyle}>
+              <label style={labelStyle}>Senha atual</label>
+              <div style={{ padding: "4px", background: "color-mix(in srgb, var(--color-text) 5%, transparent)", borderRadius: 12, border: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)" }}>
+                <CampoSenha value={senhaAtual} onChange={setSenhaAtual} autoComplete="current-password" />
+              </div>
+            </div>
+            
+            <div style={inputWrapperStyle}>
+              <label style={labelStyle}>Nova senha · mínimo 8 caracteres</label>
+              <div style={{ padding: "4px", background: "color-mix(in srgb, var(--color-text) 5%, transparent)", borderRadius: 12, border: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)" }}>
+                <CampoSenha value={senhaNova} onChange={setSenhaNova} />
+              </div>
+            </div>
+            
+            <button
+              style={{ ...btnPrimaryStyle, opacity: (pending || senhaNova.length < 8) ? 0.5 : 1 }}
+              disabled={pending || senhaNova.length < 8}
+              onClick={() =>
+                start(async () => {
+                  const res = await trocarMinhaSenha(senhaAtual, senhaNova);
+                  toast(res.msg);
+                  if (res.ok) {
+                    setSenhaAtual("");
+                    setSenhaNova("");
                   }
-                  setBv({ assunto: m.assunto, corpo: m.corpo });
-                  setEditandoBv(m);
-                }}
+                })
+              }
+            >
+              {pending ? "Salvando..." : "Alterar minha senha"}
+            </button>
+          </div>
+
+          <div style={cardStyle}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={kickerStyle}>Alertas</span>
+                <h2 style={cardTitleStyle}>Notificações</h2>
+                <p style={cardBodyStyle}>O sistema avisa as pessoas certas quando algo precisa de ação.</p>
+              </div>
+              <button
+                style={{ ...btnSecondaryStyle, padding: "8px 14px", fontSize: 12 }}
+                onClick={() =>
+                  start(async () => {
+                    const res = await enviarNotifTeste();
+                    toast(res.msg);
+                  })
+                }
               >
-                Editar template
+                Enviar teste
               </button>
             </div>
-          );
-        })}
-        <div className="card">
-          <span className="card-kicker">Templates</span>
-          <span className="card-title">Equipamentos</span>
-          <span className="card-body">
-            {equipamentos.length} equipamento(s) no catálogo · {equipamentos.filter((e) => e.kit).length} no kit
-            padrão pré-selecionado nas admissões.
-          </span>
-          <button
-            className="btn btn-secondary"
-            style={{ alignSelf: "flex-start" }}
-            onClick={() => {
-              if (!admin) {
-                toast("Somente administradores editam o catálogo");
-                return;
-              }
-              setEqs(equipamentos);
-              setEditandoEq(true);
-            }}
-          >
-            Editar template
-          </button>
+
+            <div style={{ display: "flex", flexDirection: "column", marginTop: 8 }}>
+              <h6 style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "color-mix(in srgb, var(--color-text) 40%, transparent)", textTransform: "uppercase" }}>Canais</h6>
+              {CANAIS.map(([k, label, desc]) => linha(k, label, desc(email)))}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", marginTop: 8 }}>
+              <h6 style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "color-mix(in srgb, var(--color-text) 40%, transparent)", textTransform: "uppercase" }}>Eventos</h6>
+              {EVENTOS.map(([k, label, desc]) => linha(k, label, desc))}
+            </div>
+          </div>
+          
+        </div>
+
+        {/* COLUNA DIREITA - INTEGRAÇÕES E TEMPLATES */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24, flex: 2, minWidth: 320 }}>
+          
+          <div style={cardStyle}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={kickerStyle}>Integração</span>
+              <h2 style={cardTitleStyle}>QuarkRH</h2>
+              <p style={cardBodyStyle}>Fonte dos dados de pré-admissão. Busca por CPF ou matrícula.</p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: quarkOk ? "var(--ok)" : "var(--warn)", marginTop: "auto" }}>
+              <div style={{ width: 8, height: 8, background: "currentColor", borderRadius: "50%", boxShadow: "0 0 8px currentColor" }} />
+              {quarkOk ? "CONECTADO" : "PENDENTE"}
+              <span style={{ color: "color-mix(in srgb, var(--color-text) 40%, transparent)", fontWeight: 500 }}>· api.quarkrh.com.br</span>
+            </div>
+          </div>
+
+          <div style={cardStyle}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={kickerStyle}>Integração</span>
+              <h2 style={cardTitleStyle}>Google Workspace</h2>
+              <p style={cardBodyStyle}>Criação de contas, grupos e o bloqueio de emergência.</p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 600, color: workspaceOk ? "var(--ok)" : "var(--warn)", marginTop: "auto" }}>
+              <div style={{ width: 8, height: 8, background: "currentColor", borderRadius: "50%", boxShadow: "0 0 8px currentColor" }} />
+              {workspaceOk ? "CONECTADO" : "PENDENTE"}
+              <span style={{ color: "color-mix(in srgb, var(--color-text) 40%, transparent)", fontWeight: 500 }}>· locgrupo.com.br</span>
+            </div>
+          </div>
+
+          <div style={{ ...cardStyle, gridColumn: "1 / -1" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={kickerStyle}>Alertas</span>
+              <h2 style={cardTitleStyle}>Destinatários</h2>
+              <p style={cardBodyStyle}>Recebem os alertas de 24h e 12h antes de cada admissão.</p>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <span style={{ fontFamily: "var(--mono)", fontSize: 12, background: "color-mix(in srgb, var(--color-text) 8%, transparent)", color: "var(--color-text)", padding: "6px 12px", borderRadius: 8, fontWeight: 500 }}>
+                rh@locgrupo.com.br
+              </span>
+              <span style={{ fontFamily: "var(--mono)", fontSize: 12, background: "color-mix(in srgb, var(--color-text) 8%, transparent)", color: "var(--color-text)", padding: "6px 12px", borderRadius: 8, fontWeight: 500 }}>
+                suporte.ti@locgrupo.com.br
+              </span>
+            </div>
+          </div>
+
+          <div style={{ ...cardStyle, gridColumn: "1 / -1" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={kickerStyle}>Templates</span>
+              <h2 style={cardTitleStyle}>Checklist de offboarding</h2>
+              <p style={cardBodyStyle}>{nRh} itens de RH e {nTi} de TI. Aplicado a cada novo desligamento.</p>
+            </div>
+            <button
+              style={{ ...btnSecondaryStyle, marginTop: 8 }}
+              onClick={() => {
+                if (!admin) { toast("Somente administradores editam o template"); return; }
+                setTpl(template); setEditandoTpl(true);
+              }}
+            >
+              Editar template
+            </button>
+          </div>
+
+          <div style={{ ...cardStyle, gridColumn: "1 / -1" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={kickerStyle}>Templates</span>
+              <h2 style={cardTitleStyle}>Equipamentos</h2>
+              <p style={cardBodyStyle}>{equipamentos.length} equipamento(s) no catálogo · {equipamentos.filter((e) => e.kit).length} no kit padrão pré-selecionado nas admissões.</p>
+            </div>
+            <button
+              style={{ ...btnSecondaryStyle, marginTop: 8 }}
+              onClick={() => {
+                if (!admin) { toast("Somente administradores editam o catálogo"); return; }
+                setEqs(equipamentos); setEditandoEq(true);
+              }}
+            >
+              Editar catálogo
+            </button>
+          </div>
+
+          {modelos.map((m) => {
+            const [titulo, desc] = ROTULO_MODELO[m.chave] ?? [m.chave, "Modelo de e-mail automático."];
+            return (
+              <div style={cardStyle} key={m.chave}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={kickerStyle}>E-mails automáticos</span>
+                  <h2 style={cardTitleStyle}>{titulo}</h2>
+                  <p style={cardBodyStyle}>{desc}</p>
+                </div>
+                {m.anexo_nome && (
+                  <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--color-text)", opacity: 0.6 }}>
+                    📎 {m.anexo_nome}
+                  </span>
+                )}
+                <button
+                  style={{ ...btnSecondaryStyle, marginTop: "auto" }}
+                  onClick={() => {
+                    if (!admin) { toast("Somente administradores editam o modelo"); return; }
+                    setBv({ assunto: m.assunto, corpo: m.corpo });
+                    setEditandoBv(m);
+                  }}
+                >
+                  Editar modelo
+                </button>
+              </div>
+            );
+          })}
+
         </div>
       </div>
 
+      {/* MODAL EMAIL */}
       {editandoBv && (
-        <div className="dialog-backdrop">
-          <div className="dialog" style={{ width: "min(620px, 100%)" }}>
-            <span className="dialog-title">
-              {(ROTULO_MODELO[editandoBv.chave] ?? [editandoBv.chave])[0]}
-            </span>
-            <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <span>
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
+          <div style={{ width: "100%", maxWidth: 620, background: "var(--color-surface)", borderRadius: 24, border: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)", boxShadow: "0 24px 64px rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ padding: "24px 32px", borderBottom: "1px solid color-mix(in srgb, var(--color-text) 5%, transparent)" }}>
+              <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{(ROTULO_MODELO[editandoBv.chave] ?? [editandoBv.chave])[0]}</h3>
+            </div>
+            
+            <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24 }}>
+              <div style={{ fontSize: 13, color: "color-mix(in srgb, var(--color-text) 70%, transparent)", lineHeight: 1.5 }}>
                 {(ROTULO_MODELO[editandoBv.chave] ?? ["", ""])[1]} Pode usar:{" "}
-                <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
+                <span style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--color-accent)", background: "color-mix(in srgb, var(--color-accent) 15%, transparent)", padding: "2px 6px", borderRadius: 6 }}>
                   {"{nome} {primeiro_nome} {email} {cargo} {unidade}"}
                   {editandoBv.chave === "credenciais" ? " {senha}" : ""}
                 </span>
-              </span>
-              <div className="field">
-                <label>Assunto</label>
-                <input className="input" value={bv.assunto} onChange={(e) => setBv((b) => ({ ...b, assunto: e.target.value }))} />
               </div>
-              <div className="field">
-                <label>Corpo</label>
+              <div style={inputWrapperStyle}>
+                <label style={labelStyle}>Assunto</label>
+                <input 
+                  style={{ width: "100%", fontSize: 14, padding: "12px 16px", borderRadius: 12, background: "color-mix(in srgb, var(--color-text) 5%, transparent)", border: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)", color: "var(--color-text)", outline: "none" }} 
+                  value={bv.assunto} onChange={(e) => setBv((b) => ({ ...b, assunto: e.target.value }))} 
+                />
+              </div>
+              <div style={inputWrapperStyle}>
+                <label style={labelStyle}>Corpo</label>
                 <textarea
-                  className="input"
+                  style={{ width: "100%", resize: "vertical", fontSize: 13, lineHeight: 1.6, padding: "12px 16px", borderRadius: 12, background: "color-mix(in srgb, var(--color-text) 5%, transparent)", border: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)", color: "var(--color-text)", outline: "none" }}
                   rows={12}
-                  style={{ resize: "vertical", fontSize: 13, lineHeight: 1.5 }}
                   value={bv.corpo}
                   onChange={(e) => setBv((b) => ({ ...b, corpo: e.target.value }))}
                 />
               </div>
             </div>
-            <div className="dialog-actions">
-              <button className="btn btn-secondary" onClick={() => setEditandoBv(null)}>
-                Cancelar
-              </button>
+
+            <div style={{ padding: "16px 32px", borderTop: "1px solid color-mix(in srgb, var(--color-text) 5%, transparent)", display: "flex", justifyContent: "flex-end", gap: 12, background: "color-mix(in srgb, var(--color-text) 2%, transparent)" }}>
+              <button style={{ ...btnSecondaryStyle, background: "transparent" }} onClick={() => setEditandoBv(null)}>Cancelar</button>
               <button
-                className="btn btn-primary"
+                style={{ ...btnPrimaryStyle, opacity: pending ? 0.5 : 1 }}
                 disabled={pending}
-                onClick={() =>
-                  start(async () => {
-                    const res = await salvarModeloEmail(editandoBv.chave, bv.assunto, bv.corpo);
-                    toast(res.msg);
-                    if (res.ok) {
-                      setEditandoBv(null);
-                      router.refresh();
-                    }
-                  })
-                }
+                onClick={() => start(async () => {
+                  const res = await salvarModeloEmail(editandoBv.chave, bv.assunto, bv.corpo);
+                  toast(res.msg);
+                  if (res.ok) { setEditandoBv(null); router.refresh(); }
+                })}
               >
                 {pending ? "Salvando..." : "Salvar modelo"}
               </button>
@@ -411,70 +455,62 @@ export function ConfigClient({
         </div>
       )}
 
+      {/* MODAL EQUIPAMENTOS */}
       {editandoEq && (
-        <div className="dialog-backdrop">
-          <div className="dialog" style={{ width: "min(520px, 100%)" }}>
-            <span className="dialog-title">Catálogo de equipamentos</span>
-            <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <span>
-                A lista aparece no passo 2 da pré-admissão. Marque <strong>Kit</strong> no que deve vir
-                pré-selecionado.
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
+          <div style={{ width: "100%", maxWidth: 540, background: "var(--color-surface)", borderRadius: 24, border: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)", boxShadow: "0 24px 64px rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ padding: "24px 32px", borderBottom: "1px solid color-mix(in srgb, var(--color-text) 5%, transparent)" }}>
+              <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Catálogo de equipamentos</h3>
+            </div>
+            
+            <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24 }}>
+              <span style={{ fontSize: 13, color: "color-mix(in srgb, var(--color-text) 70%, transparent)", lineHeight: 1.5 }}>
+                A lista aparece no passo 2 da pré-admissão. Marque <strong>Kit</strong> no que deve vir pré-selecionado.
               </span>
-              <div style={{ maxHeight: "46vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ maxHeight: "46vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
                 {eqs.map((item, i) => (
-                  <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
                     <input
-                      className="input"
-                      style={{ fontSize: 13, minHeight: 32 }}
+                      style={{ flex: 1, fontSize: 13, padding: "10px 14px", borderRadius: 12, background: "color-mix(in srgb, var(--color-text) 5%, transparent)", border: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)", color: "var(--color-text)", outline: "none" }}
                       value={item.nome}
                       onChange={(e) => setEqs((t) => t.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)))}
                     />
-                    <label
-                      style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}
-                    >
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
                       <input
                         type="checkbox"
                         checked={item.kit}
                         onChange={() => setEqs((t) => t.map((x, j) => (j === i ? { ...x, kit: !x.kit } : x)))}
-                        style={{ accentColor: "var(--color-accent)", width: 15, height: 15 }}
+                        style={{ accentColor: "var(--color-accent)", width: 16, height: 16 }}
                       />
                       Kit
                     </label>
-                    <button
+                    <div
                       title="Remover"
                       onClick={() => setEqs((t) => t.filter((_, j) => j !== i))}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: "var(--danger-forte)", fontSize: 13, padding: 2 }}
+                      style={{ background: "color-mix(in srgb, var(--danger) 15%, transparent)", color: "var(--danger)", width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }}
                     >
-                      ✕
-                    </button>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </div>
                   </div>
                 ))}
                 <button
-                  className="btn btn-ghost"
-                  style={{ fontSize: 12, alignSelf: "flex-start" }}
+                  style={{ ...btnSecondaryStyle, background: "transparent", color: "var(--color-accent)", padding: "8px 0" }}
                   onClick={() => setEqs((t) => [...t, { nome: "", kit: false }])}
                 >
-                  + adicionar equipamento
+                  + Adicionar equipamento
                 </button>
               </div>
             </div>
-            <div className="dialog-actions">
-              <button className="btn btn-secondary" onClick={() => setEditandoEq(false)}>
-                Cancelar
-              </button>
+            <div style={{ padding: "16px 32px", borderTop: "1px solid color-mix(in srgb, var(--color-text) 5%, transparent)", display: "flex", justifyContent: "flex-end", gap: 12, background: "color-mix(in srgb, var(--color-text) 2%, transparent)" }}>
+              <button style={{ ...btnSecondaryStyle, background: "transparent" }} onClick={() => setEditandoEq(false)}>Cancelar</button>
               <button
-                className="btn btn-primary"
+                style={{ ...btnPrimaryStyle, opacity: pending ? 0.5 : 1 }}
                 disabled={pending}
-                onClick={() =>
-                  start(async () => {
-                    const res = await salvarEquipamentos(eqs);
-                    toast(res.msg);
-                    if (res.ok) {
-                      setEditandoEq(false);
-                      router.refresh();
-                    }
-                  })
-                }
+                onClick={() => start(async () => {
+                  const res = await salvarEquipamentos(eqs);
+                  toast(res.msg);
+                  if (res.ok) { setEditandoEq(false); router.refresh(); }
+                })}
               >
                 {pending ? "Salvando..." : "Salvar catálogo"}
               </button>
@@ -483,37 +519,33 @@ export function ConfigClient({
         </div>
       )}
 
+      {/* MODAL TEMPLATE */}
       {editandoTpl && (
-        <div className="dialog-backdrop">
-          <div className="dialog" style={{ width: "min(680px, 100%)" }}>
-            <span className="dialog-title">Template do checklist de offboarding</span>
-            <div className="dialog-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <span>
-                Estes itens viram o checklist de RH e TI a cada novo desligamento. Desligamentos já em andamento não
-                mudam.
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
+          <div style={{ width: "100%", maxWidth: 720, background: "var(--color-surface)", borderRadius: 24, border: "1px solid color-mix(in srgb, var(--color-text) 10%, transparent)", boxShadow: "0 24px 64px rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ padding: "24px 32px", borderBottom: "1px solid color-mix(in srgb, var(--color-text) 5%, transparent)" }}>
+              <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Template do checklist de offboarding</h3>
+            </div>
+            
+            <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 24 }}>
+              <span style={{ fontSize: 13, color: "color-mix(in srgb, var(--color-text) 70%, transparent)", lineHeight: 1.5 }}>
+                Estes itens viram o checklist de RH e TI a cada novo desligamento. Desligamentos já em andamento não mudam.
               </span>
-              <div style={{ display: "flex", gap: 24, flexWrap: "wrap", maxHeight: "50vh", overflowY: "auto" }}>
+              <div style={{ display: "flex", gap: 32, flexWrap: "wrap", maxHeight: "50vh", overflowY: "auto" }}>
                 {colunaTpl("rh", "Itens do RH")}
                 {colunaTpl("ti", "Itens da TI")}
               </div>
             </div>
-            <div className="dialog-actions">
-              <button className="btn btn-secondary" onClick={() => setEditandoTpl(false)}>
-                Cancelar
-              </button>
+            <div style={{ padding: "16px 32px", borderTop: "1px solid color-mix(in srgb, var(--color-text) 5%, transparent)", display: "flex", justifyContent: "flex-end", gap: 12, background: "color-mix(in srgb, var(--color-text) 2%, transparent)" }}>
+              <button style={{ ...btnSecondaryStyle, background: "transparent" }} onClick={() => setEditandoTpl(false)}>Cancelar</button>
               <button
-                className="btn btn-primary"
+                style={{ ...btnPrimaryStyle, opacity: pending ? 0.5 : 1 }}
                 disabled={pending}
-                onClick={() =>
-                  start(async () => {
-                    const res = await salvarTemplateChecklist(tpl);
-                    toast(res.msg);
-                    if (res.ok) {
-                      setEditandoTpl(false);
-                      router.refresh();
-                    }
-                  })
-                }
+                onClick={() => start(async () => {
+                  const res = await salvarTemplateChecklist(tpl);
+                  toast(res.msg);
+                  if (res.ok) { setEditandoTpl(false); router.refresh(); }
+                })}
               >
                 {pending ? "Salvando..." : "Salvar template"}
               </button>

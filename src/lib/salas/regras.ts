@@ -128,23 +128,3 @@ export function finsPossiveis(p: {
   for (let m = ini + c.intervalo_min; m <= limite; m += c.intervalo_min) out.push(hhmm(m));
   return out;
 }
-
-export type EstadoSala =
-  | { tipo: "livre"; ate: string | null } // ate = início da próxima reserva (null = resto do dia)
-  | { tipo: "ocupada"; ate: string }
-  | { tipo: "fechada" };
-
-/** Situação de uma sala num instante (minutos do dia), dadas as reservas do dia dela. */
-export function estadoAgora(p: { agoraMin: number; aberta: boolean; config: ConfigSalas; reservas: { ini: string; fim: string }[] }): EstadoSala {
-  const { agoraMin: m, config: c } = p;
-  if (!p.aberta || m < minutos(c.hora_inicio) || m >= minutos(c.hora_fim)) return { tipo: "fechada" };
-  const agora = p.reservas.find((r) => minutos(r.ini) <= m && minutos(r.fim) > m);
-  if (agora) {
-    // reservas encostadas contam como um bloco só
-    let fim = minutos(agora.fim);
-    for (let r = p.reservas.find((x) => minutos(x.ini) === fim); r; r = p.reservas.find((x) => minutos(x.ini) === fim)) fim = minutos(r.fim);
-    return { tipo: "ocupada", ate: hhmm(fim) };
-  }
-  const prox = p.reservas.map((r) => minutos(r.ini)).filter((x) => x > m).sort((a, b) => a - b)[0];
-  return { tipo: "livre", ate: prox === undefined ? null : hhmm(prox) };
-}

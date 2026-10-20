@@ -62,6 +62,12 @@ const PATHS: Record<string, string[]> = {
   calendario: ["M3 5h18v16H3z", "M3 10h18", "M8 3v4", "M16 3v4"],
   feriado: ["M3 5h18v16H3z", "M3 10h18", "M8 3v4", "M16 3v4", "m9.5 14 5 5", "m14.5 14-5 5"],
   limpar: ["M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", "M3 3v5h5"],
+  afastado: ["M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0", "M12 6v6l4 2"],
+  equipamento: [
+    "M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73Z",
+    "m3.3 7 8.7 5 8.7-5",
+    "M12 22V12",
+  ],
   "sidebar-collapse": ["m15 18-6-6 6-6"],
   "sidebar-expand": ["m9 18 6-6-6-6"],
 };
