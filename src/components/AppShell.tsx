@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icone } from "./Icone";
 import { useTema } from "./ThemeToggle";
+import { SidebarExtrasProvider, useSidebarExtras } from "./SidebarExtras";
 import { mudarUnidade, sair } from "@/app/actions/sessao";
 import type { Papel, UnidadesMap } from "@/lib/types";
 
@@ -52,6 +53,8 @@ const NAV_GERAL: NavItem[] = [
   { label: "Configurações", rota: "/configuracoes", icone: "config" },
 ];
 
+import { SelectCustom } from "./SelectCustom";
+
 export interface ShellProps {
   usuario: { nome: string; email: string; papel: Papel };
   /** já filtrado pelas unidades de acesso do usuário (mapaPermitido) */
@@ -62,10 +65,22 @@ export interface ShellProps {
   children: React.ReactNode;
 }
 
-export function AppShell({ usuario, unidadesMap, filtro, escala = false, children }: ShellProps) {
+export function AppShell(props: ShellProps) {
+  return (
+    <SidebarExtrasProvider>
+      <AppShellBody {...props} />
+    </SidebarExtrasProvider>
+  );
+}
+
+function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }: ShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { escuro, alternar } = useTema();
+  const { escuro } = useTema();
+  const { extras } = useSidebarExtras();
+  // item do menu com os extras abertos (clicar de novo fecha) — começa
+  // escondido, só aparece depois de clicar em cima do item
+  const [expandido, setExpandido] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [navMin, setNavMin] = useState(false);
@@ -125,32 +140,81 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
 
   const linkNav = (n: NavItem) => {
     const sel = ativo(n.rota);
+    // controles que a própria página registrou (usePaginaExtrasNoMenu) —
+    // ficam escondidos até clicar em cima do item (clicar de novo esconde)
+    const comExtras = sel && !navMin && extras?.rota === n.rota && expandido === n.rota;
     return (
-      <Link
-        key={n.rota}
-        href={n.rota}
-        title={n.label}
-        className={sel ? "" : "nav-item"}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "8px 10px",
-          fontSize: 13.5,
-          fontWeight: 600,
-          textDecoration: "none",
-          borderRadius: 8,
-          color: sel ? "var(--color-accent-700)" : "inherit",
-          // sem background inline no item não-selecionado: inline vence o CSS
-          // e mataria o :hover definido em .nav-item
-          ...(sel ? { background: "var(--color-accent-100)" } : {}),
-        }}
-      >
-        <Icone nome={n.icone} />
-        {!navMin && (
-          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.label}</span>
+      <div key={n.rota}>
+        <Link
+          href={n.rota}
+          title={n.label}
+          className={sel ? "" : "nav-item"}
+          onClick={(e) => {
+            // já tá nessa página — não renavega (o Next remontaria a página
+            // no meio do clique), só alterna o painel de extras
+            if (sel) e.preventDefault();
+            setExpandido((atual) => (atual === n.rota ? null : n.rota));
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "10px 12px",
+            fontSize: 13.5,
+            fontWeight: sel ? 700 : 600,
+            textDecoration: "none",
+            borderRadius: 8,
+            color: sel ? "var(--color-accent)" : "inherit",
+            // sem background inline no item não-selecionado: inline vence o CSS
+            // e mataria o :hover definido em .nav-item
+            ...(sel
+              ? {
+                  background: "color-mix(in srgb, var(--color-accent) 12%, transparent)",
+                  // barra de acento à esquerda — inset não mexe no layout, só marca o item ativo
+                  boxShadow: "inset 3px 0 0 var(--color-accent)",
+                }
+              : {}),
+          }}
+        >
+          <Icone nome={n.icone} />
+          {!navMin && (
+            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.label}</span>
+          )}
+          {sel && !navMin && extras?.rota === n.rota && (
+            <span
+              style={{
+                marginLeft: "auto",
+                flex: "none",
+                display: "grid",
+                placeItems: "center",
+                transform: `rotate(${expandido === n.rota ? 0 : -90}deg)`,
+                transition: "transform 0.15s ease",
+                opacity: 0.7,
+              }}
+            >
+              <Icone nome="chevron" tamanho={14} />
+            </span>
+          )}
+        </Link>
+        {comExtras && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              margin: "6px 0 4px 0",
+              padding: "10px",
+              borderRadius: 10,
+              background: "color-mix(in srgb, var(--color-accent) 6%, var(--color-bg))",
+              border: "1px solid color-mix(in srgb, var(--color-accent) 16%, transparent)",
+              boxShadow: "inset 2px 0 0 color-mix(in srgb, var(--color-accent) 35%, transparent)",
+              animation: "entrada 0.16s ease both",
+            }}
+          >
+            {extras!.node}
+          </div>
         )}
-      </Link>
+      </div>
     );
   };
 
@@ -201,37 +265,48 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
   );
 
   const seletorUnidade = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "0 4px" }}>
       <span
         className="text-muted"
-        style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}
+        style={{
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          opacity: 0.7,
+          marginLeft: 8,
+        }}
       >
         Minha unidade
       </span>
-      <select
+      <SelectCustom
         className="input"
-        style={{ fontSize: 12, padding: "4px 6px", minHeight: 30 }}
+        style={{
+          fontSize: 13,
+          padding: "6px 12px",
+          minHeight: 36,
+          borderRadius: 8,
+          background: "color-mix(in srgb, var(--color-text) 4%, transparent)",
+          border: "1px solid color-mix(in srgb, var(--color-text) 8%, transparent)",
+        }}
         value={filtro.cidade}
-        onChange={(e) => setCidade(e.target.value)}
-      >
-        {opcoesCidade.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
-      <select
+        options={opcoesCidade}
+        onChange={setCidade}
+      />
+      <SelectCustom
         className="input"
-        style={{ fontSize: 12, padding: "4px 6px", minHeight: 30 }}
+        style={{
+          fontSize: 13,
+          padding: "6px 12px",
+          minHeight: 36,
+          borderRadius: 8,
+          background: "color-mix(in srgb, var(--color-text) 4%, transparent)",
+          border: "1px solid color-mix(in srgb, var(--color-text) 8%, transparent)",
+        }}
         value={filtro.unidade}
-        onChange={(e) => setUnidade(e.target.value)}
-      >
-        {minhasUnidades.map((u) => (
-          <option key={u} value={u}>
-            {u}
-          </option>
-        ))}
-      </select>
+        options={minhasUnidades}
+        onChange={setUnidade}
+      />
     </div>
   );
 
@@ -243,7 +318,7 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
       {!isMobile && (
         <aside
           style={{
-            width: navMin ? 64 : 248,
+            width: navMin ? 72 : 264,
             flex: "none",
             position: "sticky",
             top: 0,
@@ -251,10 +326,11 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
             overflow: "hidden",
             background: "var(--nav-bg, var(--color-surface))",
             borderRight: "1px solid var(--color-divider)",
-            padding: navMin ? "12px 8px" : "var(--space-4)",
+            boxShadow: "2px 0 12px color-mix(in srgb, #000 4%, transparent)",
+            padding: navMin ? "16px 8px" : "20px 16px",
             display: "flex",
             flexDirection: "column",
-            gap: "var(--space-4)",
+            gap: 24,
           }}
         >
           <div
@@ -262,33 +338,38 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
               display: "flex",
               alignItems: "flex-start",
               justifyContent: "space-between",
-              gap: 6,
+              gap: 8,
               flexWrap: "wrap",
-              padding: "4px 2px 2px",
+              padding: "0 4px",
             }}
           >
             {!navMin ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 7, minWidth: 0 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png" alt="Locagora" data-logo="1" style={{ width: 130 }} />
-                <span
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontWeight: 800,
-                    fontSize: 13,
-                    letterSpacing: "0.16em",
-                    color: "var(--color-accent-700)",
-                  }}
-                >
-                  LOCCONTROL
-                </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo.png" alt="Locagora" data-logo="1" style={{ width: 140 }} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 1, height: 16, background: "var(--color-divider)" }} />
+                  <span
+                    style={{
+                      fontFamily: "var(--font-heading)",
+                      fontWeight: 800,
+                      fontSize: 12,
+                      letterSpacing: "0.18em",
+                      color: "var(--color-accent)",
+                      opacity: 0.9,
+                    }}
+                  >
+                    LOCCONTROL
+                  </span>
+                </div>
               </div>
             ) : (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img src="/favicon.png" alt="LOCCONTROL" style={{ width: 28, height: 28, borderRadius: 6 }} />
+              <img src="/favicon.png" alt="LOCCONTROL" style={{ width: 32, height: 32, borderRadius: 8, margin: "0 auto" }} />
             )}
             <button
-              className="btn btn-ghost btn-icon"
               onClick={() => {
                 const v = !navMin;
                 setNavMin(v);
@@ -298,20 +379,48 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
               }}
               aria-label="Minimizar menu"
               title="Minimizar ou expandir o menu"
-              style={{ width: 26, height: 26, fontSize: 15, color: "var(--color-neutral-600)" }}
+              style={{ 
+                width: 32, height: 32, 
+                color: "var(--color-text)", 
+                marginTop: navMin ? 16 : 0, 
+                alignSelf: navMin ? "center" : "flex-start",
+                background: "var(--color-bg)",
+                border: "1px solid var(--color-divider)",
+                borderRadius: "50%",
+                boxShadow: "var(--shadow-sm)",
+                transition: "all 0.2s ease",
+                display: "grid", placeItems: "center",
+                cursor: "pointer"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.background = "color-mix(in srgb, var(--color-accent) 10%, var(--color-bg))";
+                e.currentTarget.style.color = "var(--color-accent)";
+                e.currentTarget.style.borderColor = "var(--color-accent)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.background = "var(--color-bg)";
+                e.currentTarget.style.color = "var(--color-text)";
+                e.currentTarget.style.borderColor = "var(--color-divider)";
+              }}
             >
-              {navMin ? "»" : "«"}
+              <Icone nome={navMin ? "sidebar-expand" : "sidebar-collapse"} tamanho={18} />
             </button>
           </div>
+
           {!navMin && seletorUnidade}
+          
           <div
+            className="hide-scrollbar"
             style={{
               flex: 1,
               minHeight: 0,
               overflowY: "auto",
               display: "flex",
               flexDirection: "column",
-              gap: "var(--space-4)",
+              gap: 24,
+              padding: "4px 0",
             }}
           >
             {veRH && bloco("RH", NAV_RH)}
@@ -320,53 +429,41 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
             {navSalas.length > 0 && bloco("Salas", navSalas)}
             {bloco("Geral", NAV_GERAL)}
           </div>
+
           <div
             style={{
               marginTop: "auto",
               display: "flex",
               flexDirection: "column",
-              gap: 10,
-              paddingTop: "var(--space-3)",
+              gap: 8,
+              paddingTop: 16,
               borderTop: "1px solid var(--color-divider)",
             }}
           >
-            <button
-              className="btn btn-ghost"
-              onClick={alternar}
-              style={{ justifyContent: "flex-start", gap: 10, fontSize: 13, padding: "4px 6px" }}
-            >
-              <Icone nome={escuro ? "sol" : "lua"} />
-              {!navMin && <span>{escuro ? "Modo claro" : "Modo escuro"}</span>}
-            </button>
-            <button
-              className="btn btn-ghost"
-              onClick={() => start(() => sair())}
-              title="Sair da conta"
+
+            <div
               style={{
-                justifyContent: "flex-start",
+                display: "flex",
+                alignItems: "center",
                 gap: 10,
-                fontSize: 13,
-                padding: "4px 6px",
-                color: "var(--danger-forte)",
+                padding: navMin ? 0 : "10px 12px",
+                marginTop: 4,
+                borderRadius: 12,
+                background: navMin ? "transparent" : "color-mix(in srgb, var(--color-text) 3%, transparent)",
+                border: navMin ? "none" : "1px solid color-mix(in srgb, var(--color-text) 5%, transparent)",
               }}
             >
-              <Icone nome="sair" />
-              {!navMin && <span>Sair da conta</span>}
-            </button>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span
                 style={{
-                  width: 30,
-                  height: 30,
+                  width: 32,
+                  height: 32,
                   flex: "none",
                   display: "grid",
                   placeItems: "center",
                   borderRadius: "50%",
-                  background: "var(--color-accent-100)",
-                  color: "var(--color-accent-700)",
-                  border: "1px solid var(--color-accent-300)",
-                  fontFamily: "var(--font-heading)",
-                  fontWeight: 600,
+                  background: "color-mix(in srgb, var(--color-accent) 15%, transparent)",
+                  color: "var(--color-accent)",
+                  fontWeight: 700,
                   fontSize: 12,
                 }}
               >
@@ -374,16 +471,48 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
               </span>
               {!navMin && (
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{usuario.nome}</div>
-                  <div className="text-muted" style={{ fontSize: 11 }}>
-                    {usuario.papel}
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {usuario.nome}
                   </div>
-                  <div className="text-muted" style={{ fontSize: 11, fontFamily: "var(--mono)" }}>
-                    {usuario.email}
+                  <div className="text-muted" style={{ fontSize: 11, marginTop: 2 }}>
+                    {usuario.papel}
                   </div>
                 </div>
               )}
             </div>
+
+            <button
+              onClick={() => start(() => sair())}
+              title="Sair da conta"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: navMin ? "center" : "flex-start",
+                gap: 12,
+                fontSize: 13,
+                fontWeight: 600,
+                padding: navMin ? "10px" : "10px 16px",
+                marginTop: 8,
+                borderRadius: 12,
+                color: "var(--danger)",
+                background: "color-mix(in srgb, var(--danger) 8%, transparent)",
+                border: "1px solid color-mix(in srgb, var(--danger) 10%, transparent)",
+                width: "100%",
+                cursor: "pointer",
+                transition: "all 0.2s ease"
+              }}
+              onMouseEnter={(e) => { 
+                e.currentTarget.style.background = "color-mix(in srgb, var(--danger) 15%, transparent)";
+                e.currentTarget.style.transform = "scale(0.98)";
+              }}
+              onMouseLeave={(e) => { 
+                e.currentTarget.style.background = "color-mix(in srgb, var(--danger) 8%, transparent)";
+                e.currentTarget.style.transform = "scale(1)";
+              }}
+            >
+              <Icone nome="sair" />
+              {!navMin && <span>Sair da conta</span>}
+            </button>
           </div>
         </aside>
       )}
@@ -420,44 +549,27 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
               >
                 LOCCONTROL
               </span>
-              <button
-                className="btn btn-secondary btn-icon"
-                onClick={alternar}
-                style={{ marginLeft: "auto" }}
-                aria-label="Alternar tema"
-              >
-                <Icone nome={escuro ? "sol" : "lua"} />
-              </button>
+
             </div>
             {menuOpen && (
               /* gaveta lateral: mesma organização por setores da sidebar do desktop */
               <div className="drawer-backdrop" onClick={() => setMenuOpen(false)}>
                 <nav className="drawer" onClick={(e) => e.stopPropagation()}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <select
+                    <SelectCustom
                       className="input"
-                      style={{ flex: 1, fontSize: 13 }}
+                      style={{ flex: 1, fontSize: 13, minHeight: 42, padding: "8px 12px", borderRadius: 8 }}
                       value={filtro.cidade}
-                      onChange={(e) => setCidade(e.target.value)}
-                    >
-                      {opcoesCidade.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                    <select
+                      options={opcoesCidade}
+                      onChange={setCidade}
+                    />
+                    <SelectCustom
                       className="input"
-                      style={{ flex: 1, fontSize: 13 }}
+                      style={{ flex: 1, fontSize: 13, minHeight: 42, padding: "8px 12px", borderRadius: 8 }}
                       value={filtro.unidade}
-                      onChange={(e) => setUnidade(e.target.value)}
-                    >
-                      {minhasUnidades.map((u) => (
-                        <option key={u} value={u}>
-                          {u}
-                        </option>
-                      ))}
-                    </select>
+                      options={minhasUnidades}
+                      onChange={setUnidade}
+                    />
                   </div>
                   {([
                     ["RH", veRH ? NAV_RH : []],
@@ -526,7 +638,6 @@ export function AppShell({ usuario, unidadesMap, filtro, escala = false, childre
             display: "flex",
             flexDirection: "column",
             gap: "var(--space-6)",
-            maxWidth: 1240,
             width: "100%",
             margin: "0 auto",
             boxSizing: "border-box",

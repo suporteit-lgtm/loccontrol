@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { avatar, pill } from "@/lib/format";
 import type { FatiaStatus } from "@/lib/types";
+import { ThemeToggleButton } from "./ThemeToggle";
+import { Icone } from "./Icone";
 
 /** Relógio que atualiza a cada 30s (SLA), como no protótipo. */
 export function useNow(intervaloMs = 30000) {
@@ -64,13 +66,17 @@ export function PageHeader({
   eyebrow,
   titulo,
   sub,
+  /** Coloca o `sub` do lado do título, na mesma linha, em vez de embaixo. */
+  subInline,
   acoes,
+  /** Botão de tema claro/escuro — só aparece se pedido (hoje: Dashboard e Dashboard TI). */
+  themeToggle,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   titulo: string;
   sub?: React.ReactNode;
+  subInline?: boolean;
   acoes?: React.ReactNode;
-  /** aceito por compatibilidade; o tema troca no menu lateral */
   themeToggle?: boolean;
 }) {
   return (
@@ -84,17 +90,37 @@ export function PageHeader({
       }}
     >
       <div>
-        <h6 className="text-muted" style={{ margin: 0 }}>
-          {eyebrow}
-        </h6>
-        <h2 style={{ margin: 0 }}>{titulo}</h2>
-        {sub && (
-          <div className="text-muted" style={{ fontSize: 13 }}>
-            {sub}
+        {eyebrow && (
+          <h6 className="text-muted" style={{ margin: 0 }}>
+            {eyebrow}
+          </h6>
+        )}
+        {subInline ? (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+            <h2 style={{ margin: 0 }}>{titulo}</h2>
+            {sub && (
+              <div className="text-muted" style={{ fontSize: 13 }}>
+                {sub}
+              </div>
+            )}
           </div>
+        ) : (
+          <>
+            <h2 style={{ margin: 0 }}>{titulo}</h2>
+            {sub && (
+              <div className="text-muted" style={{ fontSize: 13 }}>
+                {sub}
+              </div>
+            )}
+          </>
         )}
       </div>
-      {acoes}
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        {acoes}
+        {themeToggle && (
+          <ThemeToggleButton style={{ borderRadius: 999, background: "color-mix(in srgb, var(--color-text) 5%, transparent)", border: "none" }} />
+        )}
+      </div>
     </div>
   );
 }
@@ -141,6 +167,7 @@ export function StatCard({
   n,
   cor,
   onClick,
+  icone,
   rodape,
 }: {
   label: string;
@@ -149,26 +176,40 @@ export function StatCard({
   rodape?: string;
   cor: string;
   onClick?: () => void;
-  /** aceito por compatibilidade; o cartão não mostra ícone */
   icone?: string;
 }) {
   return (
     <div
       className="blueprint hover-lift"
       style={{
-        padding: "var(--space-4)",
+        padding: "calc(var(--space-4) * 1.25)",
         display: "flex",
         flexDirection: "column",
-        gap: 6,
+        gap: 8,
         cursor: onClick ? "pointer" : "default",
         overflow: "hidden",
         position: "relative",
       }}
       onClick={onClick}
     >
-      {/* filete de cor no topo: identifica o número de longe sem pesar */}
+      {/* Glow suave ao fundo baseado na cor do card para dar volume */}
+      <div 
+        style={{
+          position: "absolute",
+          top: -40,
+          right: -40,
+          width: 100,
+          height: 100,
+          background: cor,
+          filter: "blur(50px)",
+          opacity: 0.15,
+          pointerEvents: "none"
+        }}
+      />
+      {/* filete de cor no topo: identifica o número de longe sem pesar — anima no hover do card */}
       <span
         aria-hidden
+        className="stat-topline"
         style={{
           position: "absolute",
           top: 0,
@@ -176,31 +217,49 @@ export function StatCard({
           right: 0,
           height: 3,
           background: `linear-gradient(90deg, ${cor}, transparent 70%)`,
-          opacity: 0.75,
+          opacity: 0.9,
         }}
       />
-      <span
-        className="text-muted"
-        style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" }}
-      >
-        {label}
-      </span>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+        <span
+          className="text-muted"
+          style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}
+        >
+          {label}
+        </span>
+        {icone && (
+          <span
+            aria-hidden
+            style={{
+              flex: "none",
+              width: 32,
+              height: 32,
+              display: "grid",
+              placeItems: "center",
+              borderRadius: 10,
+              background: `color-mix(in srgb, ${cor} 14%, transparent)`,
+              color: cor,
+            }}
+          >
+            <Icone nome={icone} tamanho={17} />
+          </span>
+        )}
+      </div>
       <span
         style={{
           fontFamily: "var(--font-heading)",
-          fontWeight: 700,
-          fontSize: 36,
+          fontWeight: 800,
+          fontSize: 42,
           lineHeight: 1,
           color: cor,
+          textShadow: `0 2px 14px color-mix(in srgb, ${cor} 35%, transparent)`
         }}
       >
         {n}
       </span>
-      {rodape && (
-        <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--color-divider)" }}>
-          <span className="text-muted" style={{ fontSize: 12 }}>{rodape}</span>
-        </div>
-      )}
+      <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--color-divider)" }}>
+        {rodape && <span className="text-muted" style={{ fontSize: 12 }}>{rodape}</span>}
+      </div>
     </div>
   );
 }

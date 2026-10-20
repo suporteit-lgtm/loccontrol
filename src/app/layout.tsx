@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Roboto } from "next/font/google";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
-// Code Saver (Typodermic) — fonte única do sistema, arquivo em src/fonts,
-// licença na pasta de origem. Só existe o peso regular: o navegador sintetiza
-// o negrito, preservando a hierarquia de 600/700 do design system.
-const codeSaver = localFont({
-  src: [{ path: "../fonts/CodeSaver-Regular.otf", weight: "400", style: "normal" }],
+// Roboto — fonte única do sistema (trocou a Code Saver local). Pesos reais
+// 400/500/700/800: sem negrito sintetizado pelo navegador.
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["400", "500", "700", "800"],
   variable: "--font-sans",
   display: "swap",
 });
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={codeSaver.variable}
+      className={roboto.variable}
     >
       <head>
         {/* aplica o tema salvo antes do primeiro paint */}
