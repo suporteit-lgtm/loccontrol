@@ -31,13 +31,14 @@ export function decodeSession(value: string | undefined): string | null {
   }
 }
 
-export async function setSessionCookie(userId: string) {
+/** lembrar = true: sessão de 30 dias; false: termina quando o navegador é fechado. */
+export async function setSessionCookie(userId: string, lembrar = true) {
   const jar = await cookies();
   jar.set(COOKIE, encodeSession(userId), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30,
+    ...(lembrar ? { maxAge: 60 * 60 * 24 * 30 } : {}),
   });
 }
 

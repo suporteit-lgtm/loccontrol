@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
-import { usuarioAtual } from "@/lib/session";
 
-export default async function Home() {
-  const u = await usuarioAtual();
-  if (!u) redirect("/login");
-  redirect(u.papel.includes("T.I") ? "/dash-ti" : "/dash");
+export const dynamic = "force-dynamic";
+
+/**
+ * A entrada é o login: ele já mostra o LocControl e, com a Escala liberada,
+ * o cartão do portal do colaborador. Quem já está logado o login manda para o painel.
+ */
+export default function Home() {
+  redirect("/login");
 }

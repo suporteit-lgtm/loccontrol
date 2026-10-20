@@ -416,6 +416,25 @@ export interface GrupoSync {
   membros: { email: string; nome: string }[];
 }
 
+/** Membros de um grupo com o papel (MEMBER/MANAGER/OWNER) — usado pela Escala de Presença. */
+export async function listarMembros(
+  grupo: string
+): Promise<{ ok: boolean; membros: { email: string; papel: string }[]; erro?: string }> {
+  if (!configurado()) return { ok: true, membros: [] };
+  try {
+    const membros: { email: string; papel: string }[] = [];
+    let pageToken: string | undefined;
+    do {
+      const r = await dir().members.list({ groupKey: grupo, maxResults: 200, pageToken });
+      for (const m of r.data.members ?? []) if (m.email) membros.push({ email: m.email.toLowerCase(), papel: m.role ?? "MEMBER" });
+      pageToken = r.data.nextPageToken ?? undefined;
+    } while (pageToken);
+    return { ok: true, membros };
+  } catch (e) {
+    return { ok: false, membros: [], erro: msgErro(e) };
+  }
+}
+
 /** Membros de um grupo (todas as páginas). */
 async function membrosDoGrupo(email: string): Promise<GrupoSync["membros"]> {
   const membros: GrupoSync["membros"] = [];

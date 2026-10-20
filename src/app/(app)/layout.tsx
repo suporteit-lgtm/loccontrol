@@ -7,6 +7,7 @@ import { usuarioAtual } from "@/lib/session";
 import { unidadesMap, mapaPermitido, filtroPermitido } from "@/lib/data";
 import { AppShell } from "@/components/AppShell";
 import { AutoSync } from "@/components/AutoSync";
+import { escalaHabilitada } from "@/lib/escala/auth";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const usuario = await usuarioAtual();
@@ -20,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       usuario={{ nome: usuario.nome, email: usuario.email, papel: usuario.papel }}
       unidadesMap={permitido}
       filtro={filtro}
+      escala={escalaHabilitada()}
     >
       {children}
       <AutoSync />

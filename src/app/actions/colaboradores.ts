@@ -13,6 +13,7 @@ import { emitir } from "@/lib/notificar";
 import { templateChamado } from "@/services/emailChamado";
 import { salvarPlanilhasNoDrive, type PlanilhaExport } from "@/services/driveExport";
 import { exportacaoCompleta } from "@/services/quarkrh";
+import { aposMudancaDeStatus } from "@/lib/escala/gatilhos";
 import type { Colaborador } from "@/lib/types";
 
 export interface LinhaImportada {
@@ -129,6 +130,7 @@ export async function ativarNaEmpresa(colabId: string) {
 
   // a marca é o ÚNICO caminho para os e-mails pós-login — base importada nunca a recebe
   await db().from("colaboradores").update({ status: "Ativo", aguarda_boas_vindas: true }).eq("id", c.id);
+  aposMudancaDeStatus();
 
   // Os e-mails do corporativo (chamados e Quark) NÃO saem aqui: eles são
   // programados para 5 min depois do primeiro login, no ciclo de sincronização.
@@ -481,6 +483,7 @@ export async function salvarDadosColaborador(id: string, d: DadosColaborador) {
       ator: `${u.nome} · RH`,
       descricao: `Status definido como ${patch.status}`,
     });
+    aposMudancaDeStatus();
   }
 
   revalidatePath(`/colaboradores/${id}`);
@@ -540,6 +543,7 @@ export async function desligarColaborador(
     .from("colaboradores")
     .update({ status: "Desligado", desligamento: dataIso })
     .eq("id", id);
+  aposMudancaDeStatus();
 
   await db().from("eventos").insert({
     colaborador_id: id,

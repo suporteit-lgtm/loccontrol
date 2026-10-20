@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from "react";
 
-/** Caminho da foto real da moto (opcional). Se não existir em /public, cai no SVG desenhado. */
-const MOTO_PHOTO_SRC = "/moto.png";
-
-/** Tela de carregamento — logo com arcos girando, moto na pista e progresso. */
-export function Splash() {
+/**
+ * Tela de carregamento — logo com arcos girando, moto na pista e progresso.
+ * A moto é sempre o desenho (SVG): uma foto que falhasse antes da hidratação
+ * ficava como imagem quebrada, sem cair no desenho.
+ */
+export function Splash({
+  marca = ["LOC", "CONTROL"],
+  subtitulo = "Ciclo de vida de colaboradores",
+}: {
+  /** nome em duas partes: a segunda vai na cor de destaque */
+  marca?: [string, string];
+  subtitulo?: string;
+}) {
   const [pct, setPct] = useState(7);
-  const [motoPhotoOk, setMotoPhotoOk] = useState(true);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -51,13 +58,13 @@ export function Splash() {
               letterSpacing: "0.08em",
             }}
           >
-            LOC<span style={{ color: "var(--color-accent)" }}>CONTROL</span>
+            {marca[0]}<span style={{ color: "var(--color-accent)" }}>{marca[1]}</span>
           </div>
           <div
             className="text-muted"
             style={{ fontSize: 11.5, letterSpacing: "0.34em", textTransform: "uppercase", marginTop: 6 }}
           >
-            Ciclo de vida de colaboradores
+            {subtitulo}
           </div>
         </div>
 
@@ -65,17 +72,7 @@ export function Splash() {
         <div style={{ width: "100%", position: "relative", height: 54 }}>
           <div className="splash-moto">
             <span className="splash-moto-rastro" />
-            {motoPhotoOk ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={MOTO_PHOTO_SRC}
-                alt="Moto"
-                className="splash-moto-foto"
-                onError={() => setMotoPhotoOk(false)}
-              />
-            ) : (
-              <MotoSvg />
-            )}
+            <MotoSvg />
           </div>
           <div className="splash-pista" />
         </div>

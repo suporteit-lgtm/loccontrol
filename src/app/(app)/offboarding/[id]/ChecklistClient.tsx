@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { quandoBR } from "@/lib/format";
-import { alternarItemChecklist, concluirOffboarding, salvarObsChecklist } from "@/app/actions/checklist";
+import {
+  alternarItemChecklist,
+  concluirOffboarding,
+  concluirParteTIOffboarding,
+  salvarObsChecklist,
+} from "@/app/actions/checklist";
 import type { ChecklistItem } from "@/lib/types";
 
 interface Props {
@@ -14,9 +19,13 @@ interface Props {
   termo: { arquivo: string; data: string } | null;
   /** Fila de origem do usuário: /fila-ti para o time de TI, /fila-rh para o RH. */
   filaHref: string;
+  /** Quem está logado é do time de TI (habilita "Concluir minha parte"). */
+  ehTI: boolean;
+  /** Ainda há chamado aberto com a parte da TI pendente. */
+  tiPendente: boolean;
 }
 
-export function ChecklistClient({ colab, itens: itensIniciais, termo, filaHref }: Props) {
+export function ChecklistClient({ colab, itens: itensIniciais, termo, filaHref, ehTI, tiPendente }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   // estado local: o clique marca NA HORA; o servidor grava em segundo plano
@@ -29,6 +38,8 @@ export function ChecklistClient({ colab, itens: itensIniciais, termo, filaHref }
   useEffect(() => setItens(itensIniciais), [itensIniciais]);
 
   const tudoFeito = itens.length > 0 && itens.every((i) => i.done);
+  const doTI = itens.filter((i) => i.lista === "ti");
+  const tiFeito = doTI.length > 0 && doTI.every((i) => i.done);
 
   const toggle = (i: ChecklistItem) => {
     const otimista = itens.map((x) =>
@@ -217,6 +228,39 @@ export function ChecklistClient({ colab, itens: itensIniciais, termo, filaHref }
         {coluna("rh", "RH", null)}
         {coluna("ti", "TI", termo)}
       </div>
+      {/* A TI terminou a parte dela mas o RH ainda não: dá para tirar o
+          chamado da fila da TI sem esperar o offboarding completo */}
+      {ehTI && tiFeito && tiPendente && !tudoFeito && (
+        <div className="card" style={{ gap: "var(--space-2)", borderColor: "var(--ok)" }}>
+          <span className="card-title" style={{ color: "var(--ok-forte)" }}>
+            Sua parte (TI) está completa
+          </span>
+          <span style={{ fontSize: 14 }}>
+            Todos os itens da TI foram concluídos. Concluir a sua parte tira o chamado da fila da TI — para o RH ele
+            continua aberto, com os itens da TI riscados, até o offboarding completo.
+          </span>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button
+              className="btn btn-primary"
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  const res = await concluirParteTIOffboarding(colab.id);
+                  toast(res.msg, res.ok ? "ok" : "erro");
+                  if (res.ok) router.push("/fila-ti");
+                })
+              }
+            >
+              {pending ? "Concluindo..." : "Concluir minha parte"}
+            </button>
+          </div>
+        </div>
+      )}
+      {ehTI && tiFeito && !tiPendente && !tudoFeito && (
+        <div className="text-muted" style={{ fontSize: 13 }}>
+          ✓ A parte da TI já foi concluída — o chamado está fora da fila da TI, aguardando o RH.
+        </div>
+      )}
       {tudoFeito && (
         <div className="card" style={{ gap: "var(--space-2)", borderColor: "var(--ok)" }}>
           <span className="card-title" style={{ color: "var(--ok-forte)" }}>

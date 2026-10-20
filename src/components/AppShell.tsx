@@ -31,6 +31,20 @@ const NAV_TI: NavItem[] = [
   { label: "Usuários", rota: "/usuarios", icone: "usuarios" },
   { label: "Unidades", rota: "/unidades", icone: "unidades" },
 ];
+// Escala de Presença (RH e Admin; só com o módulo liberado)
+const NAV_ESCALA: NavItem[] = [
+  { label: "Dashboard da Escala", rota: "/escala-rh", icone: "dash" },
+  { label: "Calendário da Escala", rota: "/escala-rh/calendario", icone: "calendario" },
+  { label: "Participantes", rota: "/escala-rh/participantes", icone: "membros" },
+  { label: "Feriados", rota: "/escala-rh/feriados", icone: "feriado" },
+  { label: "Configurações da Escala", rota: "/escala-rh/configuracoes", icone: "config" },
+];
+// Agendamento de Salas (todo usuário interno; cadastro só para administradores)
+const NAV_SALAS: NavItem[] = [
+  { label: "Agenda de salas", rota: "/agenda-salas", icone: "sala" },
+  { label: "Reservas de salas", rota: "/agenda-salas/reservas", icone: "calendario" },
+];
+const NAV_SALAS_ADMIN: NavItem = { label: "Cadastro de salas", rota: "/agenda-salas/cadastro", icone: "config" };
 const NAV_GERAL: NavItem[] = [
   { label: "Grupos do Workspace", rota: "/grupos", icone: "membros" },
   { label: "Área restrita", rota: "/restrita", icone: "restrita" },
@@ -46,6 +60,8 @@ export interface ShellProps {
   /** já filtrado pelas unidades de acesso do usuário (mapaPermitido) */
   unidadesMap: UnidadesMap;
   filtro: { cidade: string; unidade: string };
+  /** módulo Escala de Presença liberado (feature flag) */
+  escala?: boolean;
   children: React.ReactNode;
 }
 
@@ -57,7 +73,7 @@ export function AppShell(props: ShellProps) {
   );
 }
 
-function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
+function AppShellBody({ usuario, unidadesMap, filtro, escala = false, children }: ShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { escuro } = useTema();
@@ -68,6 +84,8 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [navMin, setNavMin] = useState(false);
+  // seções do menu recolhidas pelo usuário (lembradas neste navegador)
+  const [fechados, setFechados] = useState<string[]>([]);
   const [, start] = useTransition();
 
   useEffect(() => {
@@ -77,6 +95,7 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
     on();
     try {
       setNavMin(localStorage.getItem("lc-nav-min") === "1");
+      setFechados(JSON.parse(localStorage.getItem("lc-nav-fechados") ?? "[]"));
     } catch {}
     return () => mq.removeEventListener("change", on);
   }, []);
@@ -86,6 +105,7 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
   const ehAdmin = usuario.papel === "Superadmin" || usuario.papel.startsWith("Admin");
   const veRH = ehAdmin || usuario.papel === "Usuário RH";
   const veTI = ehAdmin || usuario.papel === "Usuário T.I";
+  const veEscala = escala && veRH;
 
   const cidades = Object.keys(unidadesMap).sort((a, b) => a.localeCompare(b));
   // "Todas as ..." aparece para todos: quem é restrito enxerga o conjunto
@@ -198,24 +218,49 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
     );
   };
 
+  const alternarSecao = (titulo: string) =>
+    setFechados((atual) => {
+      const novo = atual.includes(titulo) ? atual.filter((t) => t !== titulo) : [...atual, titulo];
+      try {
+        localStorage.setItem("lc-nav-fechados", JSON.stringify(novo));
+      } catch {}
+      return novo;
+    });
+
+  // título da seção com a seta para recolher; recolhida, mostra só a página aberta
+  const tituloSecao = (titulo: string, estilo: React.CSSProperties) => {
+    const fechado = fechados.includes(titulo);
+    return (
+      <button
+        type="button"
+        className="nav-secao"
+        onClick={() => alternarSecao(titulo)}
+        aria-expanded={!fechado}
+        title={fechado ? `Mostrar ${titulo}` : `Recolher ${titulo}`}
+        style={estilo}
+      >
+        <span>{titulo}</span>
+        <span style={{ display: "grid", transform: `rotate(${fechado ? -90 : 0}deg)`, transition: "transform 0.15s ease" }}>
+          <Icone nome="chevron" tamanho={13} />
+        </span>
+      </button>
+    );
+  };
+  const visiveis = (titulo: string, itens: NavItem[]) =>
+    fechados.includes(titulo) ? itens.filter((n) => ativo(n.rota)) : itens;
+
   const bloco = (titulo: string, itens: NavItem[]) => (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {!navMin && (
-        <h6
-          className="text-muted"
-          style={{
-            margin: "4px 0 8px 12px",
-            fontSize: 11,
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            opacity: 0.7,
-          }}
-        >
-          {titulo}
-        </h6>
-      )}
-      {itens.map(linkNav)}
+      {!navMin &&
+        tituloSecao(titulo, {
+          margin: "4px 0 4px",
+          padding: "4px 8px 4px 12px",
+          fontSize: 11,
+          fontWeight: 800,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+        })}
+      {(navMin ? itens : visiveis(titulo, itens)).map(linkNav)}
     </div>
   );
 
@@ -265,7 +310,8 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
     </div>
   );
 
-  const navTodos = [...(veRH ? NAV_RH : []), ...(veTI ? NAV_TI : []), ...NAV_GERAL];
+  const navSalas = escala ? [...NAV_SALAS, ...(ehAdmin ? [NAV_SALAS_ADMIN] : [])] : [];
+  const navTodos = [...(veRH ? NAV_RH : []), ...(veTI ? NAV_TI : []), ...(veEscala ? NAV_ESCALA : []), ...navSalas, ...NAV_GERAL];
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", alignItems: "stretch" }}>
@@ -379,6 +425,8 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
           >
             {veRH && bloco("RH", NAV_RH)}
             {veTI && bloco("TI", NAV_TI)}
+            {veEscala && bloco("Escala", NAV_ESCALA)}
+            {navSalas.length > 0 && bloco("Salas", navSalas)}
             {bloco("Geral", NAV_GERAL)}
           </div>
 
@@ -526,14 +574,21 @@ function AppShellBody({ usuario, unidadesMap, filtro, children }: ShellProps) {
                   {([
                     ["RH", veRH ? NAV_RH : []],
                     ["TI", veTI ? NAV_TI : []],
+                    ["Escala", veEscala ? NAV_ESCALA : []],
+                    ["Salas", navSalas],
                     ["Geral", NAV_GERAL],
                   ] as const).map(([titulo, itens]) =>
                     itens.length === 0 ? null : (
                       <div key={titulo} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <h6 className="text-muted" style={{ margin: "0 0 4px" }}>
-                          {titulo}
-                        </h6>
-                        {itens.map((n) => {
+                        {tituloSecao(titulo, {
+                          margin: "0 0 4px",
+                          padding: "4px 4px",
+                          fontSize: 12,
+                          fontWeight: 800,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                        })}
+                        {visiveis(titulo, itens).map((n) => {
                           const sel = ativo(n.rota);
                           return (
                             <Link
