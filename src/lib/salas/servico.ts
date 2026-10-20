@@ -5,7 +5,10 @@
 // ╚══════════════════════════════════════════════════════════════════════════╝
 import { db } from "@/lib/db";
 import { FUSO, hojeSP, instanteSP, somarDias } from "@/lib/escala/calendario";
-import { CONFIG_PADRAO, hhmm, minutos, motivoInvalido, type ConfigSalas, type ReservaVista, type Sala } from "./regras";
+import {
+  CONFIG_PADRAO, diaPermitido, estadoAgora, hhmm, minutos, motivoInvalido,
+  type ConfigSalas, type EstadoSala, type ReservaVista, type Sala,
+} from "./regras";
 
 /** Quem está agindo: a pessoa da reserva (e se gerencia as salas). */
 export interface Ator {
@@ -213,4 +216,38 @@ export async function cancelarReserva(ator: Ator, id: string): Promise<Resultado
     .eq("status", "ATIVA");
   if (error) return { ok: false, erro: "Não foi possível cancelar. Tente de novo." };
   return { ok: true };
+}
+
+/**
+ * Situação de cada sala agora (tela de entrada). Só nome, tipo e livre/ocupada:
+ * nenhum nome de pessoa nem assunto sai daqui.
+ */
+export async function salasAgora(): Promise<{ nome: string; descricao: string | null; estado: EstadoSala }[] | null> {
+  try {
+    const { config, instalado } = await lerConfig();
+    if (!instalado) return null;
+    const { hoje, agoraMin } = agoraSP();
+    const [salas, { data: linhas }] = await Promise.all([
+      listarSalas(),
+      db()
+        .from("sala_reserva")
+        .select("sala_id, inicio, fim")
+        .eq("status", "ATIVA")
+        .lt("inicio", instanteSP(somarDias(hoje, 1), "00:00").toISOString())
+        .gt("fim", instanteSP(hoje, "00:00").toISOString()),
+    ]);
+    const aberta = diaPermitido(hoje, config);
+    return salas.map((s) => ({
+      nome: s.nome,
+      descricao: s.descricao,
+      estado: estadoAgora({
+        agoraMin,
+        aberta,
+        config,
+        reservas: (linhas ?? []).filter((r) => r.sala_id === s.id).map((r) => ({ ini: partesSP(r.inicio).hora, fim: partesSP(r.fim).hora })),
+      }),
+    }));
+  } catch {
+    return null; // a tela de entrada nunca quebra por causa das salas
+  }
 }

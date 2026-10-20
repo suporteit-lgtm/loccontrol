@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CONFIG_PADRAO as C, duracao, finsPossiveis, horarios, motivoInvalido } from "./regras";
+import { CONFIG_PADRAO as C, duracao, estadoAgora, finsPossiveis, horarios, motivoInvalido } from "./regras";
 
 // 2026-10-08 é quinta-feira
 const base = { data: "2026-10-08", config: C, hoje: "2026-10-08", agoraMin: 12 * 60 + 40 };
@@ -60,4 +60,21 @@ describe("finsPossiveis", () => {
 
 it("duracao", () => {
   expect([duracao(30), duracao(60), duracao(90), duracao(240)]).toEqual(["30 min", "1h", "1h30", "4h"]);
+});
+
+describe("estadoAgora", () => {
+  const rs = [{ ini: "10:00", fim: "11:00" }, { ini: "11:00", fim: "11:30" }, { ini: "15:00", fim: "16:00" }];
+  const e = (agoraMin: number, aberta = true) => estadoAgora({ agoraMin, aberta, config: C, reservas: rs });
+  it("livre até a próxima reserva, ou o resto do dia", () => {
+    expect(e(9 * 60)).toEqual({ tipo: "livre", ate: "10:00" });
+    expect(e(16 * 60 + 10)).toEqual({ tipo: "livre", ate: null });
+  });
+  it("ocupada junta reservas encostadas", () => {
+    expect(e(10 * 60 + 15)).toEqual({ tipo: "ocupada", ate: "11:30" });
+  });
+  it("fechada fora do expediente ou em dia sem expediente", () => {
+    expect(e(7 * 60)).toEqual({ tipo: "fechada" });
+    expect(e(19 * 60)).toEqual({ tipo: "fechada" });
+    expect(e(12 * 60, false)).toEqual({ tipo: "fechada" });
+  });
 });
