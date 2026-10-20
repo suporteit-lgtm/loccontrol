@@ -74,10 +74,10 @@ export function HistoricoChamados({
           </Link>
         }
       />
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", background: "color-mix(in srgb, var(--color-surface) 60%, transparent)", padding: "16px", borderRadius: "16px", border: "1px solid color-mix(in srgb, var(--color-divider) 50%, transparent)" }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         <input
           className="input"
-          style={{ maxWidth: 320, background: "var(--color-bg)", border: "1px solid var(--color-divider)", borderRadius: 12, padding: "8px 12px" }}
+          style={{ maxWidth: 320 }}
           placeholder="Buscar por nome, chamado ou quem concluiu"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -89,27 +89,14 @@ export function HistoricoChamados({
           options={["Todos os tipos", ...tipos]}
           onChange={(v) => setFTipo(v === "Todos os tipos" ? "" : v)}
         />
-        <span style={{ 
-          fontFamily: "var(--mono)", fontSize: 12, fontWeight: 600,
-          background: "var(--color-bg)", padding: "4px 12px", borderRadius: "999px",
-          color: "var(--color-text)", border: "1px solid var(--color-divider)",
-          marginLeft: "auto"
-        }}>
+        <span className="text-muted" style={{ fontSize: 12, fontFamily: "var(--mono)", marginLeft: "auto" }}>
           {filtradas.length} de {linhas.length} registro(s)
         </span>
       </div>
 
       {linhas.length === 0 ? (
-        <div 
-          className="card text-muted" 
-          style={{ 
-            alignItems: "center", justifyContent: "center", padding: "48px 24px",
-            background: "color-mix(in srgb, var(--color-surface) 60%, transparent)",
-            borderRadius: 16, border: "1px dashed var(--color-divider)"
-          }}
-        >
-          <span style={{ fontSize: 24, marginBottom: 12 }}>✨</span>
-          <span style={{ fontSize: 14 }}>
+        <div className="card" style={{ alignItems: "center", padding: "var(--space-8)" }}>
+          <span className="text-muted" style={{ fontSize: 14 }}>
             Ainda não há chamados concluídos — os próximos encerramentos aparecem aqui.
           </span>
         </div>
@@ -117,10 +104,9 @@ export function HistoricoChamados({
         <div
           style={{
             overflowX: "auto",
-            border: "1px solid color-mix(in srgb, var(--color-divider) 50%, transparent)",
-            borderRadius: 16,
-            background: "color-mix(in srgb, var(--color-surface) 60%, transparent)",
-            boxShadow: "var(--shadow-sm)"
+            border: "1px solid var(--color-divider)",
+            borderRadius: 10,
+            background: "var(--color-surface)",
           }}
         >
           <table className="table" style={{ minWidth: 760 }}>
@@ -137,39 +123,31 @@ export function HistoricoChamados({
                 <th></th>
               </tr>
             </thead>
-            <tbody style={{ background: "transparent" }}>
+            <tbody>
               {filtradas.map((l) => (
-                <tr key={l.id} style={{ height: 48 }}>
+                <tr key={l.id} style={{ height: 38 }}>
                   <td className="nowrap" style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
-                    <span style={{ background: "var(--color-bg)", padding: "4px 8px", borderRadius: 6, border: "1px solid var(--color-divider)" }}>
-                      {l.id}
-                    </span>
+                    {l.id}
                   </td>
                   <td className="nowrap">
                     <StatusPill status={l.tipo} />
                   </td>
-                  <td style={{ fontSize: 13.5, fontWeight: 700 }}>
+                  <td style={{ fontSize: 13.5, fontWeight: 600 }}>
                     {l.href ? (
-                      <Link href={l.href} style={{ color: "var(--color-text)", textDecoration: "none" }}>
+                      <Link href={l.href} style={{ color: "inherit" }}>
                         {l.nome}
                       </Link>
                     ) : (
                       l.nome
                     )}
                   </td>
-                  <td className="text-muted" style={{ fontSize: 12.5, lineHeight: 1.4 }}>
+                  <td className="text-muted" style={{ fontSize: 12.5 }}>
                     {l.detalhe || "—"}
                   </td>
                   <td className="nowrap" style={{ fontSize: 12.5, fontWeight: 700, color: COR_RESULTADO[l.resultado] ?? "inherit" }}>
-                    <span style={{ 
-                      background: `color-mix(in srgb, ${COR_RESULTADO[l.resultado] ?? "var(--color-text)"} 10%, transparent)`,
-                      padding: "4px 10px", borderRadius: 999,
-                      border: `1px solid color-mix(in srgb, ${COR_RESULTADO[l.resultado] ?? "var(--color-text)"} 30%, transparent)`
-                    }}>
-                      {ROTULO[l.resultado] ?? l.resultado}
-                    </span>
+                    {ROTULO[l.resultado] ?? l.resultado}
                   </td>
-                  <td style={{ fontSize: 12.5, fontWeight: 500 }}>{l.concluidoPor || "—"}</td>
+                  <td style={{ fontSize: 12.5 }}>{l.concluidoPor || "—"}</td>
                   <td className="nowrap text-muted" style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
                     {quandoBR(l.abertoEm)}
                   </td>
@@ -189,9 +167,8 @@ export function HistoricoChamados({
               ))}
               {filtradas.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-muted" style={{ textAlign: "center", padding: "48px 24px", fontSize: 13 }}>
-                    <div style={{ fontSize: 24, marginBottom: 12 }}>🔍</div>
-                    Nenhum registro encontrado com esse filtro
+                  <td colSpan={9} className="text-muted" style={{ textAlign: "center", padding: 24, fontSize: 13 }}>
+                    Nada com esse filtro
                   </td>
                 </tr>
               )}

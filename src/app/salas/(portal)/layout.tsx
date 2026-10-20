@@ -15,8 +15,7 @@ export default async function SalasPortalLayout({ children }: { children: React.
       <CabecalhoPortal nome={conta.nome} modulo="salas" />
       <SalasNav />
       <AoVivo />
-      {/* salas usam a largura da tela: grade larga e painel de reserva ao lado */}
-      <main className="esc-main" style={{ maxWidth: 1840 }}>{children}</main>
+      <main className="esc-main">{children}</main>
     </div>
   );
 }
