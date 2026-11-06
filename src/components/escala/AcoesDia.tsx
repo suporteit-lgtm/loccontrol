@@ -152,7 +152,7 @@ export function AcoesDia({ dia, ctx, compacto = false }: { dia: DiaPortal; ctx: 
     );
   }
 
-  // ── Dia livre (ter–qui) ou do outro grupo: reserva / fila ──
+  // ── Dia livre ou de outro grupo: reserva / fila ──
   const r = dia.reserva;
   const f = dia.fila;
   if (r && (r.status === "CONFIRMADA" || r.status === "UTILIZADA")) {
@@ -254,7 +254,7 @@ export function TituloDia({ dia }: { dia: DiaPortal }) {
   );
 }
 
-/** Dia livre (ter–qui): sem equipe fixa, aberto a agendamento. */
+/** Dia livre: sem equipe fixa, aberto a agendamento. */
 export function LivreBadge({ rotulo = false }: { rotulo?: boolean }) {
   return (
     <span className="tag tag-neutral" style={{ fontWeight: 700 }}>

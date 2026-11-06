@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { db } from "@/lib/db";
+import type { Grupo } from "./calendario";
 
 export const DOMINIO = "locgrupo.com.br";
 /** Módulos do portal que usam o mesmo login Google, e o cookie que guarda para onde voltar. */
@@ -50,7 +51,7 @@ export async function supabasePortal() {
 export interface ParticipantePortal {
   id: string;
   ativo: boolean;
-  grupo: "A" | "B";
+  grupo: Grupo;
   unidadeId: string;
   colaboradorId: string;
   nome: string;
@@ -76,7 +77,7 @@ async function participanteDe(authId: string): Promise<{ p: ParticipantePortal |
     .maybeSingle();
   if (error) return { p: null, instalada: !/escala_participante|relation|schema cache/i.test(error.message) };
   if (!data) return { p: null, instalada: true };
-  const g = data.escala_grupo as unknown as { letra: "A" | "B"; unidade_id: string };
+  const g = data.escala_grupo as unknown as { letra: Grupo; unidade_id: string };
   const c = data.colaboradores as unknown as { nome: string; status: string };
   return {
     instalada: true,

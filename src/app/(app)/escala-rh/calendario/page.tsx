@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { hojeSP, somarDias } from "@/lib/escala/calendario";
 import { unidadeDaEscala } from "@/lib/escala/rh";
 import { CalendarioRHClient, type DiaRH } from "./CalendarioRHClient";
+import type { Grupo } from "@/lib/escala/calendario";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export default async function CalendarioRHPage({ searchParams }: { searchParams:
     lista.push({
       data: d,
       util: !!v,
-      grupo: (v?.grupo as "A" | "B" | null) ?? null,
+      grupo: (v?.grupo as Grupo | null) ?? null,
       feriado: fer.get(d) ?? null,
       capacidade: Number(v?.capacidade ?? u.config.capacidade),
       escalados: Number(v?.escalados ?? 0),

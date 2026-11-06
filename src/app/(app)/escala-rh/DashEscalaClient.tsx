@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { PageHeader, StatCard } from "@/components/ui";
 import { SelectCustom } from "@/components/SelectCustom";
 import { GrupoBadge } from "@/components/escala/GrupoBadge";
-import { somarDias } from "@/lib/escala/calendario";
+import { somarDias, type Grupo } from "@/lib/escala/calendario";
 import { dataCurta, nomeMes } from "@/lib/escala/formato";
 import { csv, type PessoaFreq } from "@/lib/escala/metricas";
 import type { Dashboard } from "@/lib/escala/dashboard";
 
-const COR = { A: "var(--color-accent)", B: "var(--ok)" } as const;
+const COR = { A: "var(--color-accent)", B: "var(--ok)", C: "var(--grupo-c)" } as const;
 const pctTxt = (v: number | null) => (v === null ? "—" : `${v.toLocaleString("pt-BR")}%`);
 
 function baixar(nome: string, conteudo: string) {
@@ -270,8 +270,8 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
           <div style={{ flex: "1 1 160px", maxWidth: 200 }}><SelectCustom
             className="input"
             value={f.grupo ? `Grupo ${f.grupo}` : "Todos os grupos"}
-            options={["Todos os grupos", "Grupo A", "Grupo B"]}
-            onChange={(v) => ir({ grupo: v === "Grupo A" ? "A" : v === "Grupo B" ? "B" : "", pessoa: "" })}
+            options={["Todos os grupos", "Grupo A", "Grupo B", "Grupo C"]}
+            onChange={(v) => ir({ grupo: v.startsWith("Grupo ") ? (v.slice(-1) as Grupo) : "", pessoa: "" })}
           /></div>
           <div style={{ flex: "1 1 220px", maxWidth: 300 }}><SelectCustom
             className="input"
@@ -339,7 +339,7 @@ export function DashEscalaClient({ d }: { d: Dashboard }) {
               dica: s.base ? `${s.ausencias} ausência(s) em ${s.base} escalação(ões)` : "sem grupo fixo neste dia",
             }))}
           />
-          <span className="text-muted" style={{ fontSize: 12 }}>Ter a qui são dias livres (sem escalados), por isso aparecem com “—”.</span>
+          <span className="text-muted" style={{ fontSize: 12 }}>Dias livres (sem escalados) aparecem com “—”.</span>
         </div>
         <div className="card">
           <span className="card-kicker">Desde o início da escala · acumulado</span>

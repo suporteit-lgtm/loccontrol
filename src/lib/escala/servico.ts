@@ -4,7 +4,7 @@
 // ║  materialização, os feriados e a leitura de configuração.                 ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
 import { db } from "@/lib/db";
-import { hojeSP, materializar, prazoDoDia, somarDias, type Grupo } from "./calendario";
+import { hojeSP, materializar, prazoDoDia, somarDias, type GrupoRodizio } from "./calendario";
 
 export const DIAS_MATERIALIZADOS = 90;
 
@@ -13,7 +13,7 @@ export interface ConfigEscala {
   habilitado: boolean;
   capacidade: number;
   data_ancora: string | null;
-  grupo_inicial: Grupo;
+  grupo_inicial: GrupoRodizio;
   limite_mensal: number | null; // null = sem limite
   prazo_hora: string; // "18:00:00"
   oferta_validade_min: number;
@@ -63,6 +63,12 @@ export async function feriadosDa(unidadeId: string, de: string, ate: string): Pr
  * O passado fica congelado no banco.
  * Devolve o que a função SQL informou (dias removidos/alterados e reservas canceladas).
  */
+/** A unidade tem o Grupo C (terça e quinta fixas)? */
+export async function temGrupoC(unidadeId: string): Promise<boolean> {
+  const { data } = await db().from("escala_grupo").select("id").eq("unidade_id", unidadeId).eq("letra", "C").maybeSingle();
+  return !!data;
+}
+
 export async function materializarUnidade(unidadeId: string, motivo = "feriado", agora = new Date()) {
   const cfg = await configDa(unidadeId);
   if (!cfg.data_ancora) return { ok: false as const, erro: "Escolha o grupo da segunda em Configurações da Escala e salve." };
@@ -76,7 +82,7 @@ export async function materializarUnidade(unidadeId: string, motivo = "feriado",
   const dias = materializar({
     de: hoje,
     ate,
-    params: { ancora: cfg.data_ancora, grupoInicial: cfg.grupo_inicial },
+    params: { ancora: cfg.data_ancora, grupoInicial: cfg.grupo_inicial, grupoC: await temGrupoC(unidadeId) },
     feriados,
   }).map((d) => ({ ...d, prazo: prazoDoDia(d.data, prazoHora, feriados).toISOString() }));
 

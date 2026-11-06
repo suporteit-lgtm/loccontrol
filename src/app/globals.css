@@ -719,6 +719,8 @@ select.input option {
 .modulo-dia[data-g="A"] { background: color-mix(in srgb, var(--accent-base) 10%, #fff); }
 .modulo-dia[data-g="A"] strong { color: var(--accent-base); }
 .modulo-dia[data-g="B"] { background: color-mix(in srgb, var(--ok-base) 14%, #fff); }
+.modulo-dia[data-g="C"] { background: color-mix(in srgb, #7c4dff 12%, #fff); }
+.modulo-dia[data-g="C"] strong { color: #5b2fd6; }
 .modulo-dia[data-g="B"] strong { color: color-mix(in srgb, var(--ok-base) 72%, #000); }
 .modulo-dia[data-g="livre"] { background: #fff; box-shadow: inset 0 0 0 1px #e3e6ec; }
 .modulo-dia[data-g="livre"] strong { font-size: 11.5px; color: #5d6577; }
@@ -826,6 +828,7 @@ select.input option {
 .esc-dia:hover { border-color: var(--color-accent-300); box-shadow: var(--shadow-sm); }
 .esc-dia:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 .esc-dia[data-grupo="A"] { background: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface)); }
+.esc-dia[data-grupo="C"] { background: color-mix(in srgb, var(--grupo-c) 11%, var(--color-surface)); }
 .esc-dia[data-grupo="B"] { background: color-mix(in srgb, var(--ok) 11%, var(--color-surface)); }
 /* dia livre (ter–qui): superfície neutra, aberto a agendamento */
 .esc-dia[data-grupo="livre"] { background: var(--color-surface); }
@@ -966,3 +969,7 @@ button.sal-cel[data-pode="1"] { background: color-mix(in srgb, var(--ok) 9%, tra
 .sal-cel[data-bloq="1"] { background: color-mix(in srgb, var(--color-text) 12%, var(--color-surface)); }
 .sal-barra-sel { position: sticky; bottom: 12px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   padding: 10px 12px 10px 16px; border-radius: 14px; background: var(--color-surface); border: 1px solid var(--color-accent); box-shadow: var(--shadow-lg); font-size: 14px; }
+
+/* Grupo C da escala (terça e quinta) */
+:root { --grupo-c: #7c4dff; --grupo-c-forte: #5b2fd6; }
+html[data-tema="escuro"] { --grupo-c-forte: #b8a2ff; }

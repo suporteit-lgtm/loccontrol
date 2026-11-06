@@ -4,13 +4,14 @@
 // ║  Presença = escala − ausências avisadas − afastamentos.                   ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
 import { diaDaSemana } from "./calendario";
+import type { Grupo } from "./calendario";
 
 /** Uma linha de escala_v_presenca (já filtrada por período/grupo/pessoa). */
 export interface LinhaPresenca {
   data: string;
-  grupo_do_dia: "A" | "B" | null;
+  grupo_do_dia: Grupo | null;
   participante_id: string;
-  grupo_pessoa: "A" | "B";
+  grupo_pessoa: Grupo;
   tipo: "ESCALADO" | "RESERVA";
   afastado: boolean;
   ausente: boolean;
@@ -27,7 +28,7 @@ export interface LinhaFila {
 
 export interface DiaDash {
   data: string;
-  grupo: "A" | "B" | null;
+  grupo: Grupo | null;
   capacidade: number;
   escalados: number;
   afastados: number;
@@ -45,7 +46,7 @@ export interface DiaDash {
 
 /** Agrega por dia. `diasUteis` dá a lista de dias (inclusive dias sem ninguém). */
 export function porDia(
-  diasUteis: { data: string; grupo: "A" | "B" | null }[],
+  diasUteis: { data: string; grupo: Grupo | null }[],
   linhas: readonly LinhaPresenca[],
   fila: readonly LinhaFila[],
   capacidade: number,
@@ -121,7 +122,7 @@ export function ausenciaPorSemana(dias: readonly DiaDash[]) {
 }
 
 /** Dias fixos de A e B acumulados mês a mês (dias livres não contam). */
-export function abAcumulado(dias: readonly { data: string; grupo: "A" | "B" | null }[]) {
+export function abAcumulado(dias: readonly { data: string; grupo: Grupo | null }[]) {
   const out: { mes: string; a: number; b: number }[] = [];
   let a = 0;
   let b = 0;
@@ -139,7 +140,7 @@ export function abAcumulado(dias: readonly { data: string; grupo: "A" | "B" | nu
 export interface PessoaFreq {
   id: string;
   nome: string;
-  grupo: "A" | "B";
+  grupo: Grupo;
   escalados: number;
   presencas: number;
   ausencias: number;
@@ -152,7 +153,7 @@ export interface PessoaFreq {
 
 /** Frequência por pessoa (só dias realizados). */
 export function frequencia(
-  pessoas: readonly { id: string; nome: string; grupo: "A" | "B" }[],
+  pessoas: readonly { id: string; nome: string; grupo: Grupo }[],
   linhas: readonly LinhaPresenca[],
   hoje: string,
 ): PessoaFreq[] {
@@ -192,7 +193,7 @@ export function demandaReprimida(dias: readonly DiaDash[]) {
 }
 
 /** Previsão: ocupação esperada e "poucas vagas" (≤ 15% da capacidade livre). */
-export function previsao(dias: readonly { data: string; grupo: "A" | "B" | null; capacidade: number; presentes: number }[]) {
+export function previsao(dias: readonly { data: string; grupo: Grupo | null; capacidade: number; presentes: number }[]) {
   return dias.map((d) => {
     const vagas = d.capacidade - d.presentes;
     return { ...d, vagas, ocupacao: pct(d.presentes, d.capacidade) ?? 0, poucas: vagas <= Math.ceil(d.capacidade * 0.15) };

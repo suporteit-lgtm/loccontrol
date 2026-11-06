@@ -8,6 +8,7 @@ import { useToast } from "@/components/Toast";
 import { GrupoBadge } from "@/components/escala/GrupoBadge";
 import { adicionarParticipantes, moverParticipante, removerParticipante } from "@/app/actions/escala";
 import type { Candidato, ParticipanteRH, UnidadeEscala } from "@/lib/escala/rh";
+import { GRUPOS, type Grupo, type GrupoRodizio } from "@/lib/escala/calendario";
 
 const TODAS = "Todas";
 
@@ -43,7 +44,7 @@ export function ParticipantesClient({
   cidadePadrao: string;
   unidadePadrao: string;
   capacidade: number;
-  grupoInicial: "A" | "B";
+  grupoInicial: GrupoRodizio;
   grupos: UnidadeEscala["grupos"];
   participantes: ParticipanteRH[];
   candidatos: Candidato[];
@@ -55,16 +56,19 @@ export function ParticipantesClient({
   const [unid, setUnid] = useState(unidadePadrao);
   const [busca, setBusca] = useState("");
   const [sel, setSel] = useState<Set<string>>(new Set());
-  const [destino, setDestino] = useState<"A" | "B">("A");
+  const [destino, setDestino] = useState<Grupo>("A");
   const [confirmarSaida, setConfirmarSaida] = useState<string | null>(null);
   // cada grupo mostra 5 pessoas; o resto abre na seta
-  const [abertos, setAbertos] = useState<Record<"A" | "B", boolean>>({ A: false, B: false });
+  const [abertos, setAbertos] = useState<Record<Grupo, boolean>>({ A: false, B: false, C: false });
   const VISIVEIS = 5;
 
   const ativos = participantes.filter((p) => p.ativo);
-  const porGrupo = { A: ativos.filter((p) => p.grupo === "A"), B: ativos.filter((p) => p.grupo === "B") };
+  // grupos que existem nesta unidade (A e B sempre; C quando foi criado)
+  const letras = GRUPOS.filter((g) => grupos.some((x) => x.letra === g));
+  const porGrupo = Object.fromEntries(GRUPOS.map((g) => [g, ativos.filter((p) => p.grupo === g)])) as Record<Grupo, ParticipanteRH[]>;
   // quem conta na capacidade: não afastados
-  const presentes = (g: "A" | "B") => porGrupo[g].filter((p) => p.status !== "Afastado").length;
+  const presentes = (g: Grupo) => porGrupo[g].filter((p) => p.status !== "Afastado").length;
+  // equilíbrio só importa entre A e B, que dividem segunda e sexta
   const diferenca = Math.abs(porGrupo.A.length - porGrupo.B.length);
 
   const cidades = useMemo(() => [TODAS, ...[...new Set(candidatos.map((c) => c.cidade))].sort()], [candidatos]);
@@ -91,7 +95,7 @@ export function ParticipantesClient({
       }
     });
 
-  const coluna = (g: "A" | "B") => {
+  const coluna = (g: Grupo) => {
     const email = grupos.find((x) => x.letra === g)?.email_workspace;
     const lista = porGrupo[g];
     return (
@@ -106,7 +110,12 @@ export function ParticipantesClient({
           {email && <span className="text-muted" style={{ fontSize: 12 }}>{email}</span>}
         </div>
         <span className="text-muted" style={{ fontSize: 12.5 }}>
-          {g === grupoInicial ? "Esta semana vem na segunda; na próxima, na sexta" : "Esta semana vem na sexta; na próxima, na segunda"} ·{" "}
+          {g === "C"
+            ? "Vem toda terça e quinta"
+            : g === grupoInicial
+              ? "Esta semana vem na segunda; na próxima, na sexta"
+              : "Esta semana vem na sexta; na próxima, na segunda"}{" "}
+          ·{" "}
           {presentes(g)} de {capacidade} lugares nos dias fixos
         </span>
         {lista.length === 0 ? (
@@ -140,14 +149,19 @@ export function ParticipantesClient({
                     </>
                   ) : (
                     <>
-                      <button
-                        className="btn btn-secondary"
-                        disabled={pending}
-                        onClick={() => exec(() => moverParticipante(p.id, g === "A" ? "B" : "A"))}
-                        title="Agendamentos futuros em dias do novo grupo são cancelados"
-                      >
-                        Mover para {g === "A" ? "B" : "A"}
-                      </button>
+                      {letras
+                        .filter((outro) => outro !== g)
+                        .map((outro) => (
+                          <button
+                            key={outro}
+                            className="btn btn-secondary"
+                            disabled={pending}
+                            onClick={() => exec(() => moverParticipante(p.id, outro))}
+                            title="Agendamentos futuros em dias do novo grupo são cancelados"
+                          >
+                            Mover para {outro}
+                          </button>
+                        ))}
                       <button className="btn btn-ghost" disabled={pending} onClick={() => setConfirmarSaida(p.id)} style={{ color: "var(--danger)" }}>
                         Tirar da escala
                       </button>
@@ -188,7 +202,7 @@ export function ParticipantesClient({
           máximo 1 de diferença.
         </Alerta>
       )}
-      {(["A", "B"] as const).map(
+      {letras.map(
         (g) =>
           presentes(g) > capacidade && (
             <Alerta key={g} tom="danger">
@@ -198,8 +212,9 @@ export function ParticipantesClient({
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "var(--space-4)" }}>
-        {coluna("A")}
-        {coluna("B")}
+        {letras.map((g) => (
+          <div key={g} style={{ display: "contents" }}>{coluna(g)}</div>
+        ))}
       </div>
 
       <section className="card elev-sm" style={{ gap: 12 }}>
@@ -249,7 +264,7 @@ export function ParticipantesClient({
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <span className="text-muted" style={{ fontSize: 13 }}>{sel.size} selecionado(s) · incluir no</span>
-          <SelectCustom className="input" style={{ minWidth: 120 }} value={`Grupo ${destino}`} options={["Grupo A", "Grupo B"]} onChange={(v) => setDestino(v.endsWith("A") ? "A" : "B")} />
+          <SelectCustom className="input" style={{ minWidth: 120 }} value={`Grupo ${destino}`} options={letras.map((g) => `Grupo ${g}`)} onChange={(v) => setDestino(v.slice(-1) as Grupo)} />
           <button
             className="btn btn-primary"
             disabled={pending || sel.size === 0}

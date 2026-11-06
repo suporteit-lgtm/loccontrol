@@ -23,7 +23,7 @@ import { adicionarMembro, criarGrupo, listarMembros, removerMembros } from "@/se
 import {
   agendaConfigurada, atualizarEvento, criarAgenda, criarEvento, excluirEvento, listarEventos, msgErroGoogle, type EventoEscala,
 } from "@/services/googleAgenda";
-import { hojeSP, somarDias, type Grupo } from "./calendario";
+import { GRUPOS, hojeSP, somarDias, type Grupo } from "./calendario";
 import { lerModos, type Modos } from "./envio";
 import { DIAS_MATERIALIZADOS, configs, type ConfigEscala } from "./servico";
 
@@ -52,7 +52,7 @@ export async function alvoGoogle(cfg: ConfigEscala, modos: Modos): Promise<Alvo 
   return {
     modo: modos.modo_google,
     calendarioId: teste ? modos.calendario_teste_id : cfg.calendario_id,
-    grupos: { A: email("A"), B: email("B") },
+    grupos: { A: email("A"), B: email("B"), C: email("C") },
     permitido: teste ? (e) => allow.has(e.toLowerCase()) : () => true,
   };
 }
@@ -167,7 +167,7 @@ export async function sincronizarGrupos(cfg: ConfigEscala, alvo: Alvo) {
 
   let adicionados = 0, removidos = 0;
   const avisos: string[] = [];
-  for (const letra of ["A", "B"] as const) {
+  for (const letra of GRUPOS) {
     const grupo = alvo.grupos[letra];
     if (!grupo) continue;
     const quer = new Set(todos.filter((p) => p.ativo && p.letra === letra && alvo.permitido(p.email)).map((p) => p.email));

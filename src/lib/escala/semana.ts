@@ -1,13 +1,14 @@
 // Faixa da semana (Seg–Sex) mostrada nas telas de entrada: escolha de módulo e login do portal.
 import { db } from "@/lib/db";
 import { diaDaSemana, hojeSP, somarDias } from "./calendario";
+import type { Grupo } from "./calendario";
 
 export interface DiaSemana {
   nome: string; // "Seg"
   data: string; // AAAA-MM-DD
   /** dia útil da escala; com grupo nulo = dia livre (ter–qui) */
   util: boolean;
-  grupo: "A" | "B" | null;
+  grupo: Grupo | null;
   feriado: string | null;
   hoje: boolean;
 }
@@ -36,7 +37,7 @@ async function semana(unidade: string, segunda: string, hoje: string): Promise<D
       .gte("data", segunda).lte("data", sexta),
   ]);
   if (!dias?.length) return null;
-  const grupo = new Map(dias.map((d) => [d.data as string, (d.grupo as "A" | "B" | null) ?? null]));
+  const grupo = new Map(dias.map((d) => [d.data as string, (d.grupo as Grupo | null) ?? null]));
   const feriado = new Map((feriados ?? []).map((f) => [f.data as string, f.nome as string]));
   return NOMES.map((nome, i) => {
     const data = somarDias(segunda, i);

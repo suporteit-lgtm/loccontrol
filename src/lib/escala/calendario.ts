@@ -6,18 +6,23 @@
 // ║  (prazos, validade de oferta) são calculados no fuso America/Sao_Paulo.  ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
 
-export type Grupo = "A" | "B";
+/** A e B se revezam na segunda e na sexta; C (se existir na unidade) tem terça e quinta fixas. */
+export type Grupo = "A" | "B" | "C";
+export type GrupoRodizio = "A" | "B";
+export const GRUPOS: readonly Grupo[] = ["A", "B", "C"];
 export const FUSO = "America/Sao_Paulo";
 
 export interface ParametrosEscala {
   /** Data âncora: a semana que a contém é a "semana 1" (segunda = grupo inicial). */
   ancora: string;
-  grupoInicial: Grupo;
+  grupoInicial: GrupoRodizio;
+  /** a unidade tem o Grupo C (terça e quinta fixas); sem ele, terça a quinta são livres */
+  grupoC?: boolean;
 }
 
 /**
- * Um dia útil da escala. `grupo` é o grupo FIXO do dia (segunda e sexta);
- * null = dia LIVRE (terça a quinta): sem equipe fixa, qualquer pessoa agenda.
+ * Um dia útil da escala. `grupo` é o grupo FIXO do dia (segunda e sexta: A/B;
+ * terça e quinta: C, quando existe); null = dia LIVRE: qualquer pessoa agenda.
  */
 export interface DiaEscala {
   data: string;
@@ -54,7 +59,7 @@ export function ehDiaUtil(iso: string, feriados: ReadonlySet<string>): boolean {
   return !ehFimDeSemana(iso) && !feriados.has(iso);
 }
 
-export function outroGrupo(g: Grupo): Grupo {
+export function outroGrupo(g: GrupoRodizio): GrupoRodizio {
   return g === "A" ? "B" : "A";
 }
 
@@ -85,11 +90,13 @@ export function indiceSemana(ancora: string, data: string): number {
  * Regra fixa por dia da semana:
  *   semana par (1, 3, 5…): segunda = grupo inicial, sexta = o outro;
  *   semana ímpar (2, 4, 6…): inverte;
- *   terça a quinta: sem grupo (dia livre para agendamento).
+ *   terça e quinta: Grupo C, se a unidade tiver; senão livres;
+ *   quarta (e terça/quinta sem Grupo C): sem grupo (dia livre para agendamento).
  * Feriado não desloca nada — o dia apenas deixa de existir na escala.
  */
 export function grupoFixo(data: string, p: ParametrosEscala): Grupo | null {
   const dow = diaDaSemana(data);
+  if (p.grupoC && (dow === 2 || dow === 4)) return "C";
   if (dow !== 1 && dow !== 5) return null;
   const semanaPar = ((indiceSemana(p.ancora, data) % 2) + 2) % 2 === 0;
   const segunda = semanaPar ? p.grupoInicial : outroGrupo(p.grupoInicial);
@@ -103,6 +110,8 @@ export function grupoFixo(data: string, p: ParametrosEscala): Grupo | null {
  *     (grupo da segunda: qua, ter, qui · grupo da sexta: qua, qui, ter);
  *   • segunda e sexta feriado na mesma semana → segunda fica com a quarta e a
  *     sexta vai para a quinta (os dois grupos juntos não cabem no escritório).
+ *   • com Grupo C, só a quarta recebe remanejamento; se ela não servir (ou já
+ *     estiver com o outro grupo), o dia perdido não é reposto.
  * Devolve o grupo remanejado para `data` (ter–qui) ou null.
  */
 export function grupoRemanejado(data: string, p: ParametrosEscala, feriados: ReadonlySet<string>): Grupo | null {
@@ -111,9 +120,12 @@ export function grupoRemanejado(data: string, p: ParametrosEscala, feriados: Rea
   const seg = segundaDaSemana(data);
   const [ter, qua, qui, sex] = [1, 2, 3, 4].map((n) => somarDias(seg, n));
   const ocupados = new Map<string, Grupo>();
+  // com o Grupo C, terça e quinta já têm dono: segunda/sexta só podem ir para a quarta
+  // (o C não é remanejado: ele já tem dois dias por semana)
+  const livre = (d: string) => !p.grupoC || diaDaSemana(d) === 3;
   const remaneja = (diaFixo: string, ordem: string[]) => {
     if (diaFixo < p.ancora || ehDiaUtil(diaFixo, feriados)) return; // dia fixo normal: nada a fazer
-    const destino = ordem.find((d) => d >= p.ancora && ehDiaUtil(d, feriados) && !ocupados.has(d));
+    const destino = ordem.find((d) => livre(d) && d >= p.ancora && ehDiaUtil(d, feriados) && !ocupados.has(d));
     if (destino) ocupados.set(destino, grupoFixo(diaFixo, p)!);
   };
   remaneja(seg, [qua, ter, qui]);

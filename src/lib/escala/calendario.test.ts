@@ -192,3 +192,33 @@ describe("elegibilidade de reserva", () => {
   it("hoje ou passado", () => expect(motivoBloqueioReserva({ ...base, data: "2026-10-01" })).toBe("DIA_PASSADO"));
   it("inativo na escala", () => expect(motivoBloqueioReserva({ ...base, ativo: false })).toBe("INATIVO"));
 });
+
+describe("Grupo C — terça e quinta fixas", () => {
+  const PC: ParametrosEscala = { ...P, grupoC: true };
+  it("terça e quinta são do C; segunda e sexta seguem o rodízio A/B; quarta é livre", () => {
+    // semana de 19/10/2026: seg A, sex B
+    expect(grupoFixo("2026-10-19", PC)).toBe("A");
+    expect(grupoFixo("2026-10-20", PC)).toBe("C");
+    expect(grupoFixo("2026-10-21", PC)).toBeNull();
+    expect(grupoFixo("2026-10-22", PC)).toBe("C");
+    expect(grupoFixo("2026-10-23", PC)).toBe("B");
+  });
+  it("feriado na segunda: o grupo vai para a quarta, nunca para a terça/quinta do C", () => {
+    const f = new Set(["2026-10-19"]);
+    expect(grupoRemanejado("2026-10-21", PC, f)).toBe("A");
+    expect(grupoRemanejado("2026-10-20", PC, f)).toBeNull();
+    const dias = materializar({ de: "2026-10-19", ate: "2026-10-23", params: PC, feriados: f });
+    expect(dias.map((d) => d.grupo)).toEqual(["C", "A", "C", "B"]);
+  });
+  it("quarta também feriado: o dia perdido não é reposto", () => {
+    const f = new Set(["2026-10-19", "2026-10-21"]);
+    expect(materializar({ de: "2026-10-19", ate: "2026-10-23", params: PC, feriados: f }).map((d) => d.grupo)).toEqual(["C", "C", "B"]);
+  });
+  it("feriado na terça do C: não remaneja", () => {
+    const f = new Set(["2026-10-20"]);
+    expect(materializar({ de: "2026-10-19", ate: "2026-10-23", params: PC, feriados: f }).map((d) => d.grupo)).toEqual(["A", null, "C", "B"]);
+  });
+  it("sem Grupo C, nada muda", () => {
+    expect(grupoFixo("2026-10-20", P)).toBeNull();
+  });
+});
