@@ -7,7 +7,7 @@ import { SelectCustom } from "@/components/SelectCustom";
 import { useToast } from "@/components/Toast";
 import { criarAgendaProducaoRH, prepararAmbienteTesteRH, reiniciarEscala, rodarAgora, salvarModos, salvarParametros, type ParametrosForm } from "@/app/actions/escala";
 import { dataCurta, horaSP } from "@/lib/escala/formato";
-import { diaDaSemana, grupoFixo, hojeSP, outroGrupo, segundaDaSemana, somarDias, type Grupo } from "@/lib/escala/calendario";
+import { diaDaSemana, grupoFixo, hojeSP, outroGrupo, segundaDaSemana, somarDias, type GrupoRodizio } from "@/lib/escala/calendario";
 import type { ConfigEscala } from "@/lib/escala/servico";
 import type { Modo, Modos } from "@/lib/escala/envio";
 import type { UnidadeEscala } from "@/lib/escala/rh";
@@ -111,8 +111,9 @@ export function ConfigEscalaClient({
   const hoje = hojeSP();
   const segRef = [0, 6].includes(diaDaSemana(hoje)) ? somarDias(segundaDaSemana(hoje), 7) : segundaDaSemana(hoje);
   const ancora = p.data_ancora ?? segRef;
-  const segAtual: Grupo = grupoFixo(segRef, { ancora, grupoInicial: p.grupo_inicial }) ?? p.grupo_inicial;
-  const escolherSegunda = (g: Grupo) => {
+  // segunda é sempre do rodízio A/B (o Grupo C só tem terça e quinta)
+  const segAtual = (grupoFixo(segRef, { ancora, grupoInicial: p.grupo_inicial }) ?? p.grupo_inicial) as GrupoRodizio;
+  const escolherSegunda = (g: GrupoRodizio) => {
     const comA = grupoFixo(segRef, { ancora, grupoInicial: "A" });
     setP((x) => ({ ...x, data_ancora: ancora, grupo_inicial: comA === "A" ? g : outroGrupo(g) }));
   };

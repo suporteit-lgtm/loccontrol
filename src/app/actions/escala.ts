@@ -11,6 +11,7 @@ import { avisarTrocaDeGrupo } from "@/lib/escala/avisos";
 import { aposMudancaNaAgenda } from "@/lib/escala/gatilhos";
 import { unidadeDaEscala } from "@/lib/escala/rh";
 import type { Modo } from "@/lib/escala/envio";
+import type { Grupo } from "@/lib/escala/calendario";
 
 type Res = { ok: boolean; msg: string };
 const ESCALA = "Escala BH · Centro";
@@ -44,7 +45,7 @@ async function rematerializar(motivo: string) {
 }
 
 // ── Participantes ────────────────────────────────────────────────────────────
-export async function adicionarParticipantes(colaboradorIds: string[], letra: "A" | "B"): Promise<Res> {
+export async function adicionarParticipantes(colaboradorIds: string[], letra: Grupo): Promise<Res> {
   const u = await rh();
   if (!colaboradorIds.length) return { ok: false, msg: "Selecione ao menos um colaborador." };
   const { grupos } = await unidadeDaEscala();
@@ -68,7 +69,7 @@ export async function adicionarParticipantes(colaboradorIds: string[], letra: "A
   return { ok: true, msg: `${validos.length} pessoa(s) incluída(s) no Grupo ${letra}.` };
 }
 
-export async function moverParticipante(participanteId: string, letra: "A" | "B"): Promise<Res> {
+export async function moverParticipante(participanteId: string, letra: Grupo): Promise<Res> {
   const u = await rh();
   const { data: p } = await db()
     .from("escala_participante")
@@ -242,18 +243,18 @@ export async function reiniciarEscala(): Promise<Res> {
 export interface PessoaDia {
   participanteId: string;
   nome: string;
-  grupo: "A" | "B";
+  grupo: Grupo;
   situacao: "presente" | "ausente" | "ausente_em_cima" | "afastado";
 }
 
 export interface DetalheDia {
   data: string;
-  grupo: "A" | "B" | null;
+  grupo: Grupo | null;
   escalados: PessoaDia[];
-  reservas: { id: string; participanteId: string; nome: string; grupo: "A" | "B"; status: string; origem: string }[];
+  reservas: { id: string; participanteId: string; nome: string; grupo: Grupo; status: string; origem: string }[];
   fila: { id: string; nome: string; status: string; expira: string | null }[];
   /** participantes ativos que podem ser agendados neste dia pelo RH */
-  elegiveis: { id: string; nome: string; grupo: "A" | "B" }[];
+  elegiveis: { id: string; nome: string; grupo: Grupo }[];
 }
 
 export async function detalheDia(data: string): Promise<DetalheDia> {
@@ -271,11 +272,11 @@ export async function detalheDia(data: string): Promise<DetalheDia> {
   const info = new Map(
     (parts ?? []).map((p) => [
       p.id,
-      { nome: (p.colaboradores as unknown as { nome: string }).nome, grupo: (p.escala_grupo as unknown as { letra: "A" | "B" }).letra, ativo: p.ativo },
+      { nome: (p.colaboradores as unknown as { nome: string }).nome, grupo: (p.escala_grupo as unknown as { letra: Grupo }).letra, ativo: p.ativo },
     ]),
   );
   const ausentes = new Map((aus ?? []).map((a) => [a.participante_id, a.em_cima_da_hora as boolean]));
-  const grupo = (dia?.grupo as "A" | "B" | null) ?? null;
+  const grupo = (dia?.grupo as Grupo | null) ?? null;
   // dia congelado usa a foto de quem era do grupo; senão, quem é do grupo agora
   const ids: string[] = dia?.congelado
     ? (dia.escalados ?? [])
@@ -293,7 +294,7 @@ export async function detalheDia(data: string): Promise<DetalheDia> {
     .map((id) => ({
       participanteId: id,
       nome: info.get(id)?.nome ?? "—",
-      grupo: info.get(id)?.grupo ?? (grupo as "A" | "B"),
+      grupo: info.get(id)?.grupo ?? (grupo as Grupo),
       situacao: (afastados.has(id) ? "afastado" : ausentes.has(id) ? (ausentes.get(id) ? "ausente_em_cima" : "ausente") : "presente") as PessoaDia["situacao"],
     }))
     .sort((a, b) => a.nome.localeCompare(b.nome));

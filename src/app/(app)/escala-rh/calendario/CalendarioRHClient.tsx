@@ -11,11 +11,12 @@ import { agendarRH, cancelarReservaRH, detalheDia, registrarAusenciaRH, type Det
 import { SelectCustom } from "@/components/SelectCustom";
 import { BarraOcupacao } from "@/components/escala/BarraOcupacao";
 import { dataLonga, horaSP, maiuscula, nomeMes } from "@/lib/escala/formato";
+import type { Grupo } from "@/lib/escala/calendario";
 
 export interface DiaRH {
   data: string;
   util: boolean;
-  grupo: "A" | "B" | null;
+  grupo: Grupo | null;
   feriado: string | null;
   capacidade: number;
   escalados: number;
@@ -93,7 +94,8 @@ export function CalendarioRHClient({ unidade, refMes, dias }: { unidade: string;
         <div style={{ display: "flex", gap: "6px 16px", flexWrap: "wrap", alignItems: "center", fontSize: 12 }} className="text-muted">
           <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="A" /> Grupo A</span>
           <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="B" /> Grupo B</span>
-          <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><LivreBadge /> Ter a qui: livre</span>
+          <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="C" /> Grupo C (ter e qui)</span>
+          <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><LivreBadge /> Livre</span>
           <span>Ocupação = escalados que vão + agendamentos · clique no dia para ver os nomes, agendar ou registrar ausência</span>
         </div>
 

@@ -77,7 +77,7 @@ export default async function EscalaLoginPage({ searchParams }: { searchParams: 
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 48 }}>
           {[
-            "Segunda e sexta do seu grupo; terça a quinta livres para agendar",
+            "Os dias fixos do seu grupo e os dias livres para agendar",
             "Não vai? Avise e libere seu lugar para outra pessoa",
             "Salas de reunião: veja os horários livres e agende em poucos cliques",
           ].map((linha) => (

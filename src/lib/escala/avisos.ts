@@ -7,12 +7,12 @@
 // ╚══════════════════════════════════════════════════════════════════════════╝
 import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
-import { diaDaSemana, grupoFixo, hojeSP, somarDias, type Grupo } from "./calendario";
+import { diaDaSemana, GRUPOS, grupoFixo, hojeSP, somarDias, type Grupo } from "./calendario";
 import { carregarDashboard, lerFiltros } from "./dashboard";
 import { emailLembrete, emailMudancaEscala, emailResumoRH } from "./emails";
 import { despachar, lerModos, type Modos } from "./envio";
 import { dataCurta, dataLonga } from "./formato";
-import { configs, type ConfigEscala } from "./servico";
+import { configs, temGrupoC, type ConfigEscala } from "./servico";
 
 interface Membro {
   id: string;
@@ -162,7 +162,7 @@ export async function avisarMudancasDaEscala(
 
   const cfg = (await configs()).find((c) => c.unidade_id === unidadeId);
   if (!cfg?.data_ancora) return 0;
-  const params = { ancora: cfg.data_ancora, grupoInicial: cfg.grupo_inicial };
+  const params = { ancora: cfg.data_ancora, grupoInicial: cfg.grupo_inicial, grupoC: await temGrupoC(unidadeId) };
   const [{ data: novos }, { data: feriados }] = await Promise.all([
     db().from("escala_dia").select("data, grupo").eq("unidade_id", unidadeId).in("data", alterados.length ? alterados : ["1900-01-01"]),
     db().from("escala_feriado").select("data, nome").in("data", removidos.length ? removidos : ["1900-01-01"]),
@@ -180,7 +180,7 @@ export async function avisarMudancasDaEscala(
   if (!eventos.length) return 0;
 
   const porPessoa = new Map<string, { m: Membro; linhas: string[] }>();
-  for (const g of ["A", "B"] as const) {
+  for (const g of GRUPOS) {
     const linhas = eventos.filter((e) => e.grupo === g).map((e) => e.linha);
     if (!linhas.length) continue;
     for (const m of await membrosDoGrupo(unidadeId, g)) porPessoa.set(m.id, { m, linhas });

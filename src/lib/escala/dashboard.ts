@@ -7,11 +7,12 @@ import {
   type LinhaFila, type LinhaPresenca,
 } from "./metricas";
 import { participantes, unidadeDaEscala } from "./rh";
+import type { Grupo } from "./calendario";
 
 export interface Filtros {
   de: string;
   ate: string;
-  grupo: "" | "A" | "B";
+  grupo: "" | Grupo;
   pessoa: string;
 }
 
@@ -23,7 +24,7 @@ export function lerFiltros(sp: Record<string, string | undefined>, hoje = hojeSP
   const [a, m] = hoje.split("-").map(Number);
   let ate = ISO.test(sp.ate ?? "") ? sp.ate! : new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
   if (ate < de) ate = de;
-  const grupo = sp.grupo === "A" || sp.grupo === "B" ? sp.grupo : "";
+  const grupo = sp.grupo === "A" || sp.grupo === "B" || sp.grupo === "C" ? sp.grupo : "";
   return { de, ate, grupo, pessoa: /^[0-9a-f-]{36}$/.test(sp.pessoa ?? "") ? sp.pessoa! : "" };
 }
 
@@ -46,10 +47,10 @@ export async function carregarDashboard(f: Filtros) {
 
   const [pessoasTodas, diasPeriodo, diasAB, linhasBrutas, filaBruta, prev] = await Promise.all([
     participantes(unidade),
-    todas<{ data: string; grupo: "A" | "B" | null }>((a, b) =>
+    todas<{ data: string; grupo: Grupo | null }>((a, b) =>
       db().from("escala_dia").select("data, grupo").eq("unidade_id", unidade).gte("data", f.de).lte("data", f.ate).order("data").range(a, b)),
     // diferença A×B: desde a âncora até o fim do período
-    todas<{ data: string; grupo: "A" | "B" | null }>((a, b) =>
+    todas<{ data: string; grupo: Grupo | null }>((a, b) =>
       db().from("escala_dia").select("data, grupo").eq("unidade_id", unidade)
         .gte("data", u.config.data_ancora ?? f.de).lte("data", f.ate).order("data").range(a, b)),
     todas<LinhaPresenca>((a, b) =>

@@ -74,7 +74,8 @@ export function CalendarioClient({
       <div style={{ display: "flex", gap: "6px 16px", flexWrap: "wrap", alignItems: "center", fontSize: 12 }} className="text-muted">
         <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="A" /> Grupo A</span>
         <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="B" /> Grupo B</span>
-        <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><LivreBadge /> Ter a qui: livre para agendar</span>
+        <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><GrupoBadge grupo="C" /> Grupo C</span>
+        <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><LivreBadge /> Livre para agendar</span>
         <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
           <span aria-hidden style={{ width: 14, height: 14, borderRadius: 4, background: "var(--color-neutral-100)", border: "1px solid var(--color-divider)" }} />
           Fim de semana, feriado ou sem expediente

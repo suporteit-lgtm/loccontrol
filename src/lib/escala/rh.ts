@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { contexto } from "@/lib/data";
 import { escalaHabilitada } from "./auth";
 import type { ConfigEscala } from "./servico";
+import type { Grupo } from "./calendario";
 
 /** Página do RH: exige perfil RH/Admin e o módulo liberado. */
 export async function contextoEscalaRH() {
@@ -15,7 +16,7 @@ export interface UnidadeEscala {
   config: ConfigEscala;
   cidade: string;
   unidade: string;
-  grupos: { id: string; letra: "A" | "B"; email_workspace: string | null; email_teste: string | null }[];
+  grupos: { id: string; letra: Grupo; email_workspace: string | null; email_teste: string | null }[];
 }
 
 /** Hoje só BH · Centro tem escala; a estrutura aceita outras unidades no futuro. */
@@ -49,7 +50,7 @@ export interface ParticipanteRH {
   cidade: string;
   unidade: string;
   status: string; // status do colaborador no LocControl
-  grupo: "A" | "B";
+  grupo: Grupo;
   ativo: boolean;
   vinculado: boolean; // já entrou no portal com o Google
 }
@@ -62,7 +63,7 @@ export async function participantes(unidadeId: string): Promise<ParticipanteRH[]
   return (data ?? [])
     .map((p) => {
       const c = p.colaboradores as unknown as { nome: string; email: string | null; cargo: string; cidade: string; unidade: string; status: string };
-      const g = p.escala_grupo as unknown as { letra: "A" | "B" };
+      const g = p.escala_grupo as unknown as { letra: Grupo };
       return {
         id: p.id,
         colaboradorId: p.colaborador_id,

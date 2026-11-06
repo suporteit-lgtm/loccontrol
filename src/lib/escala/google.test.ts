@@ -11,7 +11,7 @@ const RESERVAS = [
   { data: "2026-10-06", email: "caio@locgrupo.com.br" },
   { data: "2026-10-06", email: "caio@locgrupo.com.br" },
 ];
-const grupos = { A: "escala-teste-a@locgrupo.com.br", B: "escala-teste-b@locgrupo.com.br" };
+const grupos = { A: "escala-teste-a@locgrupo.com.br", B: "escala-teste-b@locgrupo.com.br", C: null };
 
 describe("Google — eventos desejados", () => {
   it("produção: grupo do dia + quem reservou, sem duplicar; dia livre vazio não vira evento", () => {

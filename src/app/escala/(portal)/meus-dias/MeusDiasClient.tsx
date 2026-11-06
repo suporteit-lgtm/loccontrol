@@ -5,6 +5,7 @@ import { GrupoBadge } from "@/components/escala/GrupoBadge";
 import { AcoesDia, LivreBadge, StatusTag, TituloDia, textoVagas } from "@/components/escala/AcoesDia";
 import { dataLonga, maiuscula } from "@/lib/escala/formato";
 import type { ContextoPortal, DiaPortal } from "@/lib/escala/portal";
+import type { Grupo } from "@/lib/escala/calendario";
 
 /** "hoje", "amanhã", "em 3 dias" */
 function quando(data: string, hoje: string): string {
@@ -22,7 +23,7 @@ function Bloco({ kicker, titulo, children, vazio }: { kicker: string; titulo: st
   );
 }
 
-export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo: "A" | "B"; dias: DiaPortal[]; ctx: ContextoPortal }) {
+export function MeusDiasClient({ nome, grupo, dias, ctx }: { nome: string; grupo: Grupo; dias: DiaPortal[]; ctx: ContextoPortal }) {
   const hoje = dias.find((d) => d.hoje)!;
   const futuros = dias.filter((d) => d.data > ctx.hoje && d.util);
   const ofertas = dias.filter((d) => d.fila?.status === "OFERECIDA" && d.fila.expiraEm && new Date(d.fila.expiraEm) > new Date());
